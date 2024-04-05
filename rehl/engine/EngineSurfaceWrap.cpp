@@ -187,9 +187,8 @@ EngineSurfaceWrap::EngineSurfaceWrap(vgui::Panel * embeddedPanel, IEngineSurface
 	++staticContextCount;
 	inputStream = new vgui::FileInputStream("valve/gfx/vgui/mouse.tga", false);
 	_emulatedMouseImage = new vgui::BitmapTGA((vgui::InputStream*)inputStream, true);
-
 	inputStream->close();
-	delete inputStream;	// this causes crash
+	delete inputStream;
 
 	if (!SDL_WasInit(32))
 		{
