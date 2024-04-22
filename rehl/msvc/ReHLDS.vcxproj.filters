@@ -51,6 +51,9 @@
     <Filter Include="rehlds">
       <UniqueIdentifier>{a54a9aa9-f95b-4199-bdf0-9640fdb5590b}</UniqueIdentifier>
     </Filter>
+    <Filter Include="engine\client\vgui2">
+      <UniqueIdentifier>{b5523366-cf9a-47a2-a16e-ec85b1008693}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\engine\common.cpp">
@@ -450,6 +453,41 @@
       <Filter>engine\client</Filter>
     </ClCompile>
     <ClCompile Include="..\common\net_api.cpp">
+      <Filter>engine\client</Filter>
+    </ClCompile>
+    <ClCompile Include="..\engine\BaseUI.cpp">
+      <Filter>engine\client</Filter>
+    </ClCompile>
+    <ClCompile Include="..\vgui2\VGui_Controls.cpp">
+      <Filter>engine\client\vgui2</Filter>
+    </ClCompile>
+    <ClCompile Include="..\vgui2\Panel.cpp" />
+    <ClCompile Include="..\engine\ToolTip.cpp" />
+    <ClCompile Include="BuildGroup.cpp" />
+    <ClCompile Include="..\engine\KeyValues.cpp" />
+    <ClCompile Include="..\engine\BaseUISurface.cpp" />
+    <ClCompile Include="..\engine\FontTextureCache.cpp">
+      <Filter>engine\client</Filter>
+    </ClCompile>
+    <ClCompile Include="..\engine\gl_hud.cpp" />
+    <ClCompile Include="..\public\utlsymbol.cpp">
+      <Filter>public</Filter>
+    </ClCompile>
+    <ClCompile Include="..\vgui2\EditablePanel.cpp" />
+    <ClCompile Include="..\vgui2\FocusNavGroup.cpp" />
+    <ClCompile Include="..\engine\FontManager.cpp" />
+    <ClCompile Include="..\engine\gl_screen.cpp" />
+    <ClCompile Include="..\engine\gl_rmisc.cpp">
+      <Filter>engine\client</Filter>
+    </ClCompile>
+    <ClCompile Include="..\engine\thread.cpp">
+      <Filter>engine\client</Filter>
+    </ClCompile>
+    <ClCompile Include="..\engine\DemoPlayerWrapper.cpp" />
+    <ClCompile Include="..\engine\MixerControls.cpp">
+      <Filter>engine\client</Filter>
+    </ClCompile>
+    <ClCompile Include="studio_api.cpp">
       <Filter>engine\client</Filter>
     </ClCompile>
   </ItemGroup>
@@ -1262,6 +1300,143 @@
       <Filter>engine\client</Filter>
     </ClInclude>
     <ClInclude Include="..\engine\EngineSurface.h">
+      <Filter>engine\client</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\BaseUI.h">
+      <Filter>engine\client</Filter>
+    </ClInclude>
+    <ClInclude Include="..\vgui2\VGui_Controls.h">
+      <Filter>engine\client\vgui2</Filter>
+    </ClInclude>
+    <ClInclude Include="..\vgui2\InputInternal.h">
+      <Filter>engine\client\vgui2</Filter>
+    </ClInclude>
+    <ClInclude Include="..\vgui2\KeyCode.h">
+      <Filter>engine\client\vgui2</Filter>
+    </ClInclude>
+    <ClInclude Include="..\vgui2\MouseCode.h">
+      <Filter>engine\client\vgui2</Filter>
+    </ClInclude>
+    <ClInclude Include="..\vgui2\VGui.h">
+      <Filter>engine\client\vgui2</Filter>
+    </ClInclude>
+    <ClInclude Include="..\vgui2\IClientPanel.h">
+      <Filter>engine\client\vgui2</Filter>
+    </ClInclude>
+    <ClInclude Include="..\vgui2\Panel.h">
+      <Filter>engine\client\vgui2</Filter>
+    </ClInclude>
+    <ClInclude Include="GameUI.h">
+      <Filter>engine\client</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\GameConsole.h">
+      <Filter>engine\client</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\CareerUI.h">
+      <Filter>engine\client</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\VClientVGUI.h">
+      <Filter>engine\client</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\HTMLCommands.h">
+      <Filter>engine\client</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\IHTMLChromeController.h">
+      <Filter>engine\client</Filter>
+    </ClInclude>
+    <ClInclude Include="..\vgui2\ISurfaceManger.h">
+      <Filter>engine\client\vgui2</Filter>
+    </ClInclude>
+    <ClInclude Include="..\vgui2\IPanel.h">
+      <Filter>engine\client\vgui2</Filter>
+    </ClInclude>
+    <ClInclude Include="..\vgui2\ISystem.h">
+      <Filter>engine\client\vgui2</Filter>
+    </ClInclude>
+    <ClInclude Include="..\vgui2\IVGui.h">
+      <Filter>engine\client\vgui2</Filter>
+    </ClInclude>
+    <ClInclude Include="..\vgui2\IScheme.h">
+      <Filter>engine\client\vgui2</Filter>
+    </ClInclude>
+    <ClInclude Include="..\vgui2\ISurface.h">
+      <Filter>engine\client\vgui2</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\CStaticPanel.h">
+      <Filter>engine\client</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\MessageMap.h">
+      <Filter>engine\client\vgui2</Filter>
+    </ClInclude>
+    <ClInclude Include="ISurface.h">
+      <Filter>engine\client\vgui2</Filter>
+    </ClInclude>
+    <ClInclude Include="BuildGroup.h">
+      <Filter>engine\client\vgui2</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\ToolTip.h">
+      <Filter>engine\client\vgui2</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\KeyValues.h">
+      <Filter>engine\client</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\IBorder.h">
+      <Filter>engine\client\vgui2</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\BaseUISurface.h">
+      <Filter>engine\client</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\IMouseControl.h">
+      <Filter>engine\client</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\Cursor.h">
+      <Filter>engine\client</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\FontTextureCache.h">
+      <Filter>engine\client</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\gl_hud.h">
+      <Filter>engine\client</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\EnginePanel.h" />
+    <ClInclude Include="..\vgui2\EditablePanel.h">
+      <Filter>engine\client\vgui2</Filter>
+    </ClInclude>
+    <ClInclude Include="..\vgui2\FocusNavGroup.h">
+      <Filter>engine\client\vgui2</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\IClientVGUI.h">
+      <Filter>engine\client</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\FontManager.h">
+      <Filter>engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\rehlds\hooker.h" />
+    <ClInclude Include="..\engine\gl_screen.h">
+      <Filter>engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\MemoryPool.h">
+      <Filter>engine\client</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\gl_rmisc.h">
+      <Filter>engine\client</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\IThread.h">
+      <Filter>engine\client</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\cd_internal.h">
+      <Filter>engine\client</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\DemoPlayerWrapper.h">
+      <Filter>engine\client</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\IMixerControls.h">
+      <Filter>engine\client</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\IVoiceRecord.h">
+      <Filter>engine\client</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\r_studio.h">
       <Filter>engine\client</Filter>
     </ClInclude>
   </ItemGroup>

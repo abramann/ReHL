@@ -1,10 +1,10 @@
 #include "precompiled.h"
-#include "enginesurface.h"
 #include "../FakeVGUI/App.h"
 #include "../FakeVGUI/Panel.h"
 
 
 #define BMP_TYPE 0x4D42
+
 
 #ifdef _WIN32
 #include <Windows.h>
@@ -48,13 +48,11 @@ struct BITMAPINFO
 };
 #endif
 
+CUtlVector<char> g_TempConsoleBuffer;
+
 static EngineSurfaceWrap* staticEngineSurface = nullptr;
 static vgui::Panel* staticPanel = nullptr;
-
-void VGui_ViewportPaintBackground(int * extents)
-{
-	NOT_IMPLEMENTED;
-}
+static IBaseUI* staticUIFuncs = nullptr;
 
 void VGui_Startup()
 {
@@ -277,7 +275,25 @@ void VGuiWrap_Paint(bool paintAll)
 
 void VGuiWrap2_Startup()
 {
-	NOT_IMPLEMENTED;
+	if (staticUIFuncs)
+		return;
+
+	auto factoryFn = Sys_GetFactoryThis();
+
+	CreateInterfaceFn factories[2] =
+	{
+		factoryFn,
+		(CreateInterfaceFn)GetFileSystemFactory() };
+
+	staticUIFuncs = reinterpret_cast<IBaseUI*>(factoryFn(BASEUI_INTERFACE_VERSION, nullptr));
+
+	staticUIFuncs->Initialize(factories, ARRAYSIZE(factories));
+	staticUIFuncs->Start(&cl_enginefuncs, CLDLL_INTERFACE_VERSION);
+
+	// Flush temporary buffer
+	g_TempConsoleBuffer.AddToTail('\0');
+	VGuiWrap2_ConPrintf(g_TempConsoleBuffer.Base());
+	g_TempConsoleBuffer.Purge();
 }
 
 void VGuiWrap2_Shutdown()
@@ -372,21 +388,6 @@ void VGuiWrap2_HideConsole()
 	NOT_IMPLEMENTED;
 }
 
-void VGuiWrap2_ClearConsole()
-{
-	NOT_IMPLEMENTED;
-}
-
-void VGuiWrap2_ConPrintf(const char * msg)
-{
-	NOT_IMPLEMENTED;
-}
-
-void VGuiWrap2_ConDPrintf(const char * msg)
-{
-	NOT_IMPLEMENTED;
-}
-
 void VGuiWrap2_LoadingStarted(const char * resourceType, const char * resourceName)
 {             
 	NOT_IMPLEMENTED;
@@ -412,6 +413,26 @@ int EXT_FUNC VGuiWrap2_GetLocalizedStringLength(const char * label)
 {
 	NOT_IMPLEMENTED;
 	return 0;
+}
+
+void StartLoadingProgressBar(const char * loadingType, int numProgressPoints)
+{
+	NOT_IMPLEMENTED;
+}
+
+void StopLoadingProgressBar()
+{
+	NOT_IMPLEMENTED;
+}
+
+void ContinueLoadingProgressBar(const char * loadingType, int progressPoint, float progressFraction)
+{
+	NOT_IMPLEMENTED;
+}
+
+void SetLoadingProgressBarStatusText(const char * statusText)
+{
+	NOT_IMPLEMENTED;
 }
 
 ICareerUI * VguiWrap2_GetCareerUI()

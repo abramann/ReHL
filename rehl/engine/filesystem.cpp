@@ -40,10 +40,8 @@ const char *GetBaseDirectory(void)
 	return s_pBaseDir;
 }
 
-NOXREF void *GetFileSystemFactory(void)
+void *GetFileSystemFactory(void)
 {
-	NOXREFCHECK;
-
 	return (void *)g_FileSystemFactory;
 }
 
@@ -99,6 +97,62 @@ bool BEnableAddonsFolder(void)
 	}
 
 	return (registry->ReadInt("addons_folder", 0) > 0);
+}
+
+void Host_SetRenderer_f(void)
+{
+
+	if (g_pcls.state && (Cmd_Argc() == 2 || Cmd_Argc() == 3))
+	{
+		int hardware = 0;
+
+		if (std::strcmp(Cmd_Argv(1), "software"))
+		{
+			hardware = 1;
+		}
+
+		int windowed = 0;
+
+		if (Cmd_Argc() == 3)
+		{
+			windowed = std::strcmp(Cmd_Argv(2), "windowed") == 0;
+		}
+
+		VideoMode_SwitchMode(hardware, windowed);
+	}
+}
+
+void Host_SetVideoMode_f(void)
+{
+	if (g_pcls.state && (Cmd_Argc() == 3 || Cmd_Argc() == 4))
+	{
+		int width = Q_atoi(Cmd_Argv(1));
+		int height = Q_atoi(Cmd_Argv(2));
+		int bpp = 16;
+		if (Cmd_Argc() == 4)
+		{
+			bpp = Q_atoi(Cmd_Argv(3));
+		}
+
+		VideoMode_SetVideoMode(width, height, bpp);
+	}
+}
+
+void Host_SetGameDir_f(void)
+{
+	if (Cmd_Argc() > 0 && g_pPostRestartCmdLineArgs)
+	{
+		const char* gamedir = Cmd_Argv(1);
+		if (!gamedir || *gamedir == '/' || Q_strstr(gamedir, ":") || Q_strstr(gamedir, "..") || Q_strstr(gamedir, "\\"))
+		{
+			Con_Printf("Couldn't set gamedir to %s (contains illegal characters)\n", gamedir);
+		}
+		else
+		{
+			strcpy(&g_pPostRestartCmdLineArgs[strlen(g_pPostRestartCmdLineArgs)], "-game");
+			strcat(g_pPostRestartCmdLineArgs, gamedir);
+		}
+	}
 }
 
 void Host_SetHDModels_f(void)

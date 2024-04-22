@@ -163,6 +163,7 @@ extern cldll_func_t cl_funcs;
 extern cl_enginefunc_t cl_engsrcProxies;
 extern cl_enginefunc_dst_t g_engdstAddrs;
 extern module_t	g_module;
+extern CSysModule* hClientDLL;
 
 // Module exports
 extern modfuncs_t g_modfuncs;

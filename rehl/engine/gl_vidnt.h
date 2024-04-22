@@ -50,3 +50,5 @@ extern void VID_ShiftPalette(unsigned char *palette);
 extern qboolean scr_skipupdate;
 
 extern qboolean scr_skiponeupdate;
+
+extern bool g_bSupportsNPOTTextures;

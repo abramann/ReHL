@@ -32,6 +32,7 @@ extern cvar_t MP3FadeTime;
 
 void CD_Command_f(void);
 void MP3_Command_f(void);
+void CareerAudio_Command_f(void);
 
 void CDAudio_Init(void);
 void CDAudio_Shutdown(void);

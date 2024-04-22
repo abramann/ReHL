@@ -52,7 +52,7 @@ namespace vgui
 		virtual void drawSetTextColor(int r, int g, int b, int a) = 0;
 		virtual void drawSetTextPos(int x, int y) = 0;
 		virtual void drawPrintText(const char* text, int textLen) = 0;
-		virtual void drawSetTextureRGBA(int id, const char* rgba, int wide, int tall) = 0;
+		virtual void drawSetTextureRGBA(int id, const  unsigned char * rgba, int wide, int tall) = 0;
 		virtual void drawSetTexture(int id) = 0;
 		virtual void drawTexturedRect(int x0, int y0, int x1, int y1) = 0;
 		virtual void invalidate(vgui::Panel* panel) = 0;
@@ -71,7 +71,7 @@ namespace vgui
 		virtual void drawLine(int x1, int y1, int x2, int y2) = 0;
 		virtual void drawPolyLine(int* px, int* py, int n) = 0;
 		virtual void drawTexturedPolygon(vgui::VGuiVertex* pVertices, int n) = 0;
-		virtual void drawSetTextureBGRA(int id, const char* rgba, int wide, int tall, int hardwareFilter, int hasAlphaChannel) = 0;
+		virtual void drawSetTextureBGRA(int id, const  unsigned char * rgba, int wide, int tall, int hardwareFilter, int hasAlphaChannel) = 0;
 		virtual void drawUpdateRegionTextureBGRA(int nTextureID, int x, int y, const byte* pchData, int wide, int tall) = 0;
 		virtual void drawGetTextPos(int& x, int& y) = 0;
 		virtual void drawPrintChar(int x, int y, int wide, int tall, float s0, float t0, float s1, float t1) = 0;

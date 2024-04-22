@@ -35,8 +35,9 @@
 #include "osconfig.h"
 #include "mathlib.h"
 
-#define NOT_IMPLEMENTED __debugbreak()
-#define NOT_IMPLEMENTED_IGNORE 
+#define NOT_IMPLEMENTED DebugBreak()
+#define NOT_IMPLEMENTED_IGNORE DebugBreak();
+#define CHECK_REQUIRED DebugBreak();
 #define UNRESOLVED_ISSUE
 
 #define POSSIBLE_ERROR(MSG) 

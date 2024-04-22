@@ -25,6 +25,8 @@ TEMPENTITY* CL_AllocCustomTempEntity(float* origin, model_t* model, int high, vo
 
 void CL_InitTEnts();
 
+void CL_InitExtrap();
+
 void R_BloodSprite(vec_t* org, int colorindex, int modelIndex, int modelIndex2, float size);
 
 void R_BreakModel(float* pos, float* size, float* dir, float random, float life, int count, int modelIndex, char flags);

@@ -2028,9 +2028,7 @@ unsigned char* EXT_FUNC COM_LoadFile(const char *path, int usehunk, int *pLength
 	unsigned char *buf = NULL;
 
 #ifndef SWDS
-	/*
-	g_engdstAddrs->COM_LoadFile(&path, &usehunk, &pLength);
-	*/
+	g_engdstAddrs.COM_LoadFile(&path, &usehunk, &pLength);
 #endif
 
 	if (pLength)
@@ -2115,8 +2113,7 @@ unsigned char* EXT_FUNC COM_LoadFile(const char *path, int usehunk, int *pLength
 void EXT_FUNC COM_FreeFile(void *buffer)
 {
 #ifndef SWDS
-	NOT_IMPLEMENTED_IGNORE;
-	//g_engdstAddrs.COM_FreeFile(&buffer);
+	g_engdstAddrs.COM_FreeFile(&buffer);
 #endif
 
 	if (buffer)

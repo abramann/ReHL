@@ -60,24 +60,24 @@ void CEngine::Unload()
 
 void ForceReloadProfile()
 {
+	char szRate[32] = { 0 };
+
 	Cbuf_AddText("exec config.cfg\n");
 	Cbuf_AddText("+mlook\n");
 	Cbuf_Execute();
 	if (COM_CheckParm("-nomousegrab"))
 		Cvar_Set("cl_mousegrab", "0");
 
-	//Key_SetBinding(126, "toggleconsole");
-	//Key_SetBinding(96, "toggleconsole");
-	//Key_SetBinding(27, "cancelselect");
-	//SDL_GL_SetSwapInterval((gl_vsync.value <= 0.0) - 1);
+	Key_SetBinding(126, "toggleconsole");
+	Key_SetBinding(96, "toggleconsole");
+	Key_SetBinding(27, "cancelselect");
+	SDL_GL_SetSwapInterval((gl_vsync.value <= 0.0) - 1);
 	if (g_pcls.state != ca_dedicated)
-	{
-		Sys_Error("%s: Only dedicated mode is supported", __func__);
-		/*
-		v0 = GetRateRegistrySetting(rate.string);
-		Q_strncpy(szRate, v0, 0x20u);
+	{		
+		const char* szRegRate = GetRateRegistrySetting(rate.string);
+		Q_strncpy(szRate, szRegRate, 32);
 		Cvar_DirectSet(&rate, szRate);
-		*/
+		
 	}
 }
 

@@ -2,23 +2,23 @@
 
 #include "dll_api.h"
 #include "Scheme.h"
+#include "vgui_Color.h"
 
 
 namespace vgui
 {
 	class InputStream;
 	class Panel;
-	class Color;
 	class Font;
 
-	class VGUI_DLL_API Image
+	class Image
 	{
 	public:
 		virtual void setPos(int x, int y);
 		virtual void getPos(int *const x, int *const y);
 		virtual void getSize(int *const wide, int *const tall);
-		virtual void setColor(vgui::Color *p_color);
-		virtual void getColor(vgui::Color *const color);
+		virtual void setColor(Color *p_color);
+		virtual void getColor(Color *const color);
 		virtual void setSize(int wide, int tall);
 		virtual void drawSetColor(vgui::Scheme::SchemeColor sc);
 		virtual void drawSetColor(int r, int g, int b, int a);
@@ -38,6 +38,12 @@ namespace vgui
 		virtual void drawTexturedRect(int x0, int y0, int x1, int y1);
 		virtual void paint(vgui::Panel *panel);
 		virtual void doPaint(vgui::Panel *panel);
+
+	private:
+		int _pos[2];
+		int _size[2];
+		Panel *_panel;
+		Color _color;
 	};
 
 	class VGUI_DLL_API Bitmap : public vgui::Image
@@ -46,6 +52,10 @@ namespace vgui
 		virtual void setSize(int wide, int tall);
 		virtual void paint(vgui::Panel *panel);
 		virtual void setRGBA(int x, int y, unsigned char r, unsigned char g, unsigned char b, unsigned char a);
+	private:
+		int _id;
+		bool _uploaded;
+		unsigned char *_rgba;
 	};
 
 	class VGUI_DLL_API BitmapTGA : public Bitmap

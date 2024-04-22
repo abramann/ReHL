@@ -11,6 +11,8 @@ namespace vgui
 
 class ICareerUI;
 
+extern CUtlVector<char> g_TempConsoleBuffer;
+
 // VGUI interface
 
 extern void VGui_ViewportPaintBackground(int* extents);
@@ -123,7 +125,13 @@ extern void ContinueLoadingProgressBar(const char* loadingType, int progressPoin
 
 extern void SetLoadingProgressBarStatusText(const char* statusText);
 
+extern void StartLoadingProgressBar(const char *loadingType, int numProgressPoints);
+
 extern void StopLoadingProgressBar();
+
+extern void SetLoadingProgressBarStatusText(const char *statusText);
+
+extern void ContinueLoadingProgressBar(const char *loadingType, int progressPoint, float progressFraction);
 
 extern void SetSecondaryProgressBar(float progress);
 

@@ -36,6 +36,7 @@ class DirectorCmd;
 class IBaseSystem;
 class ISystemModule;
 class IObjectContainer;
+class BitBuffer;
 
 class IDemoPlayer {
 public:

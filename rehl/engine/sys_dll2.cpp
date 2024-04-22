@@ -79,9 +79,8 @@ NOXREF void SetRateRegistrySetting(const char *pchRate)
 	registry->WriteString("rate", pchRate);
 }
 
-NOXREF const char *GetRateRegistrySetting(const char *pchDef)
+const char *GetRateRegistrySetting(const char *pchDef)
 {
-	NOXREFCHECK;
 	return registry->ReadString("rate", pchDef);
 }
 
@@ -740,10 +739,10 @@ void CDedicatedServerAPI::UpdateStatus(float *fps, int *nActive, int *nMaxPlayer
 EXPOSE_SINGLE_INTERFACE(CDedicatedServerAPI, IDedicatedServerAPI, VENGINE_HLDS_API_VERSION);
 int RunListenServer(void* instance, char* basedir, char* cmdline, char* postRestartCmdLineArgs, CreateInterfaceFn launcherFactory, CreateInterfaceFn filesystemFactory)
 {
-	auto hOldHw = GetModuleHandleA("GameHW.dll");
-	if (hOldHw)
+	auto hGameHW = GetModuleHandleA("GameHW.dll");
+	if (hGameHW)
 	{
-		int(__cdecl* GameRunListenServer)(void*, char*, char*, char*, CreateInterfaceFn, CreateInterfaceFn) = (int(__cdecl*)(void*, char*, char*, char*, CreateInterfaceFn, CreateInterfaceFn))(0xAC680 + (uintptr_t)hOldHw);
+		int(__cdecl* GameRunListenServer)(void*, char*, char*, char*, CreateInterfaceFn, CreateInterfaceFn) = (int(__cdecl*)(void*, char*, char*, char*, CreateInterfaceFn, CreateInterfaceFn))(0xAC680 + (uintptr_t)hGameHW);
 		return GameRunListenServer(instance, basedir, cmdline, postRestartCmdLineArgs, launcherFactory, filesystemFactory);
 	}
 

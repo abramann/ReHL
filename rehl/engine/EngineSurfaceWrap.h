@@ -35,7 +35,7 @@ public:
 	void drawSetTextColor(int r, int g, int b, int a) override;
 	void drawSetTextPos(int x, int y) override;
 	void drawPrintText(const char* text, int textLen) override;
-	void drawSetTextureRGBA(int id, const char* rgba, int wide, int tall) override;
+	void drawSetTextureRGBA(int id, const unsigned char* rgba, int wide, int tall) override;
 	void drawSetTexture(int id) override;
 	void drawTexturedRect(int x0, int y0, int x1, int y1) override;
 	void invalidate(vgui::Panel* panel) override;
@@ -54,7 +54,7 @@ public:
 	virtual void drawLine(int x1, int y1, int x2, int y2);
 	virtual void drawPolyLine(int* px, int* py, int n);
 	virtual void drawTexturedPolygon(vgui::VGuiVertex* pVertices, int n);
-	virtual void drawSetTextureBGRA(int id, const char* rgba, int wide, int tall, int hardwareFilter, int hasAlphaChannel);
+	virtual void drawSetTextureBGRA(int id, const unsigned char* rgba, int wide, int tall, int hardwareFilter, int hasAlphaChannel);
 	virtual void drawUpdateRegionTextureBGRA(int nTextureID, int x, int y, const byte* pchData, int wide, int tall);
 	virtual void drawGetTextPos(int& x, int& y);
 	virtual void drawPrintChar(int x, int y, int wide, int tall, float s0, float t0, float s1, float t1);

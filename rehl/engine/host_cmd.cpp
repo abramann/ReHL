@@ -51,6 +51,8 @@ cvar_t voice_recordtofile = { "voice_recordtofile", "0", 0, 0.0f, NULL };
 cvar_t voice_inputfromfile = { "voice_inputfromfile", "0", 0, 0.0f, NULL };
 cvar_t gHostMap = { "HostMap", "C1A0", 0, 0.0f, NULL };
 
+client_state_t m1;
+
 TITLECOMMENT gTitleComments[] =
 {
 	{ "T0A0", "#T0A0TITLE" },
@@ -1293,6 +1295,72 @@ int Host_ValidSave(void)
 		return 0;
 	}
 	return 1;
+}
+
+void Host_Fly_f(void)
+{
+	if (cmd_source == src_command)
+	{
+		Cmd_ForwardToServer();
+	}
+	else if (gGlobalVariables.deathmatch_ == 0.0)
+	{
+		if (sv_player->v.movetype == 5)
+		{
+			sv_player->v.movetype = 3;
+			SV_ClientPrintf("flymode OFF\n");
+		}
+		else
+		{
+			sv_player->v.movetype = 5;
+			SV_ClientPrintf("flymode ON\n");
+		}
+	}
+}
+
+void Host_Viewmodel_f(void)
+{
+	int i = 0;
+	for (; Q_strcmp(&pr_strings[g_psv.edicts[i].v.classname], "viewthing"); i++)
+	{
+		if (i >= g_psv.num_edicts)
+		{
+			Con_Printf("No viewthing on map\n");
+			break;
+		}
+	}
+
+	const char* modelName = Cmd_Argv(1);
+	model_t* pViewModel = Mod_ForName(modelName, false, false);
+	if (pViewModel)
+	{
+		g_psv.edicts[i].v.frame = 0.0;
+		int index = g_psv.edicts[i].v.modelindex;
+		m1.model_precache[index] = pViewModel;
+	}
+	else
+	{
+		Con_Printf("Can't load %s\n", modelName);
+	}
+}
+
+
+void Host_Viewframe_f(void)
+{
+	NOT_IMPLEMENTED;
+
+}
+
+void Host_Viewnext_f(void)
+{
+	NOT_IMPLEMENTED;
+
+}
+
+void Host_Viewprev_f(void)
+{
+	NOT_IMPLEMENTED;
+
 }
 
 SAVERESTOREDATA *SaveInit(int size)
@@ -3189,14 +3257,13 @@ void Host_ResourcesList_f()
 
 void Host_InitCommands(void)
 {
-#ifndef SWDS
-	NOT_IMPLEMENTED_IGNORE;
-	
-	/*
-	Cmd_AddCommand("cd", CD_Command_f);
-	Cmd_AddCommand("mp3", MP3_Command_f);
-	Cmd_AddCommand("_careeraudio", CareerAudio_Command_f);
-	*/
+#ifndef SWDS	
+	if (!g_bIsDedicatedServer)
+	{
+		Cmd_AddCommand("cd", CD_Command_f);
+		Cmd_AddCommand("mp3", MP3_Command_f);
+		Cmd_AddCommand("_careeraudio", CareerAudio_Command_f);
+	}
 #endif
 
 	Cmd_AddCommand("shutdownserver", Host_KillServer_f);
@@ -3204,18 +3271,19 @@ void Host_InitCommands(void)
 	Cmd_AddCommand("status", Host_Status_f);
 	Cmd_AddCommand("stat", Host_Status_Formatted_f);
 	Cmd_AddCommand("quit", Host_Quit_f);
+#ifdef SWDS
 	Cmd_AddCommand("_restart", Host_Quit_Restart_f);
-
-#ifndef SWDS
-	
-	/*
-	Cmd_AddCommand("_setrenderer", Host_SetRenderer_f);
-	Cmd_AddCommand("_setvideomode", Host_SetVideoMode_f);
-	Cmd_AddCommand("_setgamedir", Host_SetGameDir_f);
-	Cmd_AddCommand("_sethdmodels", Host_SetHDModels_f);
-	Cmd_AddCommand("_setaddons_folder", Host_SetAddonsFolder_f);
-	Cmd_AddCommand("_set_vid_level", Host_SetVideoLevel_f);
-	*/
+#else
+	if (!g_bIsDedicatedServer)
+	{
+		Cmd_AddCommand("_restart", Host_Quit_Restart_f);
+		Cmd_AddCommand("_setrenderer", Host_SetRenderer_f);
+		Cmd_AddCommand("_setvideomode", Host_SetVideoMode_f);
+		Cmd_AddCommand("_setgamedir", Host_SetGameDir_f);
+		Cmd_AddCommand("_sethdmodels", Host_SetHDModels_f);
+		Cmd_AddCommand("_setaddons_folder", Host_SetAddonsFolder_f);
+		Cmd_AddCommand("_set_vid_level", Host_SetVideoLevel_f);
+	}
 #endif
 
 	Cmd_AddCommand("exit", Host_Quit_f);
@@ -3246,11 +3314,11 @@ void Host_InitCommands(void)
 	Cmd_AddCommand("writecfg", Host_WriteCustomConfig);
 
 #ifndef SWDS
-	
-	/*
-	Cmd_AddCommand("+voicerecord", Host_VoiceRecordStart_f);
-	Cmd_AddCommand("-voicerecord", Host_VoiceRecordStop_f);
-	*/
+	if (!g_bIsDedicatedServer)
+	{
+		Cmd_AddCommand("+voicerecord", Host_VoiceRecordStart_f);
+		Cmd_AddCommand("-voicerecord", Host_VoiceRecordStop_f);
+	}
 #endif
 
 	Cmd_AddCommand("startdemos", Host_Startdemos_f);
@@ -3264,14 +3332,14 @@ void Host_InitCommands(void)
 	Cmd_AddCommand("noclip", Host_Noclip_f);
 
 #ifndef SWDS
-	
-	/*
-	Cmd_AddCommand("fly", Host_Fly_f);
-	Cmd_AddCommand("viewmodel", Host_Viewmodel_f);
-	Cmd_AddCommand("viewframe", Host_Viewframe_f);
-	Cmd_AddCommand("viewnext", Host_Viewnext_f);
-	Cmd_AddCommand("viewprev", Host_Viewprev_f);
-	*/
+	if (g_bIsDedicatedServer == false)
+	{
+		Cmd_AddCommand("fly", Host_Fly_f);
+		Cmd_AddCommand("viewmodel", Host_Viewmodel_f);
+		Cmd_AddCommand("viewframe", Host_Viewframe_f);
+		Cmd_AddCommand("viewnext", Host_Viewnext_f);
+		Cmd_AddCommand("viewprev", Host_Viewprev_f);
+	}
 #endif
 
 	Cmd_AddCommand("mcache", Mod_Print);

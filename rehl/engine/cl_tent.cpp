@@ -1,5 +1,56 @@
 #include "precompiled.h"
 
+cvar_t tracerSpeed = { "tracerSpeed","6000" };
+cvar_t tracerOffset = { "tracerOffset","30" };
+cvar_t tracerLength = { "tracerLength","0.8" };
+cvar_t tracerRed = { "tracerRed","0.8" };
+cvar_t tracerGreen = { "tracerGreen","0.8" };
+cvar_t tracerBlue = { "tracerBlue","0.4" };
+cvar_t tracerAlpha = { "tracerAlpha","0.5" };
+cvar_t ex_interp = { "ex_interp", "0.1", FCVAR_ARCHIVE };
+
+sfx_t * cl_sfx_r_exp1;
+sfx_t * cl_sfx_r_exp2;
+sfx_t * cl_sfx_r_exp3;
+sfx_t * cl_sfx_pl_shell1;
+sfx_t * cl_sfx_pl_shell2;
+sfx_t * cl_sfx_pl_shell3;
+sfx_t * cl_sfx_sshell1;
+sfx_t * cl_sfx_sshell2;
+sfx_t * cl_sfx_sshell3;
+sfx_t * cl_sfx_wood1;
+sfx_t * cl_sfx_wood2;
+sfx_t * cl_sfx_wood3;
+sfx_t * cl_sfx_metal1;
+sfx_t * cl_sfx_metal2;
+sfx_t * cl_sfx_metal3;
+sfx_t * cl_sfx_glass1;
+sfx_t * cl_sfx_glass2;
+sfx_t * cl_sfx_glass3;
+sfx_t * cl_sfx_concrete1;
+sfx_t * cl_sfx_concrete2;
+sfx_t * cl_sfx_concrete3;
+sfx_t * cl_sfx_flesh1;
+sfx_t * cl_sfx_flesh2;
+sfx_t * cl_sfx_flesh3;
+sfx_t * cl_sfx_flesh4;
+sfx_t * cl_sfx_flesh5;
+sfx_t * cl_sfx_flesh6;
+sfx_t * cl_sfx_geiger1;
+sfx_t * cl_sfx_geiger2;
+sfx_t * cl_sfx_geiger3;
+sfx_t * cl_sfx_geiger4;
+sfx_t * cl_sfx_geiger5;
+sfx_t * cl_sfx_geiger6;
+
+model_t* cl_sprite_dot;
+model_t* cl_sprite_lightning;
+model_t* cl_sprite_white;
+model_t* cl_sprite_glow;
+model_t* cl_sprite_muzzleflash[3];
+model_t* cl_sprite_ricochet;
+model_t* cl_sprite_shell;
+
 TEMPENTITY gTempEnts[MAX_TEMP_ENTITIES];
 TEMPENTITY* gpTempEntFree;
 TEMPENTITY* gpTempEntActive;
@@ -200,11 +251,94 @@ TEMPENTITY* CL_AllocCustomTempEntity(float* origin, model_t* model, int high, vo
 
 void CL_InitTEnts() // TODO: implement - ScriptedSnark
 {
+	Cvar_RegisterVariable(&tracerSpeed);
+	Cvar_RegisterVariable(&tracerOffset);
+	Cvar_RegisterVariable(&tracerLength);
+	Cvar_RegisterVariable(&tracerRed);
+	Cvar_RegisterVariable(&tracerGreen);
+	Cvar_RegisterVariable(&tracerBlue);
+	Cvar_RegisterVariable(&tracerAlpha);
+
 	cl_sfx_ric1 = S_PrecacheSound("weapons/ric1.wav");
 	cl_sfx_ric2 = S_PrecacheSound("weapons/ric2.wav");
 	cl_sfx_ric3 = S_PrecacheSound("weapons/ric3.wav");
 	cl_sfx_ric4 = S_PrecacheSound("weapons/ric4.wav");
 	cl_sfx_ric5 = S_PrecacheSound("weapons/ric5.wav");
+	cl_sfx_r_exp1 = S_PrecacheSound("weapons/explode3.wav");
+	cl_sfx_r_exp2 = S_PrecacheSound("weapons/explode4.wav");
+	cl_sfx_r_exp3 = S_PrecacheSound("weapons/explode5.wav");
+	cl_sfx_pl_shell1 = S_PrecacheSound("player/pl_shell1.wav");
+	cl_sfx_pl_shell2 = S_PrecacheSound("player/pl_shell2.wav");
+	cl_sfx_pl_shell3 = S_PrecacheSound("player/pl_shell3.wav");
+	cl_sfx_sshell1 = S_PrecacheSound("weapons/sshell1.wav");
+	cl_sfx_sshell2 = S_PrecacheSound("weapons/sshell2.wav");
+	cl_sfx_sshell3 = S_PrecacheSound("weapons/sshell3.wav");
+	cl_sfx_wood1 = S_PrecacheSound("debris/wood1.wav");
+	cl_sfx_wood2 = S_PrecacheSound("debris/wood2.wav");
+	cl_sfx_wood3 = S_PrecacheSound("debris/wood3.wav");
+	cl_sfx_metal1 = S_PrecacheSound("debris/metal1.wav");
+	cl_sfx_metal2 = S_PrecacheSound("debris/metal2.wav");
+	cl_sfx_metal3 = S_PrecacheSound("debris/metal3.wav");
+	cl_sfx_glass1 = S_PrecacheSound("debris/glass1.wav");
+	cl_sfx_glass2 = S_PrecacheSound("debris/glass2.wav");
+	cl_sfx_glass3 = S_PrecacheSound("debris/glass3.wav");
+	cl_sfx_concrete1 = S_PrecacheSound("debris/concrete1.wav");
+	cl_sfx_concrete2 = S_PrecacheSound("debris/concrete2.wav");
+	cl_sfx_concrete3 = S_PrecacheSound("debris/concrete3.wav");
+	cl_sfx_flesh1 = S_PrecacheSound("debris/flesh1.wav");
+	cl_sfx_flesh2 = S_PrecacheSound("debris/flesh2.wav");
+	cl_sfx_flesh3 = S_PrecacheSound("debris/flesh3.wav");
+	cl_sfx_flesh4 = S_PrecacheSound("debris/flesh5.wav");
+	cl_sfx_flesh5 = S_PrecacheSound("debris/flesh6.wav");
+	cl_sfx_flesh6 = S_PrecacheSound("debris/flesh7.wav");
+	cl_sfx_geiger1 = S_PrecacheSound("player/geiger1.wav");
+	cl_sfx_geiger2 = S_PrecacheSound("player/geiger2.wav");
+	cl_sfx_geiger3 = S_PrecacheSound("player/geiger3.wav");
+	cl_sfx_geiger4 = S_PrecacheSound("player/geiger4.wav");
+	cl_sfx_geiger5 = S_PrecacheSound("player/geiger5.wav");
+	cl_sfx_geiger6 = S_PrecacheSound("player/geiger6.wav");
+
+	cl_sprite_dot = Mod_ForName("sprites/dot.spr", true, false);
+	Mod_MarkClient(cl_sprite_dot);
+
+	cl_sprite_lightning = Mod_ForName("sprites/lgtning.spr", true, false);
+	Mod_MarkClient(cl_sprite_lightning);
+
+	cl_sprite_white = Mod_ForName("sprites/white.spr", true, false);
+	Mod_MarkClient(cl_sprite_white);
+
+	cl_sprite_glow = Mod_ForName("sprites/animglow01.spr", true, false);
+	Mod_MarkClient(cl_sprite_glow);
+
+	cl_sprite_muzzleflash[0] = Mod_ForName("sprites/muzzleflash1.spr", true, false);
+	Mod_MarkClient(cl_sprite_muzzleflash[0]);
+
+	cl_sprite_muzzleflash[1] = Mod_ForName("sprites/muzzleflash2.spr", true, false);
+	Mod_MarkClient(cl_sprite_muzzleflash[1]);
+
+	cl_sprite_muzzleflash[2] = Mod_ForName("sprites/muzzleflash3.spr", true, false);
+	Mod_MarkClient(cl_sprite_muzzleflash[2]);
+
+	cl_sprite_ricochet = Mod_ForName("sprites/richo1.spr", true, false);
+	Mod_MarkClient(cl_sprite_ricochet);
+
+	cl_sprite_shell = Mod_ForName("sprites/shellchrome.spr", true, false);
+	Mod_MarkClient(cl_sprite_shell);
+
+	Q_memset(gTempEnts, 0, 1534000);
+	for (int i = 1; i < 500; ++i)
+	{
+		gTempEnts[i-1].next = &gTempEnts[i];
+	}
+
+	gTempEnts[499].next = nullptr;
+	gpTempEntFree = gTempEnts;
+	gpTempEntActive = nullptr;
+}
+
+void CL_InitExtrap()
+{
+	Cvar_RegisterVariable(&ex_interp);
 }
 
 void R_BloodSprite(vec_t* org, int colorindex, int modelIndex, int modelIndex2, float size)

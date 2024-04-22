@@ -40,11 +40,14 @@ extern CSysModule *g_pFileSystemModule;
 extern CreateInterfaceFn g_FileSystemFactory;
 
 const char *GetBaseDirectory(void);
-NOXREF void *GetFileSystemFactory(void);
+void *GetFileSystemFactory(void);
 bool FileSystem_LoadDLL(CreateInterfaceFn filesystemFactory);
 void FileSystem_UnloadDLL(void);
 bool BEnabledHDAddon(void);
 bool BEnableAddonsFolder(void);
+void Host_SetRenderer_f(void);
+void Host_SetVideoMode_f(void);
+void Host_SetGameDir_f(void);
 void Host_SetHDModels_f(void);
 void Host_SetAddonsFolder_f(void);
 void Host_SetVideoLevel_f(void);

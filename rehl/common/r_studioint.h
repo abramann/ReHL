@@ -73,7 +73,7 @@ typedef struct engine_studio_api_s
 	// Draws bones
 	void			( *StudioDrawBones )			( void );
 	// Loads in appropriate texture for model
-	void			( *StudioSetupSkin )			( void *ptexturehdr, int index );
+	void			( *StudioSetupSkin )			(studiohdr_t *ptexturehdr, int index );
 	// Sets up for remapped colors
 	void			( *StudioSetRemapColors )		( int top, int bottom );
 	// Set's player model and returns model pointer
@@ -147,5 +147,7 @@ typedef struct sv_blending_interface_s
 					int iBone,
 					const edict_t *pEdict );
 } sv_blending_interface_t;
+
+extern engine_studio_api_t engine_studio_api;
 
 #endif // R_STUDIOINT_H

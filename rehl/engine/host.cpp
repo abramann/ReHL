@@ -29,7 +29,7 @@
 #include "precompiled.h"
 #include "gl_vidnt.h"
 #include "gl_draw.h"
-
+#include "DemoPlayerWrapper.h"
 
 double realtime;
 double rolling_fps;
@@ -1167,8 +1167,6 @@ int Host_Init(quakeparms_t *parms)
 	Q_memset(&g_module, 0, sizeof(g_module));
 	if (g_pcls.state != ca_dedicated)
 	{
-		//Sys_Error("%s: Only dedicated server mode is supported", __func__);
-
 		color24 *disk_basepal = (color24 *)COM_LoadHunkFile("gfx/palette.lmp");
 		if (!disk_basepal)
 			Sys_Error("%s: Couldn't load gfx/palette.lmp", __func__);
@@ -1191,18 +1189,20 @@ int Host_Init(quakeparms_t *parms)
 		CL_InitEventSystem();
 		ClientDLL_Init();
 		VGui_Startup();
+
 		if (!VID_Init(host_basepal))
 		{
-			//VGui_Shutdown();
+			VGui_Shutdown();
 			return 0;
 		}
+
 		Draw_Init();
 		SCR_Init();
 		R_Init();
-		S_Init();
-		//CDAudio_Init();
+		//S_Init();
+		CDAudio_Init();
 		//Voice_Init("voice_speex", 1);
-		//DemoPlayer_Init();
+		DemoPlayer_Init();
 		CL_Init();
 	}
 	else

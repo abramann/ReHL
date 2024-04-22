@@ -1,17 +1,19 @@
 #include "precompiled.h"
 #include "text_draw.h"
-//#include "vgui2_scheme.h"
+#include "vgui2\ilocalize.h"
+#include "vgui2\ISchemeManager.h"
+#include "vgui2\IScheme.h"
+
 
 static vgui2::HFont _consoleFont = NULL;
 static vgui2::HFont _creditsFont = NULL;
 
 using namespace vgui2;
 
-void VGUI2_Draw_Init()
-{		
-	NOT_IMPLEMENTED;
+static Color _col(255, 255, 255, 255);
 
-	/*
+void VGUI2_Draw_Init()
+{
 	auto pSchemeManager = vgui2::scheme();
 	auto defScheme = pSchemeManager->GetDefaultScheme();
 	auto pScheme = pSchemeManager->GetIScheme(defScheme);
@@ -19,7 +21,6 @@ void VGUI2_Draw_Init()
 		_consoleFont = pScheme->GetFont("EngineFont", 1);
 	if (!_creditsFont)
 		_creditsFont = pScheme->GetFont("Legacy_CreditsFont", 1);
-		*/
 }
 
 void VGUI2_ResetCurrentTexture()
@@ -39,7 +40,7 @@ unsigned int VGUI2_GetCreditsFont()
 
 void VGUI2_Draw_SetTextColor(int r, int g, int b)
 {
-	NOT_IMPLEMENTED;
+	_col.SetColor(r, g, b, -1);
 }
 
 void VGUI2_Draw_SetTextColorAlpha(int r, int g, int b, int a)
@@ -49,20 +50,27 @@ void VGUI2_Draw_SetTextColorAlpha(int r, int g, int b, int a)
 
 const wchar_t* VGUI2_Find_String(const char* str)
 {
-	NOT_IMPLEMENTED;
-	return nullptr;
+	static wchar_t tmpString[1024];
+
+	if (str && *str == '#')
+	{
+		auto pszLocalized = vgui2::localize()->Find(str);
+
+		return pszLocalized;
+	}
 }
 
 int VGUI2_GetFontWide(wchar_t ch, unsigned int font)
 {
-	NOT_IMPLEMENTED;
-	return 0;
+	int a, b, c;
+	vgui2::surface()->GetCharABCwide(font, ch, a, b, c);
+
+	return c + b + a;
 }
 
 int VGUI2_GetFontTall(unsigned int font)
 {
-	NOT_IMPLEMENTED;
-	return 0;
+	return vgui2::surface()->GetFontTall(font);
 }
 
 int VGUI2_Draw_StringLen(const char* psz, unsigned int font)
@@ -85,7 +93,27 @@ int VGUI2_Draw_StringLenW(const wchar_t* wsz, unsigned int font)
 int VGUI2_DrawString(int x, int y, const char* str, unsigned int font)
 {
 	NOT_IMPLEMENTED;
-	return 0;
+	g_BaseUISurface._engineSurface->resetViewPort();
+
+	vgui2::surface()->DrawSetTextFont(font);
+	vgui2::surface()->DrawSetTextPos(x, y);
+	vgui2::surface()->DrawSetTextColor(_col);
+
+	auto pszString = VGUI2_Find_String(str);
+
+	for (size_t i = 0; i < wcslen(pszString); ++i)
+	{
+		if (!iswprint(pszString[i]))
+		{
+			// TODO: this could modify localized strings managed by ILocalize - Solokiller
+			const_cast<wchar_t*>(pszString)[i] = L' ';
+		}
+	}
+
+	vgui2::surface()->DrawPrintText(pszString, wcslen(pszString));
+	vgui2::surface()->DrawFlushText();
+
+	return VGUI2_Draw_StringLenW(pszString, font);
 }
 
 int VGUI2_DrawStringClient(int x, int y, const char* str, int r, int g, int b)
@@ -114,6 +142,15 @@ int VGUI2_Draw_CharacterAdd(int x, int y, int ch, int r, int g, int b, unsigned 
 
 int VGUI2_MessageFontInfo(short* pWidth, unsigned int font)
 {
-	NOT_IMPLEMENTED;
-	return 0;
+	vgui2::surface()->DrawSetTextFont(font);
+
+	if (pWidth)
+	{
+		for (int i = 0; i < 256; ++i)
+		{
+			pWidth[i] = VGUI2_GetFontWide(i, font);
+		}
+	}
+
+	return VGUI2_GetFontTall(font);
 }

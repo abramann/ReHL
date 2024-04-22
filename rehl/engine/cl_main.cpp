@@ -19,7 +19,10 @@
 */
 #include "precompiled.h"
 #include "cl_servercache.h"
+#include "net_api.h"
+#include "Sequence.h"
 
+cvar_t cl_gamegauge = { "cl_gg", "0" };
 
 qboolean g_bIsCStrike;
 qboolean g_bIsCZero;
@@ -30,8 +33,8 @@ server_cache_t cached_servers[16];
 netadr_t g_GameServerAddress;
 netadr_t g_rconaddress;
 char g_lastrconcommand[1024];
-client_static_t cls;
-client_state_t cl;
+//client_static_t cls;
+//client_state_t cl;
 
 cl_entity_t* cl_entities = nullptr;
 
@@ -98,6 +101,41 @@ cvar_t m_rawinput = { "m_rawinput", "0", FCVAR_ARCHIVE };
 cvar_t cl_filterstuffcmd = { "cl_filterstuffcmd", "0", FCVAR_ARCHIVE | FCVAR_PRIVILEGED };
 
 
+void CL_GameDir_f(void);
+void CL_FullServerinfo_f(void);
+void CL_Record_f(void);
+void CL_PlayDemo_f(void);
+void CL_ViewDemo_f(void);
+void CL_TimeDemo_f(void);
+void CL_GameGauge_f(void);
+void CL_ListDemo_f(void);
+void CL_AppendDemo_f(void);
+void CL_RemoveDemo_f(void);
+void CL_SwapDemo_f(void);
+void CL_SetDemoInfo_f(void);
+void CL_Listen_f(void);
+void CL_Commentator_f(void);
+void CL_WavePlayLen_f(void);
+void CL_StartMovie_f(void);
+void CL_EndMovie_f(void);
+void CL_PrintEntities_f(void);
+void CL_Rcon_f(void);
+void CL_DumpMessageLoad_f(void);
+void CL_PingServers_f(void);
+void CL_Slist_f(void);
+void CL_ListCachedServers_f(void);
+void CL_BeginUpload_f(void);
+void CL_HTTPCancel_f(void);
+void CL_SpecPos_f(void);
+
+extern cvar_t cl_smoothtime; // = { "cl_smoothtime", "0.4", FCVAR_ARCHIVE };
+cvar_t cl_nosmooth = { "cl_nosmooth", "0" };
+extern cvar_t cl_showerror; // = { "cl_showerror", "0" };
+
+void CL_InitPrediction();
+
+void CL_InitPrediction();
+
 void SetupStartupTimings()
 {
 	g_iCurrentTiming = 0;
@@ -128,18 +166,18 @@ void PrintStartupTimings()
 
 void CL_CheckClientState(void)
 {
-	if ((cls.state == ca_connected || cls.state == ca_uninitialized) &&
-		cls.signon == SIGNONS)
+	if ((g_pcls.state == ca_connected || g_pcls.state == ca_uninitialized) &&
+		g_pcls.signon == SIGNONS)
 	{
 		// first update is the final signon stage
-		cls.state = ca_active;
+		g_pcls.state = ca_active;
 
 		if (fs_startup_timings.value != 0.0)
 			PrintStartupTimings();
 
 		{
-			unsigned char* IPPtr = cls.netchan.remote_address.ip;
-			unsigned short port = cls.netchan.remote_address.port;
+			unsigned char* IPPtr = g_pcls.netchan.remote_address.ip;
+			unsigned short port = g_pcls.netchan.remote_address.port;
 
 			if (!port)
 			{
@@ -182,7 +220,7 @@ void CL_Connect_f(void) // This function crashes the game due to exception in cl
 	name[sizeof(name) - 1] = 0;
 
 	/* - TODO: implement demo playback - ScriptedSnark
-	if (cls.demoplayback)
+	if (g_pcls.demoplayback)
 	CL_StopPlayback();
 	*/
 
@@ -198,7 +236,7 @@ void CL_Connect_f(void) // This function crashes the game due to exception in cl
 
 	int num = Q_atoi(name); // In case it's an index.
 
-	if ((num > 0) && (num <= num_servers) && !Q_strstr(cls.servername, "."))
+	if ((num > 0) && (num <= num_servers) && !Q_strstr(g_pcls.servername, "."))
 	{
 		Q_strncpy(name, NET_AdrToString(cached_servers[num - 1].adr), sizeof(name));
 		name[sizeof(name) - 1] = 0;
@@ -207,29 +245,29 @@ void CL_Connect_f(void) // This function crashes the game due to exception in cl
 	Q_memset(msg_buckets, 0, sizeof(msg_buckets));
 	Q_memset(total_data, 0, sizeof(total_data));
 
-	Q_strncpy(cls.servername, name, sizeof(cls.servername) - 1);
-	cls.servername[sizeof(cls.servername) - 1] = 0;
+	Q_strncpy(g_pcls.servername, name, sizeof(g_pcls.servername) - 1);
+	g_pcls.servername[sizeof(g_pcls.servername) - 1] = 0;
 
-	cls.state = ca_connecting;
-	cls.connect_time = -99999;
+	g_pcls.state = ca_connecting;
+	g_pcls.connect_time = -99999;
 
-	cls.connect_retry = 0;
+	g_pcls.connect_retry = 0;
 
-	cls.passive = false;
-	cls.spectator = false;
-	cls.isVAC2Secure = false;
+	g_pcls.passive = false;
+	g_pcls.spectator = false;
+	g_pcls.isVAC2Secure = false;
 
-	cls.GameServerSteamID = 0;
+	g_pcls.GameServerSteamID = 0;
 
-	cls.build_num = 0;
+	g_pcls.build_num = 0;
 
 	Q_memset(&g_GameServerAddress, 0, sizeof(netadr_t));
-	cls.challenge = 0;
+	g_pcls.challenge = 0;
 
 	gfExtendedError = false;
 	g_LastScreenUpdateTime = 0.0;
 
-	if (Q_strnicmp(cls.servername, "local", 5))
+	if (Q_strnicmp(g_pcls.servername, "local", 5))
 	{
 		// allow remote
 		NET_Config(true);
@@ -240,19 +278,19 @@ void CL_Retry_f() // TODO: improve - ScriptedSnark
 {
 	char szCommand[260]; // [esp+1Ch] [ebp-110h] BYREF
 
-	if (cls.servername[0])
+	if (g_pcls.servername[0])
 	{
-		if (strchr(cls.servername, 10) || strchr(cls.servername, 59))
+		if (strchr(g_pcls.servername, 10) || strchr(g_pcls.servername, 59))
 			Con_Printf("Invalid command separator in server name, refusing retry\n");
 		else
 		{
-			if (cls.passive)
-				snprintf(szCommand, sizeof(szCommand), "listen %s\n", cls.servername);
+			if (g_pcls.passive)
+				snprintf(szCommand, sizeof(szCommand), "listen %s\n", g_pcls.servername);
 			else
-				snprintf(szCommand, sizeof(szCommand), "connect %s\n", cls.servername);
+				snprintf(szCommand, sizeof(szCommand), "connect %s\n", g_pcls.servername);
 
 			Cbuf_AddText(szCommand);
-			Con_Printf("Commencing connection retry to %s\n", cls.servername);
+			Con_Printf("Commencing connection retry to %s\n", g_pcls.servername);
 		}
 	}
 	else
@@ -365,8 +403,9 @@ extern cvar_t scr_downloading;
 
 
 qboolean CL_PrecacheResources(void)
-
 {
+	NOT_IMPLEMENTED;
+
 	resource_s* prVar1;
 	model_s* pmVar2;
 	byte bVar3;
@@ -388,8 +427,8 @@ qboolean CL_PrecacheResources(void)
 		dVar10 = Sys_FloatTime();
 		g_StartupTimings[iVar9].time = (float)dVar10;
 	}
-	if ((cl.resourcesonhand.pNext != (resource_s*)0x0) &&
-		(strSource = cl.resourcesonhand.pNext, cl.resourcesonhand.pNext != &cl.resourcesonhand)) {
+	if ((g_pcl.resourcesonhand.pNext != (resource_s*)0x0) &&
+		(strSource = g_pcl.resourcesonhand.pNext, g_pcl.resourcesonhand.pNext != &g_pcl.resourcesonhand)) {
 		do {
 			bVar3 = strSource->ucFlags;
 			prVar1 = strSource->pNext;
@@ -401,10 +440,10 @@ qboolean CL_PrecacheResources(void)
 							S_BeginPrecaching();
 							iVar9 = strSource->nIndex;
 							psVar8 = S_PrecacheSound(strSource->szFileName);
-							cl.sound_precache[iVar9] = psVar8;
+							g_pcl.sound_precache[iVar9] = psVar8;
 							S_EndPrecaching();
 							bVar3 = strSource->ucFlags;
-							if ((cl.sound_precache[strSource->nIndex] == (sfx_s*)0x0) && ((bVar3 & 1) != 0)) {
+							if ((g_pcl.sound_precache[strSource->nIndex] == (sfx_s*)0x0) && ((bVar3 & 1) != 0)) {
 								COM_ExplainDisconnection
 									(true, "Cannot continue without sound %s, disconnecting.", strSource);
 								CL_Disconnect();
@@ -412,30 +451,30 @@ qboolean CL_PrecacheResources(void)
 							}
 						}
 						else {
-							cl.sound_precache[strSource->nIndex] = (sfx_s*)0x0;
+							g_pcl.sound_precache[strSource->nIndex] = (sfx_s*)0x0;
 							bVar3 = strSource->ucFlags;
 						}
 						break;
 					case t_model:
-						if ((cl.model_precache_count <= strSource->nIndex) &&
-							(cl.model_precache_count = strSource->nIndex + 1, 0x200 < cl.model_precache_count)) {
-							cl.model_precache_count = 0x200;
+						if ((g_pcl.model_precache_count <= strSource->nIndex) &&
+							(g_pcl.model_precache_count = strSource->nIndex + 1, 0x200 < g_pcl.model_precache_count)) {
+							g_pcl.model_precache_count = 0x200;
 						}
 						if (strSource->szFileName[0] == '*') goto LAB_0019e98c;
 						if (fs_lazy_precache.value == 0.0) {
 							iVar9 = strSource->nIndex;
 						LAB_0019ea2d:
 							pmVar4 = Mod_ForName(strSource->szFileName, false, true);
-							cl.model_precache[iVar9] = pmVar4;
-							pmVar2 = cl.model_precache[strSource->nIndex];
+							g_pcl.model_precache[iVar9] = pmVar4;
+							pmVar2 = g_pcl.model_precache[strSource->nIndex];
 						}
 						else {
 							iVar7 = Q_strnicmp(strSource->szFileName, "maps", 4);
 							iVar9 = strSource->nIndex;
 							if (iVar7 == 0) goto LAB_0019ea2d;
 							pmVar4 = Mod_FindName(true, strSource->szFileName);
-							cl.model_precache[iVar9] = pmVar4;
-							pmVar2 = cl.model_precache[strSource->nIndex];
+							g_pcl.model_precache[iVar9] = pmVar4;
+							pmVar2 = g_pcl.model_precache[strSource->nIndex];
 						}
 						if (((pmVar2 == (model_s*)0x0) && (strSource->ucFlags != '\0')) &&
 							(Con_Printf("Model %s not found and not available from server\n", strSource),
@@ -459,11 +498,11 @@ qboolean CL_PrecacheResources(void)
 					case t_eventscript:
 						iVar9 = strSource->nIndex;
 						pcVar5 = Mem_Strdup(strSource->szFileName);
-						cl.event_precache[iVar9].filename = pcVar5;
+						g_pcl.event_precache[iVar9].filename = pcVar5;
 						iVar9 = strSource->nIndex;
 						pbVar6 = COM_LoadFile(strSource->szFileName, 5, (int*)0x0);
-						cl.event_precache[iVar9].pszScript = (char*)pbVar6;
-						if (cl.event_precache[strSource->nIndex].pszScript != (char*)0x0) goto LAB_0019e98c;
+						g_pcl.event_precache[iVar9].pszScript = (char*)pbVar6;
+						if (g_pcl.event_precache[strSource->nIndex].pszScript != (char*)0x0) goto LAB_0019e98c;
 						Con_Printf("Script %s not found and not available from server\n", strSource);
 						bVar3 = strSource->ucFlags;
 						if ((bVar3 & 1) != 0) {
@@ -481,7 +520,7 @@ qboolean CL_PrecacheResources(void)
 				}
 				strSource->ucFlags = bVar3 | 0x10;
 			}
-		} while ((prVar1 != (resource_s*)0x0) && (strSource = prVar1, prVar1 != &cl.resourcesonhand));
+		} while ((prVar1 != (resource_s*)0x0) && (strSource = prVar1, prVar1 != &g_pcl.resourcesonhand));
 	}
 	if (fs_startup_timings.value == 0.0) {
 		return true;
@@ -531,7 +570,7 @@ void CL_TakeSnapshot_f()
 	char base[64];
 	char filename[64];
 
-	if (cl.num_entities && (in = cl_entities->model) != 0)
+	if (g_pcl.num_entities && (in = cl_entities->model) != 0)
 		COM_FileBase(in->name, base);
 	else
 		Q_strcpy(base, "Snapshot");
@@ -564,7 +603,7 @@ void CL_ShutDownClientStatic() // probably need to improve if doesn't work
 
 	for (i = 0; i < CL_UPDATE_BACKUP; i++)
 	{
-		ent = &cl.frames[i].packet_entities;
+		ent = &g_pcl.frames[i].packet_entities;
 		if (ent->entities)
 		{
 			Mem_Free(ent->entities);
@@ -572,7 +611,7 @@ void CL_ShutDownClientStatic() // probably need to improve if doesn't work
 		ent->entities = NULL;
 	}
 
-	Q_memset(cl.frames, 0, sizeof(frame_t) * client);
+	Q_memset(g_pcl.frames, 0, sizeof(frame_t) * client);
 	*/
 }
 
@@ -585,20 +624,129 @@ void CL_Shutdown()
 
 void CL_Init()
 {
-	NOT_IMPLEMENTED;
-	
+	 const char * name = Steam_GetCommunityName();
+	if (!name)
+		name = "unknown";
+
+	Info_SetValueForKey(g_pcls.userinfo, "name", name, 256);
+	Info_SetValueForKey(g_pcls.userinfo, "topcolor", "0", 256);
+	Info_SetValueForKey(g_pcls.userinfo, "bottomcolor", "0", 256);
+	Info_SetValueForKey(g_pcls.userinfo, "rate", "2500", 256);
+	Info_SetValueForKey(g_pcls.userinfo, "cl_updaterate", "20", 256);
+	Info_SetValueForKey(g_pcls.userinfo, "cl_lw", "1", 256);
+	Info_SetValueForKey(g_pcls.userinfo, "cl_lc", "1", 256);
+
+	Net_APIInit();
 	CL_InitTEnts();
+	CL_InitExtrap();
 	TextMessageInit();
-	Cmd_AddCommand /*WithFlags*/("connect", CL_Connect_f /*, 8*/); // TODO: implement slowhacking protection - ScriptedSnark
-	Cmd_AddCommand /*WithFlags*/("retry", CL_Retry_f /*, 8*/);		// TODO: also uncomment when this new func from GoldSrc update will be finished - ScriptedSnark
-	Cmd_AddCommand("snapshot", CL_TakeSnapshot_f);
+	Sequence_Init();
+
+	Cvar_RegisterVariable(&cl_weaponlistfix);
+	Cvar_RegisterVariable(&cl_fixtimerate);
+	Cvar_RegisterVariable(&cl_showmessages);
+	Cvar_RegisterVariable(&cl_name);
+	Cvar_RegisterVariable(&password);
+	Cvar_RegisterVariable(&team);
+	Cvar_RegisterVariable(&cl_model);
+	Cvar_RegisterVariable(&skin);
+	Cvar_RegisterVariable(&topcolor);
+	Cvar_RegisterVariable(&bottomcolor);
 	Cvar_RegisterVariable(&rate);
+	Cvar_RegisterVariable(&cl_updaterate);
 	Cvar_RegisterVariable(&cl_lw);
+	Cvar_RegisterVariable(&cl_lc);
+	Cvar_RegisterVariable(&cl_dlmax);
+	Cvar_RegisterVariable(&fs_startup_timings);
+	Cvar_RegisterVariable(&fs_lazy_precache);
+	Cvar_RegisterVariable(&fs_precache_timings);
+	Cvar_RegisterVariable(&fs_perf_warnings);
+	Cvar_RegisterVariable(&cl_clockreset);
+	Cvar_RegisterVariable(&cl_showevents);
+	Cvar_RegisterVariable(&cl_himodels);
+	Cvar_RegisterVariable(&cl_gaitestimation);
+	Cvar_RegisterVariable(&cl_idealpitchscale);
+	Cvar_RegisterVariable(&cl_resend);
+	Cvar_RegisterVariable(&cl_timeout);
+	Cvar_RegisterVariable(&cl_cmdbackup);
+	Cvar_RegisterVariable(&cl_shownet);
+	Cvar_RegisterVariable(&rcon_address);
+	Cvar_RegisterVariable(&rcon_port);
+	Cvar_RegisterVariable(&cl_solid_players);
+	Cvar_RegisterVariable(&cl_slisttimeout);
+	Cvar_RegisterVariable(&cl_download_ingame);
+	Cvar_RegisterVariable(&cl_allow_download);
+	Cvar_RegisterVariable(&cl_allow_upload);
+	Cvar_RegisterVariable(&cl_gamegauge);
+	Cvar_RegisterVariable(&cl_cmdrate);
 	Cvar_RegisterVariable(&cl_showfps);
-	Cvar_RegisterVariable(&cl_nointerp);
+	Cvar_RegisterVariable(&cl_needinstanced);
 	Cvar_RegisterVariable(&dev_overview);
+	Cvar_RegisterVariable(&cl_logofile);
+	Cvar_RegisterVariable(&cl_logocolor);
 	Cvar_RegisterVariable(&cl_mousegrab);
 	Cvar_RegisterVariable(&m_rawinput);
+	Cvar_RegisterVariable(&cl_filterstuffcmd);
+	if (COM_CheckParm("-nomousegrab"))
+		Cvar_Set("cl_mousegrab", "0");
+
+	ClientDLL_HudInit();
+	Cmd_AddCommand((char *)"gamedir", CL_GameDir_f);
+	Cmd_AddCommandWithFlags((char *)"connect", CL_Connect_f, 8);
+	Cmd_AddCommand("fullserverinfo", CL_FullServerinfo_f);
+	Cmd_AddCommandWithFlags("retry", CL_Retry_f, 8);
+	Cmd_AddCommand("disconnect", CL_Disconnect_f);
+	Cmd_AddCommand("record", CL_Record_f);
+	Cmd_AddCommand("stop", CL_Stop_f);
+	Cmd_AddCommand("playdemo", CL_PlayDemo_f);
+	Cmd_AddCommand("viewdemo", CL_ViewDemo_f);
+	Cmd_AddCommand("timedemo", CL_TimeDemo_f);
+	Cmd_AddCommand((char *)"gg", CL_GameGauge_f);
+	Cmd_AddCommand("listdemo", CL_ListDemo_f);
+	Cmd_AddCommand("appenddemo", CL_AppendDemo_f);
+	Cmd_AddCommandWithFlags("removedemo", CL_RemoveDemo_f, 16);
+	Cmd_AddCommand("swapdemo", CL_SwapDemo_f);
+
+	Cmd_AddCommand("setdemoinfo", CL_SetDemoInfo_f);
+	Cmd_AddCommand("listen", CL_Listen_f);
+	Cmd_AddCommand("commentator", CL_Commentator_f);
+	Cmd_AddCommand("waveplaylen", CL_WavePlayLen_f);
+	Cmd_AddCommand("snapshot", CL_TakeSnapshot_f);
+	Cmd_AddCommand("startmovie", CL_StartMovie_f);
+	Cmd_AddCommand("endmovie", CL_EndMovie_f);
+	Cmd_AddCommand("entities", CL_PrintEntities_f);
+	Cmd_AddCommandWithFlags("rcon", CL_Rcon_f, 8);
+	Cmd_AddCommand("cl_messages", CL_DumpMessageLoad_f);
+	Cmd_AddCommand("pingservers", CL_PingServers_f);
+	Cmd_AddCommand("slist", CL_Slist_f);
+	Cmd_AddCommand("list", CL_ListCachedServers_f);
+	Cmd_AddCommand("upload", CL_BeginUpload_f);
+
+	CL_InitPrediction();
+	Cmd_AddCommand("httpstop", CL_HTTPCancel_f);
+	Cmd_AddCommand("spec_pos", CL_SpecPos_f);
+	g_pcls.datagram.data = g_pcls.datagram_buf;
+	g_pcls.datagram.cursize = 0;
+	g_pcls.datagram.buffername = "g_pcls.datagram";
+	g_pcls.isVAC2Secure = false;
+	g_pcls.GameServerSteamID = 0;
+	g_pcls.datagram.maxsize = 4000;
+	g_pcls.build_num = 0;
+	g_pcls.datagram.flags = 0;
+
+	Q_memset(&m1, 0, 1767016);
+	m1.resourcesneeded.pNext = &m1.resourcesneeded;
+	m1.resourcesonhand.pPrev = &m1.resourcesonhand;
+	m1.resourcesneeded.pPrev = &m1.resourcesneeded;
+	m1.resourcesonhand.pNext = &m1.resourcesonhand;
+
+	DELTA_RegisterDescription("clientdata_t");
+	DELTA_RegisterDescription("entity_state_t");
+	DELTA_RegisterDescription("entity_state_player_t");
+	DELTA_RegisterDescription("custom_entity_state_t");
+	DELTA_RegisterDescription("usercmd_t");
+	DELTA_RegisterDescription("weapon_data_t");
+	DELTA_RegisterDescription("event_t");
 }
 
 dlight_t* CL_AllocDlight(int key)
@@ -626,7 +774,7 @@ dlight_t* CL_AllocElight(int key) // - TODO: improve - ScriptedSnark
 
 	Alloc:
 		dest = cl_elights;
-		while (cl.time <= (long double)dest->die)
+		while (g_pcl.time <= (long double)dest->die)
 		{
 			if (dest++ == &cl_elights[64])
 			{
@@ -650,7 +798,7 @@ model_t* CL_GetModelByIndex(int index)
 	if (index >= MAX_MODELS)
 		return nullptr;
 
-	model_t* model = cl.model_precache[index]; // ebx
+	model_t* model = g_pcl.model_precache[index]; // ebx
 
 	if (!model)
 		return nullptr;
@@ -686,7 +834,7 @@ void CL_GetPlayerHulls()
 
 bool UserIsConnectedOnLoopback()
 {
-	return cls.netchan.remote_address.type == NA_LOOPBACK;
+	return g_pcls.netchan.remote_address.type == NA_LOOPBACK;
 }
 
 void CL_HudMessage(const char* pMessage)
@@ -714,15 +862,15 @@ void GetPos(vec3_t origin, vec3_t angles)
 
 	if (Cmd_Argc() == 2)
 	{
-		if (Q_atoi(Cmd_Argv(1)) == 2 && cls.state == ca_active)
+		if (Q_atoi(Cmd_Argv(1)) == 2 && g_pcls.state == ca_active)
 		{
-			origin[0] = cl.frames[cl.parsecountmod].playerstate[cl.playernum].origin[0];
-			origin[1] = cl.frames[cl.parsecountmod].playerstate[cl.playernum].origin[1];
-			origin[2] = cl.frames[cl.parsecountmod].playerstate[cl.playernum].origin[2];
+			origin[0] = g_pcl.frames[g_pcl.parsecountmod].playerstate[g_pcl.playernum].origin[0];
+			origin[1] = g_pcl.frames[g_pcl.parsecountmod].playerstate[g_pcl.playernum].origin[1];
+			origin[2] = g_pcl.frames[g_pcl.parsecountmod].playerstate[g_pcl.playernum].origin[2];
 
-			angles[0] = cl.frames[cl.parsecountmod].playerstate[cl.playernum].angles[0];
-			angles[1] = cl.frames[cl.parsecountmod].playerstate[cl.playernum].angles[1];
-			angles[2] = cl.frames[cl.parsecountmod].playerstate[cl.playernum].angles[2];
+			angles[0] = g_pcl.frames[g_pcl.parsecountmod].playerstate[g_pcl.playernum].angles[0];
+			angles[1] = g_pcl.frames[g_pcl.parsecountmod].playerstate[g_pcl.playernum].angles[1];
+			angles[2] = g_pcl.frames[g_pcl.parsecountmod].playerstate[g_pcl.playernum].angles[2];
 		}
 	}
 	*/
@@ -738,12 +886,12 @@ const char* CL_CleanFileName(const char* filename)
 
 void CL_ClearCaches()
 {
-	for (int i = 1; i < ARRAYSIZE(cl.event_precache) && cl.event_precache[i].pszScript; ++i)
+	for (int i = 1; i < ARRAYSIZE(g_pcl.event_precache) && g_pcl.event_precache[i].pszScript; ++i)
 	{
-		Mem_Free(const_cast<char*>(cl.event_precache[i].pszScript));
-		Mem_Free(const_cast<char*>(cl.event_precache[i].filename));
+		Mem_Free(const_cast<char*>(g_pcl.event_precache[i].pszScript));
+		Mem_Free(const_cast<char*>(g_pcl.event_precache[i].filename));
 
-		Q_memset(&cl.event_precache[i], 0, sizeof(cl.event_precache[i]));
+		Q_memset(&g_pcl.event_precache[i], 0, sizeof(g_pcl.event_precache[i]));
 	}
 }
 
@@ -754,30 +902,30 @@ void CL_ClearClientState()
 	/*
 	for (int i = 0; i < CL_UPDATE_BACKUP; ++i)
 	{
-		if (cl.frames[i].packet_entities.entities)
+		if (g_pcl.frames[i].packet_entities.entities)
 		{
-			Mem_Free(cl.frames[i].packet_entities.entities);
+			Mem_Free(g_pcl.frames[i].packet_entities.entities);
 		}
 
-		cl.frames[i].packet_entities.entities = nullptr;
-		cl.frames[i].packet_entities.num_entities = 0;
+		g_pcl.frames[i].packet_entities.entities = nullptr;
+		g_pcl.frames[i].packet_entities.num_entities = 0;
 	}
 
 	CL_ClearResourceLists();
 
 	for (int i = 0; i < MAX_CLIENTS; ++i)
 	{
-		COM_ClearCustomizationList(&cl.players[i].customdata, false);
+		COM_ClearCustomizationList(&g_pcl.players[i].customdata, false);
 	}
 
 	CL_ClearCaches();
 
 	Q_memset(&cl, 0, sizeof(cl));
 
-	cl.resourcesneeded.pPrev = &cl.resourcesneeded;
-	cl.resourcesneeded.pNext = &cl.resourcesneeded;
-	cl.resourcesonhand.pPrev = &cl.resourcesonhand;
-	cl.resourcesonhand.pNext = &cl.resourcesonhand;
+	g_pcl.resourcesneeded.pPrev = &g_pcl.resourcesneeded;
+	g_pcl.resourcesneeded.pNext = &g_pcl.resourcesneeded;
+	g_pcl.resourcesonhand.pPrev = &g_pcl.resourcesonhand;
+	g_pcl.resourcesonhand.pNext = &g_pcl.resourcesonhand;
 
 	CL_CreateResourceList();
 	*/
@@ -791,7 +939,7 @@ void CL_ClearState(bool bQuiet)
 	CL_ClearClientState();
 
 	// TODO: implement - Solokiller
-	SZ_Clear(&cls.netchan.message);
+	SZ_Clear(&g_pcls.netchan.message);
 
 	// clear other arrays
 	Q_memset(cl_efrags, 0, sizeof(cl_efrags));
@@ -804,15 +952,15 @@ void CL_ClearState(bool bQuiet)
 	//
 	// allocate the efrags and chain together into a free list
 	//
-	cl.free_efrags = cl_efrags;
+	g_pcl.free_efrags = cl_efrags;
 
 	int i;
 	for (i = 0; i < MAX_EFRAGS - 1; ++i)
 	{
-		cl.free_efrags[i].entnext = &cl.free_efrags[i + 1];
+		g_pcl.free_efrags[i].entnext = &g_pcl.free_efrags[i + 1];
 	}
 
-	cl.free_efrags[i].entnext = nullptr;
+	g_pcl.free_efrags[i].entnext = nullptr;
 }
 
 void CL_CreateResourceList()
@@ -849,3 +997,164 @@ void CL_Parse_Sound(void)
 	NOT_IMPLEMENTED;
 }
 
+void CL_GameDir_f(void)
+{
+	NOT_IMPLEMENTED;
+}
+
+void CL_FullServerinfo_f(void)
+{
+	NOT_IMPLEMENTED;
+
+}
+
+void CL_Record_f(void)
+{
+	NOT_IMPLEMENTED;
+
+}
+
+void CL_PlayDemo_f(void)
+{
+	NOT_IMPLEMENTED;
+
+}
+
+void CL_ViewDemo_f(void)
+{
+	NOT_IMPLEMENTED;
+
+}
+
+void CL_TimeDemo_f(void)
+{
+	NOT_IMPLEMENTED;
+
+}
+
+void CL_GameGauge_f(void)
+{
+	NOT_IMPLEMENTED;
+
+}
+
+void CL_ListDemo_f(void)
+{
+	NOT_IMPLEMENTED;
+
+}
+
+void CL_AppendDemo_f(void)
+{
+	NOT_IMPLEMENTED;
+
+}
+
+void CL_RemoveDemo_f(void)
+{
+	NOT_IMPLEMENTED;
+
+}
+
+void CL_SwapDemo_f(void)
+{
+	NOT_IMPLEMENTED;
+
+}
+
+void CL_SetDemoInfo_f(void)
+{
+	NOT_IMPLEMENTED;
+
+}
+
+void CL_Listen_f(void)
+{
+	NOT_IMPLEMENTED;
+
+}
+
+void CL_Commentator_f(void)
+{
+	NOT_IMPLEMENTED;
+
+}
+
+void CL_WavePlayLen_f(void)
+{
+	NOT_IMPLEMENTED;
+
+}
+
+void CL_StartMovie_f(void)
+{
+	NOT_IMPLEMENTED;
+
+}
+
+void CL_EndMovie_f(void)
+{
+	NOT_IMPLEMENTED;
+
+}
+
+void CL_PrintEntities_f(void)
+{
+	NOT_IMPLEMENTED;
+
+}
+
+void CL_Rcon_f(void)
+{
+	NOT_IMPLEMENTED;
+
+}
+
+void CL_DumpMessageLoad_f(void)
+{
+	NOT_IMPLEMENTED;
+
+}
+
+void CL_PingServers_f(void)
+{
+	NOT_IMPLEMENTED;
+
+}
+
+void CL_Slist_f(void)
+{
+	NOT_IMPLEMENTED;
+
+}
+
+void CL_ListCachedServers_f(void)
+{
+	NOT_IMPLEMENTED;
+
+}
+
+void CL_BeginUpload_f(void)
+{
+	NOT_IMPLEMENTED;
+
+}
+
+void CL_HTTPCancel_f(void)
+{
+	NOT_IMPLEMENTED;
+
+}
+
+void CL_SpecPos_f(void)
+{
+	NOT_IMPLEMENTED;
+
+}
+
+void CL_InitPrediction()
+{
+	Cvar_RegisterVariable(&cl_smoothtime);
+	Cvar_RegisterVariable(&cl_nosmooth);
+	Cvar_RegisterVariable(&cl_showerror);
+}

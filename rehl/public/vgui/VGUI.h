@@ -12,6 +12,8 @@ namespace vgui2
 // this is the only handle to a panel that is valid across dll boundaries
 typedef unsigned int VPANEL;
 
+#define NULL_HANDLE 0
+
 // handles to vgui objects
 // NULL values signify an invalid value
 typedef unsigned long HScheme;

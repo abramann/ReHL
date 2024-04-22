@@ -25,7 +25,7 @@
 *    version.
 *
 */
-
+#include "precompiled.h"
 #include "utlsymbol.h"
 
 LessCtx_t g_LessCtx;

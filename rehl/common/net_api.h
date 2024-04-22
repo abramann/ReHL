@@ -100,6 +100,8 @@ typedef struct net_api_s
 
 extern net_api_t netapi;
 
+void Net_APIInit();
+
 void Net_APIShutDown();
 
 void Net_InitNetworking();

@@ -3,8 +3,7 @@
 //		S c r i p t e d   S e q u e n c e s
 // 
 //---------------------------------------------------------------------------
-#ifndef _INCLUDE_SEQUENCE_H_
-#define _INCLUDE_SEQUENCE_H_
+#pragma once
 
 
 #ifndef _DEF_BYTE_
@@ -198,4 +197,4 @@ void Sequence_ParseFile( const char* fileName, qboolean isGlobal );
 void Sequence_OnLevelLoad( const char* mapName );
 sentenceEntry_s* SequencePickSentence( const char *groupName, int pickMethod, int *picked );
 
-#endif /* _INCLUDE_SEQUENCE_H_ */
+void Sequence_Init();

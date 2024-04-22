@@ -13,6 +13,8 @@ typedef struct screenshake_s
 	float appliedAngle;
 } screenshake_t;
 
+void V_Init();
+bool V_CheckGamma();
 void V_ApplyShake(float* origin, float* angles, float factor);
 void V_CalcShake(void);
 int V_ScreenShake(const char* pszName, int iSize, void* pbuf);

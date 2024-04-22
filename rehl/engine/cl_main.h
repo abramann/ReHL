@@ -39,6 +39,8 @@ extern cvar_t show_fps;
 extern cvar_t ex_interp;
 extern cvar_t cl_name;
 
+extern client_state_t m1;
+
 extern qboolean g_bIsCStrike;
 extern qboolean g_bIsCZero;
 

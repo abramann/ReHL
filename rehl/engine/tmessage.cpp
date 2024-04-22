@@ -138,9 +138,8 @@ int IsWhiteSpace(char space)
 #endif
 }
 
-NOXREF const char *SkipSpace(const char *pText)
+const char *SkipSpace(const char *pText)
 {
-	NOXREFCHECK;
 	if (pText)
 	{
 		int pos = 0;
@@ -152,9 +151,8 @@ NOXREF const char *SkipSpace(const char *pText)
 	return NULL;
 }
 
-NOXREF const char *SkipText(const char *pText)
+const char *SkipText(const char *pText)
 {
-	NOXREFCHECK;
 	if (pText)
 	{
 		int pos = 0;
@@ -165,9 +163,8 @@ NOXREF const char *SkipText(const char *pText)
 	return NULL;
 }
 
-NOXREF int ParseFloats(const char *pText, float *pFloat, int count)
+int ParseFloats(const char *pText, float *pFloat, int count)
 {
-	NOXREFCHECK;
 	const char *pTemp = pText;
 	int index = 0;
 
@@ -220,9 +217,8 @@ void TrimSpace(const char *source, char *dest)
 	}
 }
 
-NOXREF int IsToken(const char *pText, const char *pTokenName)
+int IsToken(const char *pText, const char *pTokenName)
 {
-	NOXREFCHECK;
 	if (!pText || !pTokenName)
 		return 0;
 
@@ -232,9 +228,8 @@ NOXREF int IsToken(const char *pText, const char *pTokenName)
 	return 0;
 }
 
-NOXREF int ParseDirective(const char *pText)
+int ParseDirective(const char *pText)
 {
-	NOXREFCHECK;
 	if (pText && pText[0] == '$')
 	{
 		float tempFloat[8];
@@ -308,12 +303,11 @@ NOXREF int ParseDirective(const char *pText)
 	return 0;
 }
 
-NOXREF void TextMessageParse(unsigned char *pMemFile, int fileSize)
+void TextMessageParse(unsigned char *pMemFile, int fileSize)
 {
-	NOXREFCHECK;
 	char buf[512];
 	char trim[512];
-	char *pCurrentText;
+	char *pCurrentText = nullptr;
 	char *pNameHeap;
 	char currentName[512];
 	char nameHeap[NAME_HEAP_SIZE];
@@ -435,9 +429,8 @@ NOXREF void TextMessageParse(unsigned char *pMemFile, int fileSize)
 	gMessageTableCount = messageCount;
 }
 
-NOXREF void TextMessageShutdown(void)
+void TextMessageShutdown(void)
 {
-	NOXREFCHECK;
 	if (gMessageTable)
 	{
 		Mem_Free(gMessageTable);
@@ -445,9 +438,8 @@ NOXREF void TextMessageShutdown(void)
 	}
 }
 
-NOXREF void TextMessageInit(void)
+void TextMessageInit(void)
 {
-	NOXREFCHECK;
 	int fileSize;
 	unsigned char *pMemFile;
 

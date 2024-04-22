@@ -1,5 +1,7 @@
 #include "precompiled.h"
 
+IMixerControls* g_pMixerControls;
+IVoiceRecord* g_pVoiceRecord;
 
 IVoiceTweak g_VoiceTweakAPI =
 {
@@ -9,6 +11,11 @@ IVoiceTweak g_VoiceTweakAPI =
 	&VoiceTweak_GetControlFloat,
 	&VoiceTweak_GetSpeakingVolume
 };
+
+bool g_bUsingSteamVoice = true;
+bool g_bVoiceAtLeastPartiallyInitted;
+
+bool VoiceSE_Init();
 
 void  VoiceSE_RegisterCvars(void);
 
@@ -56,7 +63,34 @@ void Voice_RegisterCvars()
 
 bool Voice_Init(const char* pCodecName, int quality)
 {
+	if (voice_enable.value == 0.0)
+		return false;
+	
+	if (g_bVoiceAtLeastPartiallyInitted)
+		Voice_Deinit();
+
+	g_bVoiceAtLeastPartiallyInitted = true;
+
+	if (!VoiceSE_Init())
+		return false;
+
+	bool steamUser = SteamUser();
+
+	g_bUsingSteamVoice = steamUser;
+
+	if (steamUser || pCodecName[0] == '\0')
+	{
+		g_pMixerControls = GetMixerControls();
+		float forcemicrecord = voice_forcemicrecord.value;
+		
+		if (forcemicrecord != 0.0 && g_pMixerControls)
+			g_pMixerControls->SelectMicrophoneForWaveInput();
+
+		return true;
+	}
+
 	NOT_IMPLEMENTED;
+
 	return true;
 }
 
@@ -101,6 +135,12 @@ int Voice_AddIncomingData(int nChannel, char *pchData, int nCount, int iSequence
 {
 	NOT_IMPLEMENTED;
 	return 0;
+}
+
+bool VoiceSE_Init()
+{
+	NOT_IMPLEMENTED;
+	return false;
 }
 
 void VoiceSE_RegisterCvars()

@@ -1,17 +1,6 @@
 #pragma once
 
-struct Color
-{
-	Color(int r, int g, int b, int a)
-	{
-		_color[0] = r;
-		_color[1] = g;
-		_color[2] = b;
-		_color[3] = a;
-	}
-
-	byte _color[4];
-};
+#include "Color.h"
 
 void VGUI2_Draw_Init();
 

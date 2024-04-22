@@ -31,10 +31,12 @@
 #include "renderer.h"
 
 
-CGame g_Game;
-IGame *game = &g_Game;
+volatile CGame g_Game;
+IGame *game = (IGame*)&g_Game;
 
 void GetWindowNameFromGameDir(char* output, int outputBufferSize);
+
+bool BUsesSDLInput();
 
 CGame::CGame()
 {
@@ -293,4 +295,24 @@ void GetWindowNameFromGameDir(char* output, int outputBufferSize)
 
 		FS_Close(hLiblist);
 	}
+}
+
+bool BUsesSDLInput()
+{
+	static bool s_bUseRawInput;
+
+	s_bUseRawInput = false;
+
+	if (BIsValveGame() ||
+		Q_strstr(g_szfullClientName, "valve/cl_dlls/client") ||
+		Q_strstr(g_szfullClientName, "cstrike/cl_dlls/client") ||
+		Q_strstr(g_szfullClientName, "tfc/cl_dlls/client") ||
+		Q_strstr(g_szfullClientName, "dod/cl_dlls/client") ||
+		Q_strstr(g_szfullClientName, "gearbox/cl_dlls/client") ||
+		Q_strstr(g_szfullClientName, "bshift/cl_dlls/client"))
+	{
+		s_bUseRawInput = true;
+	}
+
+	return s_bUseRawInput;
 }

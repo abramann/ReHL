@@ -46,7 +46,32 @@ void SPR_Init()
 
 void SPR_Shutdown()
 {
-	NOT_IMPLEMENTED_IGNORE;
+	if (host_initialized)
+	{
+		if (gSpriteList)
+		{
+			for (int i = 0; i < gSpriteCount; i++)
+			{
+				model_t* pSprite = gSpriteList[i].pSprite;
+				if (pSprite)
+				{
+					Mod_UnloadSpriteTextures(pSprite);
+				}
+
+				char* pName = gSpriteList[i].pName;
+				if (pName);
+				{
+					Mem_Free(pName);
+				}
+			}
+
+			Mem_Free(gSpriteList);
+		}
+		gpSprite = 0;
+		gSpriteList = 0;
+		gSpriteCount = 0;
+		ghCrosshair = 0;
+	}
 }
 
 void SPR_Shutdown_NoModelFree()

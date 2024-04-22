@@ -37,7 +37,6 @@ extern float scr_con_current;
 void D_FlushCaches(void);
 void R_SetStackBase(void);
 void SCR_UpdateScreen(void);
-void V_Init(void);
 void SCR_Init(void);
 void R_Init(void);
 void R_ForceCVars(qboolean multiplayer);

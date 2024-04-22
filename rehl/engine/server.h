@@ -627,4 +627,4 @@ char *SV_GetIDString_internal(USERID_t *id);
 char *SV_GetClientIDString(client_t *client);
 int GetGameAppID(void);
 qboolean IsGameSubscribed(const char *gameName);
-NOXREF qboolean BIsValveGame(void);
+qboolean BIsValveGame(void);

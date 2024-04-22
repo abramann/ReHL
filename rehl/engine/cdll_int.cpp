@@ -1,14 +1,13 @@
 #include "precompiled.h"
-#include "r_efx.h"
-#include "event_api.h"
-#include "demo_api.h"
-#include "net_api.h"
-#include "ref_params.h"
+
+
+cvar_t* cl_righthand;
 
 char g_szfullClientName[512];
 
+CSysModule* hClientDLL = nullptr;
+
 static bool fClientLoaded = false;
-static CSysModule* hClientDLL = nullptr;
 static cldll_func_dst_t g_cldstAddrs = k_cldstNull;
 static BlobFootprint_t g_blobfootprintClient = {};
 
@@ -18,6 +17,8 @@ bool LoadSecureClient(const char* pszDllName);
 void LoadInsecureClient(const char* pszFullPathClientDLLName);
 
 void SDL_GetMousePos(POINT* ppt);
+
+void R_ResetStudio();
 
 cl_enginefunc_t cl_enginefuncs =
 {
@@ -253,7 +254,27 @@ void ClientDLL_CheckStudioInterface(CSysModule* hClientDLL)
 
 void ClientDLL_HudInit()
 {
-	NOT_IMPLEMENTED;
+	if (!cl_funcs.pHudInitFunc)
+		Sys_Error("../engine/cdll_int.c, line %d: could not link client DLL for HUD initialization", 1075);
+
+	cl_funcs.pHudInitFunc();
+
+	R_ResetStudio();
+	if (fClientLoaded)
+	{
+		auto studioInterface = cl_funcs.pStudioInterface = (HUD_STUDIO_INTERFACE_FUNC) Sys_GetProcAddress(hClientDLL, "HUD_GetStudioModelInterface");
+		
+		if (studioInterface)
+		{
+			if (!studioInterface(1, &pStudioAPI, &engine_studio_api))
+			{
+				Con_DPrintf("Couldn't get client .dll studio model rendering interface.  Version mismatch?\n");
+				R_ResetStudio();
+			}
+		}
+	}
+
+	cl_righthand = Cvar_FindVar("cl_righthand");
 }
 
 void ClientDLL_HudVidInit()
@@ -594,7 +615,11 @@ cl_entity_t* hudGetViewModel()
 
 cl_entity_t* hudGetEntityByIndex(int idx)
 {
-	NOT_IMPLEMENTED;
+	g_engdstAddrs.GetEntityByIndex(&idx);
+
+	if (idx >= 0 && idx < m1.max_edicts)
+		return &cl_entities[idx];
+
 	return nullptr;
 }
 
@@ -930,4 +955,3 @@ void SDL_GetMousePos(POINT* ppt)
 	ppt->x = x;
 	ppt->y = y;
 }
-

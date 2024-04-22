@@ -23,7 +23,7 @@
 #endif
 
 #include "utlvector.h"
-#include "Color.h"
+#include "../../engine/Color.h"
 
 #define FOR_EACH_SUBKEY( kvRoot, kvSubKey ) \
 	for ( KeyValues * kvSubKey = kvRoot->GetFirstSubKey(); kvSubKey != NULL; kvSubKey = kvSubKey->GetNextKey() )

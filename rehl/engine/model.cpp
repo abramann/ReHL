@@ -39,6 +39,8 @@ int ad_enabled;
 cachewad_t ad_wad;
 mod_known_info_t mod_known_info[MAX_KNOWN_MODELS];
 
+extern byte mod_novis[1024];
+
 // values for model_t's needload
 enum
 {
@@ -50,7 +52,7 @@ enum
 void SW_Mod_Init(void)
 {
 #ifndef SWDS
-	// TODO: Add client-side code
+
 #endif
 }
 
@@ -365,9 +367,8 @@ model_t *Mod_LoadModel(model_t *mod, qboolean crash, qboolean trackCRC)
 	return mod;
 }
 
-NOXREF void Mod_MarkClient(model_t *pModel)
+void Mod_MarkClient(model_t *pModel)
 {
-	NOXREFCHECK;
 	pModel->needload = (NL_NEEDS_LOADED | NL_UNREFERENCED);
 }
 

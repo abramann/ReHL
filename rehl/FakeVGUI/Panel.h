@@ -4,6 +4,7 @@
 #include "MouseCode.h"
 #include "KeyCode.h"
 #include "Scheme.h"
+#include "vgui_Color.h"
 
 
 namespace vgui
@@ -21,7 +22,6 @@ namespace vgui
 	class SchemeFont;
 	class SchemeColor;
 	class RepaintSignal;
-	class Color;
 	class App;
 
 	class VGUI_DLL_API Panel
@@ -107,10 +107,10 @@ namespace vgui
 		virtual void  setBgColor(int r, int g, int b, int a);
 		virtual void  getFgColor(int *const r, int *const g, int *const b, int *const a);
 		virtual void  getBgColor(int *const r, int *const g, int *const b, int *const a);
-		virtual void  setBgColor(vgui::Color *p_color);
-		virtual void  setFgColor(vgui::Color *p_color);
-		virtual void  getBgColor(vgui::Color *const color);
-		virtual void  getFgColor(vgui::Color *const color);
+		virtual void  setBgColor(Color *p_color);
+		virtual void  setFgColor(Color *p_color);
+		virtual void  getBgColor(Color *const color);
+		virtual void  getFgColor(Color *const color);
 		virtual void  setAsMouseCapture(bool state);
 		virtual void  setAsMouseArena(bool state);
 		virtual vgui::App * getApp();

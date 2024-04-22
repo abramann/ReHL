@@ -99,14 +99,13 @@ int W_LoadWadFile(char *filename)
 
 lumpinfo_t *W_GetLumpinfo(int wad, char *name, qboolean doerror)
 {
-	int i;
-	lumpinfo_t *lump_p;
 	char clean[16];
+	lumpinfo_t * lump_p = wads->wad_lumps;//wad_base[0];
 
 	W_CleanupName(name, clean);
-	for (i = 0; i < wads[wad].wad_numlumps; i++)
+	for (int i = 0; i < wads[wad].wad_numlumps; i++, lump_p++)
 	{
-		lump_p = wads[i].wad_lumps;
+		//lump_p = wads[i].wad_lumps;
 		if (!Q_strcmp(clean, lump_p->name))
 			return lump_p;
 	}

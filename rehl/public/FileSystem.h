@@ -197,6 +197,11 @@ public:
 	virtual void			AddSearchPathNoWrite(const char *pPath, const char *pathID) = 0;
 };
 
+namespace vgui2
+{
+	IFileSystem* filesystem();
+}
+
 // Steam3/Src compat
 #define IBaseFileSystem IFileSystem
 

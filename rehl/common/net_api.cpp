@@ -2,7 +2,8 @@
 #include "net.h"
 
 
-net_api_query_t* g_queries;
+net_api_query_t* g_queries = nullptr;
+net_adrlist_t* g_addresses = nullptr;
 
 net_api_t netapi =
 {
@@ -24,10 +25,27 @@ void Net_InitNetworking()
 	NET_Config(true);
 }
 
+void Net_APIInit()
+{
+	g_queries = 0;
+	g_addresses = 0;
+}
+
 void Net_APIShutDown()
 {
-	NOT_IMPLEMENTED_IGNORE;
+	for (net_api_query_t *p = g_queries; p; p = p->next)
+	{
+		Mem_Free(p);
+	}
+	
+	g_queries = 0;
 
+	for (net_adrlist_t* pAddr = g_addresses; pAddr; pAddr = pAddr->next)
+	{
+		Mem_Free(pAddr);
+	}
+
+	g_addresses = 0;
 }
 
 void Net_Status(net_status_t* status)

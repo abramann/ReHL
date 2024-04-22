@@ -8515,9 +8515,8 @@ qboolean IsGameSubscribed(const char *gameName)
 #endif
 }
 
-NOXREF qboolean BIsValveGame(void)
+qboolean BIsValveGame(void)
 {
-	NOXREFCHECK;
 	for (int i = 0; i < ARRAYSIZE(g_GameToAppIDMap); i++)
 	{
 		if (!Q_stricmp(g_GameToAppIDMap[i].pGameDir, com_gamedir))

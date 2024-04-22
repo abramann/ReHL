@@ -1102,7 +1102,7 @@ void CUtlRBTree<T, I, L, M>::SetLessFunc(typename CUtlRBTree<T, I, L, M>::LessFu
 	else
 	{
 		// Need to re-sort the tree here....
-		Assert(0);
+		//Assert(0);
 	}
 }
 

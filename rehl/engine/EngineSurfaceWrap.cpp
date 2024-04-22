@@ -48,10 +48,10 @@ void EngineSurfaceWrap::drawPolyLine(int * px, int * py, int n)
 
 void EngineSurfaceWrap::drawTexturedPolygon(vgui::VGuiVertex * pVertices, int n)
 {
-	_engineSurface->drawTexturedPolygon(pVertices, n);
+	_engineSurface->drawTexturedPolygon((vgui2::VGuiVertex*)pVertices, n);
 }
 
-void EngineSurfaceWrap::drawSetTextureBGRA(int id, const char * rgba, int wide, int tall, int hardwareFilter, int hasAlphaChannel)
+void EngineSurfaceWrap::drawSetTextureBGRA(int id, const unsigned char * rgba, int wide, int tall, int hardwareFilter, int hasAlphaChannel)
 {
 	_engineSurface->drawSetTextureRGBA(id, rgba, wide, tall, hardwareFilter, hasAlphaChannel);
 }
@@ -155,7 +155,7 @@ void EngineSurfaceWrap::drawPrintText(const char * text, int textLen)
 	NOT_IMPLEMENTED;
 }
 
-void EngineSurfaceWrap::drawSetTextureRGBA(int id, const char * rgba, int wide, int tall)
+void EngineSurfaceWrap::drawSetTextureRGBA(int id, const unsigned char * rgba, int wide, int tall)
 {
 	_engineSurface->drawSetTextureRGBA(id, rgba, wide, tall, false, false);
 }
@@ -197,11 +197,19 @@ EngineSurfaceWrap::EngineSurfaceWrap(vgui::Panel * embeddedPanel, IEngineSurface
 			SDL_InitSubSystem(32);
 		}
 
-	staticDefaultCursor[1] = 0;
-	for (int i = 2; i < 14; i++)
-	{
-		staticDefaultCursor[i] = SDL_CreateSystemCursor((SDL_SystemCursor)(i - 2));
-	}
+	staticDefaultCursor[1] = nullptr;
+	staticDefaultCursor[2] = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_ARROW);
+	staticDefaultCursor[3] = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_IBEAM);
+	staticDefaultCursor[4] = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_WAIT);
+	staticDefaultCursor[5] = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_CROSSHAIR);
+	staticDefaultCursor[6] = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_SIZENS);
+	staticDefaultCursor[7] = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_SIZENWSE);
+	staticDefaultCursor[8] = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_SIZENESW);
+	staticDefaultCursor[9] = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_SIZEWE);
+	staticDefaultCursor[10] = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_SIZENS);
+	staticDefaultCursor[11] = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_SIZEALL);
+	staticDefaultCursor[12] = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_NO);
+	staticDefaultCursor[13] = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_HAND);
 
 	staticCurrentCursor = staticDefaultCursor[2];
 }

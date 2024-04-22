@@ -744,13 +744,10 @@ int Q_UnicodeLength(const char * pUTF8)
 
 int Q_strcasecmp(const char * s1, const char * s2)
 {
-	NOT_IMPLEMENTED_IGNORE;
-	// Using SDL_strncasecmp should be fine.
-
 	if (!s1)
 		return -1;
 	if (s2)
-		return SDL_strncasecmp(s1, s2, 0x1869Fu);
+		return SDL_strcasecmp(s1, s2);
 	return 1;
 }
 

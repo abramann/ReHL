@@ -28,22 +28,18 @@
 
 #include "precompiled.h"
 
-float scr_con_current;
-
 int r_pixbytes = 1;
 
-void D_FlushCaches() { }
-void R_SetStackBase() { }
-void SCR_UpdateScreen() { }
-void V_Init() { }
-void SCR_Init() { }
-void R_Init() { }
-void R_ForceCVars(qboolean multiplayer) { }
-void SCR_BeginLoadingPlaque(qboolean reconnect) { }
-void SCR_EndLoadingPlaque() { }
-void R_InitSky() { }
+void D_FlushCaches() { NOT_IMPLEMENTED; }
+void R_SetStackBase() { NOT_IMPLEMENTED; }
+
+
+void R_ForceCVars(qboolean multiplayer) { NOT_IMPLEMENTED; }
+void SCR_BeginLoadingPlaque(qboolean reconnect) { NOT_IMPLEMENTED; }
+void R_InitSky() { NOT_IMPLEMENTED; }
 void R_MarkLeaves()
 {
+	NOT_IMPLEMENTED;
 }
 
 void R_InitTextures()
@@ -74,6 +70,4 @@ void R_InitTextures()
 	}
 }
 
-void StartLoadingProgressBar(const char *loadingType, int numProgressPoints) { }
-void ContinueLoadingProgressBar(const char *loadingType, int progressPoint, float progressFraction) { }
-void SetLoadingProgressBarStatusText(const char *statusText) { }
+

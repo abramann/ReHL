@@ -65,7 +65,7 @@ model_t *Mod_FindName(qboolean trackCRC, const char *name);
 NOXREF qboolean Mod_ValidateCRC(const char *name, CRC32_t crc);
 NOXREF void Mod_NeedCRC(const char *name, qboolean needCRC);
 model_t *Mod_LoadModel(model_t *mod, qboolean crash, qboolean trackCRC);
-NOXREF void Mod_MarkClient(model_t *pModel);
+void Mod_MarkClient(model_t *pModel);
 model_t *Mod_ForName(const char *name, qboolean crash, qboolean trackCRC);
 void Mod_AdInit(void);
 void Mod_AdSwap(texture_t *src, int pixels, int entries);

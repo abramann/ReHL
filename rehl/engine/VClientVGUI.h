@@ -1,0 +1,4 @@
+#pragma once
+
+
+#define VCLIENTVGUI_INTERFACE_VERSION "VClientVGUI001"

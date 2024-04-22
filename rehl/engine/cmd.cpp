@@ -75,7 +75,6 @@ void Cbuf_AddText(const char *text)
 // commands.
 void Cbuf_InsertText(const char *text)
 {
-
 	int addLen = Q_strlen(text);
 	int currLen = cmd_text.cursize;
 
@@ -570,11 +569,7 @@ void Cmd_Shutdown(void)
 int EXT_FUNC Cmd_Argc(void)
 {
 #ifndef SWDS
-	NOT_IMPLEMENTED;
-	
-	/*
-	g_engdstAddrs->Cmd_Argc();
-	*/
+	g_engdstAddrs.Cmd_Argc();
 #endif
 
 	return cmd_argc;
@@ -582,12 +577,8 @@ int EXT_FUNC Cmd_Argc(void)
 
 const char* EXT_FUNC Cmd_Argv(int arg)
 {
-#ifndef SWDS
-	NOT_IMPLEMENTED;
-	
-	/*
-	g_engdstAddrs->Cmd_Argv(&arg);
-	*/
+#ifndef SWDS	
+	g_engdstAddrs.Cmd_Argv(&arg);
 #endif
 
 	if (arg >= 0 && arg < cmd_argc)
@@ -774,6 +765,38 @@ void Cmd_AddCommand(const char *cmd_name, xcommand_t function)
 	Cmd_InsertCommand(cmd);
 }
 
+void Cmd_AddCommandWithFlags(char * cmd_name, xcommand_t function, int flags)
+{
+	cmd_function_t *cmd;
+
+	if (host_initialized)
+	{
+		Sys_Error("%s: called after host_initialized", __func__);
+	}
+
+	// Check in variables list
+	if (Cvar_FindVar(cmd_name) != NULL)
+	{
+		Con_Printf("%s: \"%s\" already defined as a var\n", __func__, cmd_name);
+		return;
+	}
+
+	// Check if this command is already defined
+	if (Cmd_Exists(cmd_name))
+	{
+		Con_Printf("%s: \"%s\" already defined\n", __func__, cmd_name);
+		return;
+	}
+
+	// Create cmd_function
+	cmd = (cmd_function_t *)Hunk_Alloc(sizeof(cmd_function_t));
+	cmd->name = cmd_name;
+	cmd->function = function ? function : Cmd_ForwardToServer;
+	cmd->flags = flags;
+
+	Cmd_InsertCommand(cmd);
+}
+
 // Use this for call from user code, because it alloc string for the name.
 void Cmd_AddMallocCommand(const char *cmd_name, xcommand_t function, int flag)
 {
@@ -802,10 +825,8 @@ void Cmd_AddMallocCommand(const char *cmd_name, xcommand_t function, int flag)
 	Cmd_InsertCommand(cmd);
 }
 
-NOXREF void Cmd_AddHUDCommand(const char *cmd_name, xcommand_t function)
+void Cmd_AddHUDCommand(const char *cmd_name, xcommand_t function)
 {
-	NOXREFCHECK;
-
 	Cmd_AddMallocCommand(cmd_name, function, FCMD_HUD_COMMAND);
 }
 
