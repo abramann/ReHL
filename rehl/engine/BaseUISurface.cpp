@@ -101,7 +101,7 @@ void BaseUISurface::Init(vgui2::VPANEL embeddedPanel, IEngineSurface* engineSurf
 	Cvar_RegisterVariable(&sdl_double_click_size);
 	Cvar_RegisterVariable(&sdl_double_click_time);
 
-//#ifndef UNRESOLVED_ISSUE
+#ifndef UNRESOLVED_ISSUE
 	m_pChromeController = pChromeController;
 
 	if (m_pChromeController)
@@ -110,7 +110,7 @@ void BaseUISurface::Init(vgui2::VPANEL embeddedPanel, IEngineSurface* engineSurf
 
 		m_pChromeController->SetCefThreadTargetFrameRate(60);
 	}
-//#endif
+#endif
 }
 
 void BaseUISurface::GetMouseDelta(int& x, int& y)

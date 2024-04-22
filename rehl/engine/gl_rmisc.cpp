@@ -175,31 +175,21 @@ void R_InitParticleTexture()
 	particletexture = GL_GenTexture();
 	GL_Bind(particletexture);
 
-	CHECK_REQUIRED;
-
-	char data[8][8][4];
-
-	for (int y = 0; y < 8; ++y) 
+	char data[8][8][4] = { 0 };
+	for (int i = 0; i < 8; i++)
 	{
-		for (int x = 0; x < 8; ++x)
+		for (int j = 0; j < 8; j++)
 		{
-
-			if (y == 5 && x == 0) 
+			for (int k = 0; k < 4; k++)
 			{
-				data[y][x][0] = -1;
+				if (k == 3)
+					data[i][j][k] = -dottexture[j][i];
+				else
+					data[i][j][k] = -1;
 			}
-			else 
-			{
-				data[y][x][0] = -dottexture[x][y];
-			}
-
-			data[y][x][1] = (y == 0 && x == 0) ? -1 : -dottexture[x][y];
-
-			data[y][x][2] = (y == 1 && x == 0) ? -1 : -dottexture[x][y];
-
-			data[y][x][3] = (y == 2 && x == 0) ? -1 : -dottexture[x][y];
 		}
 	}
+
 
 	int w, h, bpp;
 	VideoMode_GetCurrentVideoMode(&w, &h, &bpp);
