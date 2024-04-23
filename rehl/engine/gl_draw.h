@@ -68,7 +68,7 @@ int GL_LoadTexture(char *identifier, GL_TEXTURETYPE textureType, int width, int 
 
 int GL_LoadTexture2(char *identifier, GL_TEXTURETYPE textureType, int width, int height, unsigned char *data, qboolean mipmap, int iType, unsigned char *pPal, int filter);
 
-void GL_Upload16(char *data, int width, int height, qboolean mipmap, int iType, unsigned char *pPal, int filter);
+void GL_Upload16(unsigned char *data, int width, int height, qboolean mipmap, int iType, unsigned char *pPal, int filter);
 
 void GL_Upload32(unsigned int *data, int width, int height, qboolean mipmap, int iType, int filter);
 

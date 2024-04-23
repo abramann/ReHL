@@ -523,7 +523,7 @@ int Sys_InitGame(const char *lpOrgCmdLine, const char *pBaseDir, SDL_Window** pp
 #ifndef SWDS
 	else
 		ClientDLL_ActivateMouse();
-
+#ifndef _WIN32
 	char MessageText[512];
 	const char en_US[] = "en_US.UTF-8";
 
@@ -536,6 +536,7 @@ int Sys_InitGame(const char *lpOrgCmdLine, const char *pBaseDir, SDL_Window** pp
 		Q_snprintf(MessageText, sizeof(MessageText), "SetLocale('%s') failed. Using '%s'.\nYou may have limited glyph support.\nPlease install '%s' locale.", en_US, cat, en_US);
 		SDL_ShowSimpleMessageBox(0, "Warning", MessageText, pmainwindow);
 	}
+#endif
 #endif // SWDS
 	return 1;
 }

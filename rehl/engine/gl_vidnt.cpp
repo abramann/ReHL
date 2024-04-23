@@ -402,7 +402,6 @@ bool GL_SetMode(SDL_Window* mainwindow, HDC* pmaindc, HGLRC* pbaseRC, const char
 
 bool VID_Init(unsigned short *palette)
 {
-	POSSIBLE_ERROR("No parameter for this function in Windows build");
 	Cvar_RegisterVariable(&gl_ztrick);
 	Cvar_RegisterVariable(&gl_vsync);
 	if (COM_CheckParm("-gl_log"))

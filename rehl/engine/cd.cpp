@@ -20,7 +20,7 @@ void CD_Command_f(void)
 
 void MP3_Command_f(void)
 {
-	NOT_IMPLEMENTED;
+
 }
 
 void CareerAudio_Command_f(void)

@@ -28,7 +28,7 @@ quake_mode_t modes[6] =
 	{"GL_LINEAR_MIPMAP_LINEAR",GL_LINEAR_MIPMAP_LINEAR , GL_LINEAR }
 };
 
-unsigned int scaled_25071[524288]; // 
+unsigned int scaled_25071[524288] = { 0 }; // 
 int g_currentpalette;
 
 int gl_filter_max = 2601;
@@ -663,7 +663,7 @@ int GL_LoadTexture2(char * identifier, GL_TEXTURETYPE textureType, int width, in
 		if (textureType == GLT_SPRITE && iType == GLT_WORLD)
 			GL_Upload32((unsigned int*)data, width, height, mipmap, 4, filter);
 		else
-			GL_Upload16((char*)data, width, height, mipmap, iType, pPal, filter);
+			GL_Upload16(data, width, height, mipmap, iType, pPal, filter);
 	}
 	else
 	{
@@ -889,7 +889,7 @@ void GL_Upload32(unsigned int *data, int width, int height, qboolean mipmap, int
 	qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY, gl_ansio.value);
 }
 
-void GL_Upload16(char *data, int width, int height, qboolean mipmap, int iType, unsigned char *pPal, int filter)
+void GL_Upload16(unsigned char *data, int width, int height, qboolean mipmap, int iType, unsigned char *pPal, int filter)
 {
 	int count = height * width;
 	if (count > 1228800)
@@ -932,15 +932,15 @@ void GL_Upload16(char *data, int width, int height, qboolean mipmap, int iType, 
 		}
 		else if (count)
 		{
+			memset(trans_25102, 0, sizeof(int) * 307202);
 			for (int i = 0; i < count; i++)
 			{
-				int r = pPal[3 * data[i]];
-				r = r | r >> 6;
-				int g = pPal[3 * data[i + 1]];
-				g = g | g >> 6;
-				int b = pPal[3 * data[i + 2]];
-				b = b | b >> 6;
+				unsigned char* p = &pPal[3 * data[i]];
+				unsigned char r = p[0] | p[0] >> 6;
+				unsigned char g = p[1] | p[1] >> 6;
+				unsigned char b = p[2] | p[2] >> 6;
 				trans_25102[i] = b << 16 | (g << 8) | r | 0xFF000000;
+			//	trans_25102[i] = r | ((g | (b << 0xFFFFFF00)) << 8);
 			}
 		}
 
