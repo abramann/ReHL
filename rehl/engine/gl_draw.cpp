@@ -28,7 +28,7 @@ quake_mode_t modes[6] =
 	{"GL_LINEAR_MIPMAP_LINEAR",GL_LINEAR_MIPMAP_LINEAR , GL_LINEAR }
 };
 
-unsigned int scaled_25071[524288] = { 0 }; // 
+unsigned int scaled_25071[524288] = { 0 }; //
 int g_currentpalette;
 int giTotalTextures = 0;
 
@@ -76,7 +76,7 @@ void ComputeScaledSize(int *wscale, int *hscale, int width, int height);
 void GL_ResampleAlphaTexture(unsigned char *in, int inwidth, int inheight, unsigned char *out, int outwidth, int outheight);
 void GL_ResampleTexture(unsigned int *in, int inwidth, int inheight, unsigned int *out, int outwidth, int outheight);
 short GL_PaletteAdd(unsigned char *pPal, qboolean isSky);
-void ApplyScale(unsigned char* data, int width, int height,unsigned char* scaledData, int scaled_width, int scaled_height);
+void ApplyScale(unsigned char* data, int width, int height, unsigned char* scaledData, int scaled_width, int scaled_height);
 
 unsigned int trans_25102[307202] = { 0 };
 
@@ -158,7 +158,6 @@ void gl_texturemode_hook_callback(cvar_t * cvar)
 		qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY, gl_ansio.value);
 	}
 }
-	
 
 void Draw_Init()
 {
@@ -274,7 +273,7 @@ void Draw_SetTextColor(float r, float g, float b)
 
 void Draw_GetDefaultColor()
 {
-	int ir; 
+	int ir;
 	int ig;
 	int ib;
 
@@ -362,9 +361,8 @@ short GL_PaletteAdd(unsigned char *pPal, qboolean isSky)
 	}
 
 	unsigned char gammaPal[768];
-	for (int i = 0; i < 768; ++i) 
+	for (int i = 0; i < 768; ++i)
 		gammaPal[i] = texgammatable[pPal[i]];
-	
 
 	// Calculate a unique identifier based on palette data
 	int hash = 0;
@@ -638,7 +636,6 @@ int GL_LoadTexture2(char * identifier, GL_TEXTURETYPE textureType, int width, in
 		ComputeScaledSize(&scaled_width, &scaled_height, width, height);
 	}
 
-
 	unsigned char* textureData = data;
 
 	unsigned char scaledData[16384] = { 0 };
@@ -659,10 +656,10 @@ int GL_LoadTexture2(char * identifier, GL_TEXTURETYPE textureType, int width, in
 	if (!qglColorTableEXT
 		|| gl_palette_tex.value == 0.0
 		|| iType
-		|| (paletteIndex = GL_PaletteAdd(pPal, 0), slot->paletteIndex = paletteIndex, paletteIndex < 0) )
+		|| (paletteIndex = GL_PaletteAdd(pPal, 0), slot->paletteIndex = paletteIndex, paletteIndex < 0))
 	{
 		if (g_modfuncs.m_pfnTextureLoad)
-			g_modfuncs.m_pfnTextureLoad(identifier, width, height,(char*) data);
+			g_modfuncs.m_pfnTextureLoad(identifier, width, height, (char*)data);
 		if (textureType == GLT_SPRITE && iType == GLT_WORLD)
 			GL_Upload32((unsigned int*)data, width, height, mipmap, 4, filter);
 		else
@@ -684,7 +681,7 @@ int GL_LoadTexture2(char * identifier, GL_TEXTURETYPE textureType, int width, in
 
 qpic_t * LoadTransBMP(char *pszName)
 {
-	return LoadTransPic(pszName,(qpic_t*) W_GetLumpName(0, pszName));
+	return LoadTransPic(pszName, (qpic_t*)W_GetLumpName(0, pszName));
 }
 
 qpic_t * LoadTransPic(char *pszName, qpic_t *ppic)
@@ -724,7 +721,7 @@ qpic_t * LoadTransPic(char *pszName, qpic_t *ppic)
 			}
 		}
 	}
-	
+
 	numgltextures++;
 	gltexture_t * glt = &gltextures[numgltextures];
 	Q_strcpy(glt->identifier, pszName);
@@ -742,8 +739,8 @@ qpic_t * LoadTransPic(char *pszName, qpic_t *ppic)
 	int size = width * height;
 
 	// RGBA format image
-	byte* pImageData =(byte*) Mem_Malloc(size * 4);
-	
+	byte* pImageData = (byte*)Mem_Malloc(size * 4);
+
 	byte* pOriginalData = &ppic->data[size + 2];
 	for (int i = 0; i < size; i++)
 	{
@@ -755,7 +752,8 @@ qpic_t * LoadTransPic(char *pszName, qpic_t *ppic)
 
 	CHECK_REQUIRED;
 
-	 *(DWORD*)pNewPic->data = gltextures[numgltextures].texnum;
+	// Probably wrong implement
+	*(DWORD*)pNewPic->data = gltextures[numgltextures].texnum;
 	Mem_Free(pImageData);
 	return pNewPic;
 }
@@ -845,8 +843,7 @@ void GL_Upload32(unsigned int *data, int width, int height, qboolean mipmap, int
 		break;
 	}
 
-	bool not_scaled = scaled_width == width && scaled_height == height;
-	if (not_scaled)
+	if (scaled_width == width && scaled_height == height)
 	{
 		if (!mipmap)
 			qglTexImage2D(GL_TEXTURE_2D, 0, iComponent, width, height, 0, iFormat, GL_UNSIGNED_BYTE, data);
@@ -857,6 +854,8 @@ void GL_Upload32(unsigned int *data, int width, int height, qboolean mipmap, int
 
 			Q_memcpy(scaled_25071, data, size);
 			::texels += scaled_height * scaled_width;
+			DebugBreak();
+			// Check here
 			qglTexImage2D(GL_TEXTURE_2D, 0, iComponent, scaled_width, scaled_height, 0, iFormat, GL_UNSIGNED_BYTE, scaled_25071);
 		}
 	}
@@ -870,7 +869,6 @@ void GL_Upload32(unsigned int *data, int width, int height, qboolean mipmap, int
 		::texels += scaled_height * scaled_width;
 		qglTexImage2D(GL_TEXTURE_2D, 0, iComponent, scaled_width, scaled_height, 0, iFormat, GL_UNSIGNED_BYTE, scaled_25071);
 	}
-
 	if (mipmap)
 	{
 		for (int i = 1; scaled_width > 1 || scaled_height > 1; i++)
@@ -893,7 +891,7 @@ void GL_Upload32(unsigned int *data, int width, int height, qboolean mipmap, int
 	qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, gl_filter_max);
 	qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, gl_ansio.value);
 }
-#include "FF.c.h"
+
 void GL_Upload16(unsigned char *data, int width, int height, qboolean mipmap, int iType, unsigned char *pPal, int filter)
 {
 	int count = height * width;
@@ -948,10 +946,8 @@ void GL_Upload16(unsigned char *data, int width, int height, qboolean mipmap, in
 				unsigned char g = p[1] | p[1] >> 6;
 				unsigned char b = p[2] | p[2] >> 6;
 				trans_25102[i] = b << 16 | (g << 8) | r | 0xFF000000;
-			//	trans_25102[i] = r | ((g | (b << 0xFFFFFF00)) << 8);
 			}
 		}
-
 		GL_Upload32(trans_25102, width, height, mipmap, iType, filter);
 	}
 	else if (count)
@@ -1031,7 +1027,6 @@ void BoxFilter3x3(unsigned char * out, unsigned char * in, int w, int h, int x, 
 			base += w;
 			neighborY++;
 		}
-
 	}
 
 	if (!validNeighbors)
@@ -1091,7 +1086,7 @@ void ComputeScaledSize(int *wscale, int *hscale, int width, int height)
 
 			*wscale = i;
 		}
-		
+
 		if (hscale)
 		{
 			if (j > maxSize)
@@ -1124,7 +1119,7 @@ void GL_ResampleAlphaTexture(unsigned char *in, int inwidth, int inheight, unsig
 		} while (v7 != outwidth);
 		for (int i = 0; i < outwidth; i++)
 		{
-			p1[i] = 
+			p1[i] =
 		}
 		v10 = 3 * ((unsigned int)((inwidth << 16) / outwidth) >> 2);
 		for (j = 0; j != outwidth; ++j)
@@ -1217,27 +1212,27 @@ void ApplyScale(unsigned char* data, int width, int height, unsigned char* scale
 
   // Check for invalid scaled height
   if (scaledHeight <= 0) {
-    return 0; // Handle error or return something meaningful
+	return 0; // Handle error or return something meaningful
   }
 
   // Loop through scaled height
   for (int y = 0; y < scaledHeight; y += (heightScale >> 2)) {
-    // Check for invalid scaled width
-    if (scaledWidth <= 0) {
-      break; // Handle error or skip processing
-    }
+	// Check for invalid scaled width
+	if (scaledWidth <= 0) {
+	  break; // Handle error or skip processing
+	}
 
-    // Loop through scaled width
-    for (int x = 0; x < scaledWidth; x += (widthScale >> 2)) {
-      // Calculate source pixel index (avoid overflow with unsigned int)
-      int sourceIndex = y * width + x;
+	// Loop through scaled width
+	for (int x = 0; x < scaledWidth; x += (widthScale >> 2)) {
+	  // Calculate source pixel index (avoid overflow with unsigned int)
+	  int sourceIndex = y * width + x;
 
-      // Copy pixel from source image to output
-      *out++ = *((unsigned char*)imageData + sourceIndex);
-    }
+	  // Copy pixel from source image to output
+	  *out++ = *((unsigned char*)imageData + sourceIndex);
+	}
 
-    // Move to next row in source image based on scaling factor
-    imageData += width * ((heightScale + y) >> 16);
+	// Move to next row in source image based on scaling factor
+	imageData += width * ((heightScale + y) >> 16);
   }
   */
 }

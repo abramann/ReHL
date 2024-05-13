@@ -38,22 +38,20 @@ void Con_CheckResize()
 	}
 	else
 	{
-		int newnumlines = 0x4000 / newwidth;
+		int newtotal = 0x4000 / newwidth;
 		con_linewidth = newwidth;
-		if (newnumlines > con_totallines)
-			newnumlines = con_totallines;
+		if (newtotal > con_totallines)
+			newtotal = con_totallines;
 
 		int oldtotal = con_totallines;
 
-		con_totallines = newnumlines;
+		con_totallines = newtotal;
 
-		int numlines = newnumlines;
+		int numlines = newtotal;
 		if (newwidth > oldwidth)
 			newwidth = oldwidth;
 
 		char tbuf[16384];
-
-		CHECK_REQUIRED;
 
 		Q_memcpy(tbuf, con_text, 0x4000);
 		Q_memset(con_text, 32, 0x4000);
