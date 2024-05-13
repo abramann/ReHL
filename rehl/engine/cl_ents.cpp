@@ -1,8 +1,20 @@
 #include "precompiled.h"
 
+
+void CL_TempEntUpdate();
+void CL_LinkPlayers();
+void CL_LinkPacketEntities();
+void CL_FireEvents();
+long double CL_LerpPoint();
+
 extern double parsecounttime;
 double g_flLatency;
 int last_incoming_sequence = 0;
+int cl_numvisedicts;
+int cl_numbeamentities;
+mleaf_t *r_oldviewleaf;
+
+cl_entity_t* cl_visedicts[512];
 
 qboolean CL_IsPlayerIndex(int index)
 {
@@ -54,6 +66,7 @@ qboolean CL_EntityTeleported(cl_entity_t* ent)
 
 	return true;
 }
+
 
 
 int CL_ParseDeltaHeader(qboolean* remove, qboolean* custom, int* numbase, qboolean* newbl,
@@ -746,3 +759,70 @@ void CL_ParseClientdata(void)
 	*/
 }
 
+void CL_EmitEntities(void)
+{
+	cl_numvisedicts = 0;
+	cl_numbeamentities = 0;
+
+	if (g_pcls.state != ca_active || !m1.validsequence || m1.frames[m1.parsecountmod].invalid)
+		return;
+
+	m1.commands[CL_UPDATE_MASK & (g_pcls.netchan.outgoing_sequence - 1)].frame_lerp = CL_LerpPoint();
+	if (g_pcls.spectator)
+	{
+		mleaf_t* leaf = Mod_PointInLeaf(m1.simorg, m1.worldmodel);
+		uchar* ppvs = Mod_LeafPVS(leaf, m1.worldmodel);
+		PVSMark(m1.worldmodel, ppvs);
+	}
+
+	CL_LinkPlayers();
+	CL_LinkPacketEntities();
+
+	for (int i = 0; i < cl_numvisedicts; i++)
+	{
+		cl_entity_t* viseditct = cl_visedicts[i];
+		int aiment = viseditct->curstate.aiment;
+		if (aiment && viseditct->curstate.movetype == 12)
+		{
+			cl_entity_t* ent = &cl_entities[aiment];
+			VectorCopy(ent->origin, viseditct->origin);
+		}
+	}
+
+	ClientDLL_CreateEntities();
+
+	CL_TempEntUpdate();
+	if (g_pcls.spectator)
+	{
+		r_oldviewleaf = 0;
+		R_MarkLeaves();
+	}
+
+	CL_FireEvents();
+}
+
+void CL_TempEntUpdate()
+{
+	NOT_IMPLEMENTED;
+}
+
+void CL_LinkPlayers()
+{
+	NOT_IMPLEMENTED;
+}
+
+void CL_LinkPacketEntities()
+{
+	NOT_IMPLEMENTED;
+}
+
+void CL_FireEvents()
+{
+	NOT_IMPLEMENTED;
+}
+
+long double CL_LerpPoint()
+{
+	NOT_IMPLEMENTED;
+	return 0;
+}

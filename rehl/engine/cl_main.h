@@ -81,3 +81,4 @@ void CL_SignonReply(void);
 qboolean CL_PrecacheResources(void);
 void CL_ReadPackets(void);
 void CL_Move(void);
+void CL_CheckForResend(void);

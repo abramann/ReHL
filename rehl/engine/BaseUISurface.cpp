@@ -170,18 +170,20 @@ static void CheckModState()
 		}
 	};
 
-	helper(KMOD_LSHIFT, vgui2::KEY_LSHIFT);
-	helper(KMOD_LALT, vgui2::KEY_LALT);
-	helper(KMOD_LCTRL, vgui2::KEY_LCONTROL);
+	helper(KMOD_LSHIFT, vgui::KEY_LSHIFT);
+	helper(KMOD_LALT, vgui::KEY_LALT);
+	helper(KMOD_LCTRL, vgui::KEY_LCONTROL);
+
+	CHECK_REQUIRED;
 
 	// TODO: shouldn't this be KEY_RSHIFT? - Solokiller
-	helper(KMOD_RSHIFT, vgui2::KEY_LSHIFT);
-	helper(KMOD_RALT, vgui2::KEY_RALT);
-	helper(KMOD_RCTRL, vgui2::KEY_RCONTROL);
+	helper(KMOD_RSHIFT, vgui::KEY_LSHIFT);
+	helper(KMOD_RALT, vgui::KEY_RALT);
+	helper(KMOD_RCTRL, vgui::KEY_RCONTROL);
 
-	helper(KMOD_CAPS, vgui2::KEY_CAPSLOCK);
-	helper(KMOD_LGUI, vgui2::KEY_LWIN);
-	helper(KMOD_RGUI, vgui2::KEY_RWIN);
+	helper(KMOD_CAPS, vgui::KEY_CAPSLOCK);
+	helper(KMOD_LGUI, vgui::KEY_LWIN);
+	helper(KMOD_RGUI, vgui::KEY_RWIN);
 
 	s_lastModifierCode = state;
 }
@@ -265,15 +267,15 @@ void BaseUISurface::AppHandler(void* event, void* userData)
 
 	case SDL_KEYUP:
 	{
-		g_InputInternal->InternalKeyCodeReleased(KeyCode_VirtualKeyToVGUI(ev.key.keysym.sym));
+		g_InputInternal->InternalKeyCodeReleased(vgui2::KeyCode_VirtualKeyToVGUI(ev.key.keysym.sym));
 		CheckModState();
 		break;
 	}
 
 	case SDL_KEYDOWN:
 	{
-		g_InputInternal->InternalKeyCodePressed(KeyCode_VirtualKeyToVGUI(ev.key.keysym.sym));
-		g_InputInternal->InternalKeyCodeTyped(KeyCode_VirtualKeyToVGUI(ev.key.keysym.sym));
+		g_InputInternal->InternalKeyCodePressed(vgui2::KeyCode_VirtualKeyToVGUI(ev.key.keysym.sym));
+		g_InputInternal->InternalKeyCodeTyped(vgui2::KeyCode_VirtualKeyToVGUI(ev.key.keysym.sym));
 		CheckModState();
 		break;
 	}

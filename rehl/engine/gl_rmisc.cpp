@@ -136,6 +136,7 @@ void R_Init()
 
 	R_InitParticles();
 	R_InitParticleTexture();
+
 	R_UploadEmptyTex();
 	for (int i = 0; i < 16; i++)
 		playertextures[i] = GL_GenTexture();
@@ -207,13 +208,13 @@ void R_InitParticleTexture()
 
 void R_UploadEmptyTex()
 {
-	char pPal[768];
+	uchar pPal[768];
 
 	Q_memset(pPal, 0, 768);
 
-	pPal[765] = -1;
+	pPal[765] = 255;
 	pPal[766] = 0;
-	pPal[767] = -1;
+	pPal[767] = 255;
 
 	int width = r_notexture_mip->width;
 	int height = r_notexture_mip->height;

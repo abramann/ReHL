@@ -115,3 +115,4 @@ qboolean Host_IsServerActive(void);
 void Host_Version(void);
 int Host_Init(quakeparms_t *parms);
 void Host_Shutdown(void);
+int Host_GetMaxClients();

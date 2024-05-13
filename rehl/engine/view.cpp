@@ -3,10 +3,16 @@
 screenshake_t gVShake;
 
 void BuildGammaTable(float g);
+void FilterLightParams();
 
 int lightgammatable[1024];
 int lineargammatable[1024];
 int screengammatable[1024];
+
+float oldgammavalue_25911;
+float oldlightgamma_25912;
+float oldtexgamma_25913;
+float oldbrightness_25914;
 
 vec3_t r_soundOrigin;
 vec3_t r_playerViewportAngles;
@@ -19,6 +25,10 @@ cvar_t v_texgamma = { "texgamma", "2.0" };
 cvar_t v_brightness = { "brightness", "0.0", FCVAR_ARCHIVE };
 cvar_t v_lambert = { "lambert", "1.5" };
 cvar_t v_direct = { "direct", "0.9" };
+
+float v_blend[4];
+
+uchar ramps[3][256];
 
 void V_Init()
 {
@@ -35,8 +45,27 @@ void V_Init()
 
 bool V_CheckGamma()
 {
-	// TODO: implement - Solokiller
-	return false;
+	FilterLightParams();
+	if (v_gamma.value == oldgammavalue_25911
+		&& v_lightgamma.value == oldlightgamma_25912
+		&& v_texgamma.value == oldtexgamma_25913)
+	{
+		if (v_brightness.value == oldbrightness_25914)
+			return false;
+	}
+
+	BuildGammaTable(v_gamma.value);
+
+	oldgammavalue_25911 = v_gamma.value;
+	oldlightgamma_25912 = v_lightgamma.value;
+	oldtexgamma_25913 = v_texgamma.value;
+	oldbrightness_25914 = v_brightness.value;
+
+	D_FlushCaches();
+
+	vid.recalc_refdef = 1;
+
+	return true;
 }
 
 void V_CalcShake()
@@ -115,5 +144,80 @@ void BuildGammaTable(float g)
 		float x = k / 1023.0;
 		lineargammatable[k] = pow(x, v_gamma.value) * 1023.0;
 		screengammatable[k] = pow(x, 1.0 / v_gamma.value) * 1023.0f;
+	}
+}
+
+void FilterLightParams()
+{
+	if (g_bIsCStrike)
+	{
+		Cvar_DirectSet(&v_lightgamma, "2.5");
+		Cvar_DirectSet(&v_texgamma, "2.0");
+	}
+	if (Host_GetMaxClients() > 1 && v_brightness.value > 2.0)
+		Cvar_DirectSet(&v_brightness, "2.0");
+
+	if (v_gamma.value < 1.8)
+	{
+		Cvar_DirectSet(&v_gamma, "1.8");
+	}
+	else if (v_gamma.value > 3.0)
+	{
+		Cvar_DirectSet(&v_gamma, "3.0");
+	}
+	if (v_texgamma.value < 1.8)
+	{
+		Cvar_DirectSet(&v_texgamma, "1.8");
+	}
+	else if (v_texgamma.value > 3.0)
+	{
+		Cvar_DirectSet(&v_texgamma, "3.0");
+	}
+	if (v_lightgamma.value >= 1.8)
+	{
+		if (v_lightgamma.value > 3.0)
+			Cvar_DirectSet(&v_lightgamma, "3.0");
+	}
+	if (v_brightness.value > 100)
+	{
+		Cvar_DirectSet(&v_brightness, "100.0");
+	}
+	else if(v_brightness.value < 0)
+	{
+		Cvar_DirectSet(&v_brightness, "0");
+	}
+}
+
+void V_UpdatePalette()
+{
+	FilterLightParams();
+
+	if (v_gamma.value != oldgammavalue_25911
+		|| v_lightgamma.value != oldlightgamma_25912
+		|| v_texgamma.value != oldtexgamma_25913
+		|| v_brightness.value != oldbrightness_25914)
+	{
+		BuildGammaTable(v_gamma.value);
+		
+		oldgammavalue_25911 = v_gamma.value;
+		oldlightgamma_25912 = v_lightgamma.value;
+		oldtexgamma_25913 = v_texgamma.value;
+		oldbrightness_25914 = v_brightness.value;
+
+		D_FlushCaches();
+
+		vid.recalc_refdef = 1;
+
+		v_blend[0] = 0.0;
+		v_blend[1] = 0.0;
+		v_blend[2] = 0.0;
+		v_blend[3] = 0.0;
+
+		for (int i = 0; i < 256; i++)
+		{
+			ramps[0][i] = texgammatable[i];;
+			ramps[1][i] = texgammatable[i];;
+			ramps[2][i] = texgammatable[i];;
+		}
 	}
 }

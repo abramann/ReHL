@@ -110,3 +110,27 @@ void CL_HookEvent(char * name, void(*pfnEvent)(event_args_t *))
 		g_pEventHooks = pNewEvent;
 	}
 }
+
+qboolean CL_RequestMissingResources(void)
+{
+	if (g_pcls.dl.doneregistering || g_pcls.dl.custom == false && g_pcls.state != ca_uninitialized)
+		return false;
+
+	resource_t* p = m1.resourcesneeded.pNext;
+	if (p == &m1.resourcesneeded)
+	{
+		g_pcls.dl.custom = false;
+		g_pcls.dl.doneregistering = true;
+		return false;
+	}
+	else
+	{
+		if ((p->ucFlags & 2) == 0)
+		{
+			CL_MoveToOnHandList(p);
+			return true;
+		}
+	}
+
+	return false;
+}

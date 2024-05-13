@@ -30,8 +30,16 @@
 
 int r_pixbytes = 1;
 
-void D_FlushCaches() { NOT_IMPLEMENTED; }
-void R_SetStackBase() { NOT_IMPLEMENTED; }
+void D_FlushCaches() 
+{ 
+	// Nothing
+}
+
+void R_SetStackBase() 
+{ 
+	// Nothing
+}
+
 
 
 void R_ForceCVars(qboolean multiplayer) { NOT_IMPLEMENTED; }

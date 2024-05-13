@@ -2,13 +2,12 @@
 
 void GLBeginHud()
 {
-	NOT_IMPLEMENTED;
-	/*
-		qglViewport(glx, gly, glwidth, glheight);
+	qglViewport(glx, gly, glwidth, glheight);
 
 	qglMatrixMode(GL_PROJECTION);
 	qglPushMatrix();
 	qglLoadIdentity();
+
 	// TODO: probably should match the max render distance? - Solokiller
 	qglOrtho(0, glwidth, glheight, 0, -99999, 99999);
 
@@ -19,12 +18,10 @@ void GLBeginHud()
 	qglDisable(GL_DEPTH_TEST);
 	qglDisable(GL_CULL_FACE);
 	qglDisable(GL_BLEND);
-
 	qglEnable(GL_ALPHA_TEST);
 	qglColor4f(1, 1, 1, 1);
 
 	VGUI2_ResetCurrentTexture();
-	*/
 }
 
 void GLFinishHud()

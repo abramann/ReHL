@@ -30,9 +30,10 @@ quake_mode_t modes[6] =
 
 unsigned int scaled_25071[524288] = { 0 }; // 
 int g_currentpalette;
+int giTotalTextures = 0;
 
-int gl_filter_max = 2601;
-int gl_filter_min = 2703;
+int gl_filter_max = GL_LINEAR;
+int gl_filter_min = GL_LINEAR_MIPMAP_LINEAR;
 static int texels = 0;
 
 cvar_t gl_ansio = { "gl_ansio", "16" };
@@ -41,7 +42,6 @@ cvar_t gl_picmip = { "gl_picmip", "0", FCVAR_ARCHIVE };
 cvar_t gl_palette_tex = { "gl_palette_tex", "1" };
 cvar_t gl_texturemode = { "gl_texturemode", "GL_LINEAR_MIPMAP_LINEAR", FCVAR_ARCHIVE };
 cvar_t gl_max_size = { "gl_max_size", "256", FCVAR_ARCHIVE };
-cvar_t con_color = { "color", "255 100 30", FCVAR_ARCHIVE };
 cvar_t gl_spriteblend = { "gl_spriteblend", "1", FCVAR_ARCHIVE };
 cvar_t gl_dither = { "gl_dither", "1", FCVAR_ARCHIVE };
 cvarhook_t gl_texturemode_hook = { gl_texturemode_hook_callback };
@@ -232,6 +232,11 @@ void Draw_FillRGBA(int x, int y, int w, int h, int r, int g, int b, int a)
 	qglColor3f(1.0, 1.0, 1.0);
 	qglEnable(GL_TEXTURE_2D);
 	qglDisable(GL_BLEND);
+}
+
+void Draw_TileClear(int x, int y, int w, int h)
+{
+	Draw_FillRGBA(x, y, w, h, 0, 0, 0, 255);
 }
 
 int Draw_Character(int x, int y, int num, unsigned int font)
@@ -590,14 +595,14 @@ int GL_LoadTexture2(char * identifier, GL_TEXTURETYPE textureType, int width, in
 
 	if (!slot)
 	{
-		bool reachedMaxTexures = numgltextures + 1 <= MAX_GLTEXTURES;
+		bool reached_max = numgltextures + 1 <= MAX_GLTEXTURES;
 		slot = &gltextures[numgltextures++];
-		if (!reachedMaxTexures)
+		if (!reached_max)
 			Sys_Error("Texture Overflow: MAX_GLTEXTURES");
 	}
 	if (!slot->texnum)
 	{
-		qglGenTextures(1, (GLuint*)&slot->texnum);
+		slot->texnum = GL_GenTexture();
 	}
 
 	Q_strncpy(slot->identifier, identifier, 63);
@@ -623,7 +628,6 @@ int GL_LoadTexture2(char * identifier, GL_TEXTURETYPE textureType, int width, in
 	int scaled_width;
 	int scaled_height;
 
-
 	if (g_bSupportsNPOTTextures)
 	{
 		scaled_width = width;
@@ -634,18 +638,17 @@ int GL_LoadTexture2(char * identifier, GL_TEXTURETYPE textureType, int width, in
 		ComputeScaledSize(&scaled_width, &scaled_height, width, height);
 	}
 
-	bool scaled = (scaled_width != width && scaled_height != height &&
-		!(scaled_width > 128 || scaled_height > 128) && !mipmap);
 
 	unsigned char* textureData = data;
 
 	unsigned char scaledData[16384] = { 0 };
 
-	if (scaled)
+	if (scaled_width != width && scaled_height != height &&
+		scaled_width <= 128 && scaled_height < 128 && !mipmap)
 	{
 		if (fs_perf_warnings.value != 0.0)
 		{
-			Con_DPrintf("fs_perf_warnings: resampling non-power-of-2 texture %s (%dx%d)", (char)identifier, width, height);
+			Con_DPrintf("fs_perf_warnings: resampling non-power-of-2 texture %s (%dx%d)", identifier, width, height);
 		}
 
 		ApplyScale(data, width, height, scaledData, scaled_width, scaled_height);
@@ -750,6 +753,8 @@ qpic_t * LoadTransPic(char *pszName, qpic_t *ppic)
 
 	GL_Upload32((unsigned int*)pImageData, width, height, false, (int)GLT_DECAL, gl_filter_max);
 
+	CHECK_REQUIRED;
+
 	 *(DWORD*)pNewPic->data = gltextures[numgltextures].texnum;
 	Mem_Free(pImageData);
 	return pNewPic;
@@ -767,31 +772,45 @@ void GL_Upload32(unsigned int *data, int width, int height, qboolean mipmap, int
 	int size = width * height;
 
 	if (iType != GLT_HUDSPRITE)
-	{
 		giTotalTexBytes += 2 * size;
+	else
+		giTotalTexBytes += size;
+
+	giTotalTextures++;
+
+	int scaled_width;
+	int scaled_height;
+
+	float blend = gl_spriteblend.value;
+	if (blend == 0.0 || iType != GLT_STUDIO && iType != GLT_DECAL && iType != GLT_WORLD || size <= 0)
+	{
 	}
 	else
 	{
-		giTotalTexBytes += size;
-	}
-
-	static int giTotalTextures = 0;
-	giTotalTextures++;
-	float blend = gl_spriteblend.value;
-	if (blend != 0.0 || iType != GLT_STUDIO && iType != GLT_DECAL && iType != GLT_WORLD || size <= 0)
-	{
-		for (unsigned int i = 0, *wide = (unsigned int*)data; i < size; i++, wide++)
+		int size = width * height;
+		for (int i = 0; i < size; i++)
 		{
-			if (!*wide)
+			if (data[i] == 0)
 			{
-				BoxFilter3x3((unsigned char*)wide, (unsigned char*)data, width, height, i % width, i / width);
+				i++;
+				BoxFilter3x3((uchar*)&data[i], (uchar*)data, width, height, i % width, i / width);
+			}
+			else
+			{
+				data[i]++;
 			}
 		}
 	}
-	int scaled_width;
-	int scaled_height;
-	ComputeScaledSize(&scaled_width, &scaled_height, width, height);
 
+	if (g_bSupportsNPOTTextures)
+	{
+		scaled_width = width;
+		scaled_height = height;
+	}
+	else
+	{
+		ComputeScaledSize(&scaled_width, &scaled_height, width, height);
+	}
 	if (scaled_width * scaled_height > MAX_TEXELS)
 	{
 		Sys_Error("GL_LoadTexture: too big");
@@ -827,68 +846,54 @@ void GL_Upload32(unsigned int *data, int width, int height, qboolean mipmap, int
 	}
 
 	bool not_scaled = scaled_width == width && scaled_height == height;
-	if (!mipmap)
-	{
-		if (not_scaled)
-		{
-			GL_ResampleTexture(data, width, height, scaled_25071, scaled_width, scaled_height);
-			texels += scaled_height * scaled_width;
-			qglTexImage2D(GL_TEXTURE_2D, 0, iComponent, scaled_width, scaled_height, 0, iFormat, GL_UNSIGNED_BYTE, scaled_25071);
-		}
-
-		qglTexImage2D(GL_TEXTURE_2D, 0, iComponent, scaled_width, scaled_height, 0, iFormat, GL_UNSIGNED_BYTE, data);
-		qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, gl_filter_min);
-		qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, gl_filter_max);
-		qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, gl_ansio.value);
-		return;
-	}
-
 	if (not_scaled)
 	{
-		if (iType != 2)
+		if (!mipmap)
+			qglTexImage2D(GL_TEXTURE_2D, 0, iComponent, width, height, 0, iFormat, GL_UNSIGNED_BYTE, data);
+		else
 		{
-			size *= 4;
+			if (iType != GLT_HUDSPRITE)
+				size *= 4;
+
+			Q_memcpy(scaled_25071, data, size);
+			::texels += scaled_height * scaled_width;
+			qglTexImage2D(GL_TEXTURE_2D, 0, iComponent, scaled_width, scaled_height, 0, iFormat, GL_UNSIGNED_BYTE, scaled_25071);
 		}
-
-		Q_memcpy(scaled_25071, data, size);
-
-		DebugBreak(); 
-		// It crashes at this call when calling from R_UploadEmptyTex
-
-		qglTexImage2D(GL_TEXTURE_2D, 0, iComponent, width, height, 0, iFormat, GL_UNSIGNED_BYTE, scaled_25071);
-	}
-	else if (iType == GLT_HUDSPRITE)
-	{
-		GL_ResampleAlphaTexture((unsigned char*)data, width, height, (unsigned char*)scaled_25071, scaled_width, scaled_height);
 	}
 	else
 	{
-		GL_ResampleTexture(data, width, height, scaled_25071, scaled_width, scaled_height);
+		if (iType == GLT_HUDSPRITE)
+			GL_ResampleAlphaTexture((uchar*)data, width, height, (uchar*)scaled_25071, scaled_width, scaled_height);
+		else
+			GL_ResampleTexture(data, width, height, scaled_25071, scaled_width, scaled_height);
+
+		::texels += scaled_height * scaled_width;
+		qglTexImage2D(GL_TEXTURE_2D, 0, iComponent, scaled_width, scaled_height, 0, iFormat, GL_UNSIGNED_BYTE, scaled_25071);
 	}
-	texels += scaled_height * scaled_width;
-	qglTexImage2D(GL_TEXTURE_2D, 0, iComponent, scaled_width, scaled_height, 0, iFormat, GL_UNSIGNED_BYTE, scaled_25071);
-	
 
-	for (int i = 1; scaled_width > 1 || scaled_height > 1; i++)
+	if (mipmap)
 	{
-		Call_Function<void, unsigned int*, int, int>(0x3E0F0, scaled_25071, scaled_width, scaled_height);
+		for (int i = 1; scaled_width > 1 || scaled_height > 1; i++)
+		{
+			Call_Function<void, unsigned int*, int, int>(0x3E0F0, scaled_25071, scaled_width, scaled_height);
 
-		scaled_width /= 2;
-		scaled_height /= 2;
-		if (scaled_width < 1)
-			scaled_width = 1;
-		if (scaled_height < 1)
-			scaled_height = 1;
+			scaled_width /= 2;
+			scaled_height /= 2;
+			if (scaled_width < 1)
+				scaled_width = 1;
+			if (scaled_height < 1)
+				scaled_height = 1;
 
-		texels += scaled_height * scaled_width;
-		qglTexImage2D(GL_TEXTURE_2D, i, iComponent, scaled_width, scaled_height, 0, iFormat, GL_UNSIGNED_BYTE, scaled_25071);
+			texels += scaled_height * scaled_width;
+			qglTexImage2D(GL_TEXTURE_2D, i, iComponent, scaled_width, scaled_height, 0, iFormat, GL_UNSIGNED_BYTE, scaled_25071);
+		}
 	}
 
 	qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, gl_filter_min);
 	qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, gl_filter_max);
-	qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY, gl_ansio.value);
+	qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, gl_ansio.value);
 }
-
+#include "FF.c.h"
 void GL_Upload16(unsigned char *data, int width, int height, qboolean mipmap, int iType, unsigned char *pPal, int filter)
 {
 	int count = height * width;
@@ -928,6 +933,9 @@ void GL_Upload16(unsigned char *data, int width, int height, qboolean mipmap, in
 			for (int i = 0; i < count + 3; i += 4)
 			{
 				trans_25102[i] = pPal[3 * data[i]] | 0xFF000000;
+				trans_25102[i + 1] = pPal[3 * data[i + 1]] | 0xFF000000;
+				trans_25102[i + 2] = pPal[3 * data[i + 2]] | 0xFF000000;
+				trans_25102[i + 3] = pPal[3 * data[i + 3]] | 0xFF000000;
 			}
 		}
 		else if (count)

@@ -746,7 +746,7 @@ int RunListenServer(void* instance, char* basedir, char* cmdline, char* postRest
 		int(__cdecl* GameRunListenServer)(void*, char*, char*, char*, CreateInterfaceFn, CreateInterfaceFn) = (int(__cdecl*)(void*, char*, char*, char*, CreateInterfaceFn, CreateInterfaceFn))(0xAC680 + (uintptr_t)hGameHW);
 		return GameRunListenServer(instance, basedir, cmdline, postRestartCmdLineArgs, launcherFactory, filesystemFactory);
 	}
-
+	
 	static char OrigCmd[1024];
 	g_pPostRestartCmdLineArgs = postRestartCmdLineArgs;
 	strcpy(OrigCmd, cmdline);

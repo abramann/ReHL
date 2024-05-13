@@ -42,7 +42,20 @@ bool CL_AddEntityToPhysList(int entIndex)
 
 void CL_MoveSpectatorCamera()
 {
-	NOT_IMPLEMENTED;
+	if (g_pcls.state != ca_active && !g_pcls.spectator)
+		return;
+
+	double time = m1.time;
+
+	CL_SetUpPlayerPrediction(false, true);
+	CL_SetSolidPlayers(m1.playernum);
+	CL_RunUsercmd(&spectatorState, &spectatorState, &m1.cmd, true, &time, 100.0 * time);
+
+	VectorCopy(spectatorState.client.velocity, m1.simvel);
+	VectorCopy(spectatorState.playerstate.origin, m1.simorg);
+	VectorCopy(spectatorState.client.punchangle, m1.punchangle);
+	VectorCopy(spectatorState.client.velocity, m1.simvel);
+	VectorCopy(spectatorState.client.view_ofs, m1.viewheight);
 }
 
 void CL_SetDevOverView(refdef_t* refdef)

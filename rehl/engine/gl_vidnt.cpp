@@ -11,9 +11,12 @@
 void CheckTextureExtensions();
 void CheckMultiTextureExtensions();
 void CheckATINPatchExtensions();
+void GLimp_LogNewFrame();
 
 cvar_t gl_ztrick = { "gl_ztrick", "0" };
 cvar_t gl_vsync = { "gl_vsync", "1", FCVAR_ARCHIVE };
+
+extern cvar_t  gl_clear;
 
 rect_t window_rect = {};
 
@@ -28,8 +31,6 @@ int TEXTURE2_SGIS = GL_MAX_ASYNC_DRAW_PIXELS_SGIX;
 
 int gl_mtexable = 0;
 
-SDL_Window* pmainwindow = nullptr;
-
 struct FBO_Container_t
 {
 	GLuint s_hBackBufferFBO;
@@ -37,6 +38,9 @@ struct FBO_Container_t
 	GLuint s_hBackBufferDB;
 	GLuint s_hBackBufferTex;
 };
+
+SDL_Window* pmainwindow = nullptr;
+qboolean vsync = false;
 
 static bool gfMiniDriver = false;
 static bool s_bEnforceAspect = false;
@@ -76,7 +80,7 @@ float GetYMouseAspectRatioAdjustment()
 }
 
 void GL_Init()
-{
+{	
 	gl_vendor = reinterpret_cast<const char*>(qglGetString(GL_VENDOR));
 	gl_renderer = reinterpret_cast<const char*>(qglGetString(GL_RENDERER));
 	gl_version = reinterpret_cast<const char*>(qglGetString(GL_VERSION));
@@ -143,12 +147,51 @@ void GL_Init()
 	qglBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	qglTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
 
+
 	GL_Config();
 }
 
 void GL_BeginRendering(int* x, int* y, int* width, int* height)
 {
-	NOT_IMPLEMENTED;
+	*y = 0;
+	*x = 0;
+	if (VideoMode_IsWindowed())
+	{
+		*width = window_rect.right - window_rect.left;
+		*height = window_rect.bottom - window_rect.top;
+	}
+	else
+	{
+		VideoMode_GetCurrentVideoMode(width, height, 0);
+	}
+
+	vid.conwidth = *width;
+	vid.width = *width;;
+	vid.conheight = *height;
+	vid.height = *height;
+
+	qboolean glvsync = (gl_vsync.value > 0);
+
+	if (glvsync != vsync)
+	{
+		SDL_GL_SetSwapInterval(glvsync);
+		vsync = glvsync;
+	}
+	if (s_BackBufferFBO.s_hBackBufferFBO)
+	{
+		if (s_MSAAFBO.s_hBackBufferFBO)
+			qglBindFramebufferEXT(GL_DRAW_FRAMEBUFFER_NV, s_MSAAFBO.s_hBackBufferFBO);
+		else
+			qglBindFramebufferEXT(GL_DRAW_FRAMEBUFFER_NV, s_BackBufferFBO.s_hBackBufferFBO);
+
+		glClearColor(0.0, 0.0, 0.0, 1.0);
+		if (gl_clear.value == 0.0f)
+			qglClear(GL_GLYPH_HAS_KERNING_BIT_NV);
+		else
+			glClear(0x4100u);
+	}
+
+	GLimp_LogNewFrame();
 }
 
 void GL_EndRendering()
@@ -773,3 +816,11 @@ void CheckATINPatchExtensions()
 {
 	atismoothing = false;
 }
+
+/*void GLimp_LogNewFrame()
+{
+	FileHandle_t file = glw_state.log_fp;
+	if (file)
+		FS_FPrintf(file, "*** R_BeginFrame ***\n");
+}
+*/

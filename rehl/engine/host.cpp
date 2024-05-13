@@ -845,7 +845,7 @@ void Host_UpdateScreen(void)
 		SCR_UpdateScreen();
 		if (cl_inmovie)
 		{
-			if (*(float *)&scr_con_current == 0.0f)
+			if (scr_con_current == 0.0f)
 				VID_WriteBuffer(NULL);
 		}
 	}
@@ -915,13 +915,13 @@ void _Host_Frame(float time)
 	CL_SetLastUpdate();
 	CL_ReadPackets();
 	CL_RedoPrediction();
-	CL_VoiceIdle();
+	//CL_VoiceIdle();
 	CL_EmitEntities();
 	CL_CheckForResend();
 
 	while (CL_RequestMissingResources())
 		;
-	CL_UpdateSoundFade();
+	//CL_UpdateSoundFade();
 	Host_CheckConnectionFailure();
 	//CL_HTTPUpdate();
 	Steam_ClientRunFrame();
@@ -931,7 +931,7 @@ void _Host_Frame(float time)
 	Host_UpdateScreen();
 	host_times[4] = Sys_FloatTime();
 	CL_DecayLights();
-	Host_UpdateSounds();
+	//Host_UpdateSounds();
 	host_times[0] = host_times[5];
 	host_times[5] = Sys_FloatTime();
 
@@ -1296,6 +1296,13 @@ void Host_Shutdown(void)
 	realtime = 0.0f;
 	g_psv.time = 0.0f;
 	g_pcl.time = 0.0f;
+}
+
+int Host_GetMaxClients()
+{
+	if (g_psv.active)
+		return g_psvs.maxclients;
+	return m1.maxclients;
 }
 
 void sys_timescale_hook_callback(cvar_t *cvar)

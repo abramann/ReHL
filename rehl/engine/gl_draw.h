@@ -40,6 +40,8 @@ void Draw_Init();
 
 void Draw_FillRGBA(int x, int y, int w, int h, int r, int g, int b, int a);
 
+void Draw_TileClear(int x, int y, int w, int h);
+
 int Draw_Character(int x, int y, int num, unsigned int font);
 
 int Draw_MessageCharacterAdd(int x, int y, int num, int rr, int gg, int bb, unsigned int font);

@@ -25,11 +25,11 @@ namespace vgui2
 }
 
 // gameui
-static IGameUI* staticGameUIFuncs = nullptr;
+IGameUI* staticGameUIFuncs = nullptr;
 static IGameConsole* staticGameConsole = nullptr;
 static ICareerUI* staticCareerUI = nullptr;
 
-static class IClientVGUI* staticClient = nullptr;
+class IClientVGUI* staticClient = nullptr;
 
 // hw
 static BaseUISurface* staticSurface = nullptr;
@@ -139,11 +139,11 @@ void CBaseUI::Start(cl_enginefunc_t* engineFuncs, int interfaceVersion)
 
 	staticSurface = (BaseUISurface*)this->m_FactoryList[0](VGUI_SURFACE_INTERFACE_VERSION, 0);
 	vgui2::g_pSurface = staticSurface;
-//#ifdef UNRESOLVED_ISSUE
-//	IHTMLChromeController* pHTMLController = nullptr;
-//#else
+#ifdef UNRESOLVED_ISSUE
+	IHTMLChromeController* pHTMLController = nullptr;
+#else
 	IHTMLChromeController* pHTMLController = (IHTMLChromeController *)m_FactoryList[3](CHROMEHTML_INTERFACE_VERSION, 0);
-//#endif
+#endif
 	IEngineSurface* pEngineSurface = (IEngineSurface *)m_FactoryList[0](ENGINESURFACE_INTERFACE_VERSION, 0);
 
 	staticSurface->Init(staticPanel->GetVPanel(), pEngineSurface, pHTMLController);
@@ -285,6 +285,8 @@ int CBaseUI::Key_Event(int down, int keynum, const char* pszCurrentBinding)
 
 void CBaseUI::CallEngineSurfaceAppHandler(void* pEvent, void* pUserData)
 {
+	if (staticSurface)
+		staticSurface->AppHandler(pEvent, pUserData);
 }
 
 void CBaseUI::Paint(int x, int y, int right, int bottom)

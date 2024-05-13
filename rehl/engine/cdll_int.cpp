@@ -289,12 +289,61 @@ void ClientDLL_HudVidInit()
 
 void ClientDLL_UpdateClientData()
 {
-	NOT_IMPLEMENTED;
+	cl_entity_t *entity; // eax
+
+	if (g_pcls.state == ca_active && g_pcls.demoplayback == false)
+	{
+		client_data_t oldcdat;
+
+		client_data_t cdat;
+	
+
+		Q_memset(&cdat, 0, 32);
+
+		cdat.viewangles[0] = m1.viewangles[0];
+		cdat.viewangles[1] = m1.viewangles[1];
+		cdat.viewangles[2] = m1.viewangles[2];
+
+		entity = &cl_entities[m1.viewentity];
+
+		cdat.origin[0] = entity->origin[0];
+		cdat.origin[1] = entity->origin[1];
+		cdat.origin[2] = entity->origin[2];
+
+		cdat.fov = scr_fov_value;
+		cdat.iWeaponBits = m1.weapons;
+
+		qboolean demorecording = g_pcls.demorecording;
+
+		if (demorecording)
+		{
+			for (int i = 0; i < 8; ++i)
+				oldcdat.origin[i] = cdat.origin[i];
+		}
+		if (cl_funcs.pHudUpdateClientDataFunc)
+		{
+			float fill = m1.time;
+			if (cl_funcs.pHudUpdateClientDataFunc(&cdat, fill))
+			{
+				m1.viewangles[0] = cdat.viewangles[0];
+				m1.viewangles[1] = cdat.viewangles[1];
+				m1.viewangles[2] = cdat.viewangles[2];
+
+				scr_fov_value = cdat.fov;
+			}
+		}
+		if (demorecording)
+			CL_WriteDLLUpdate(&oldcdat);
+	}
 }
 
 void ClientDLL_Frame(double time)
 {
-	NOT_IMPLEMENTED;
+	if (fClientLoaded)
+	{
+		if (cl_funcs.pHudFrame)
+			cl_funcs.pHudFrame(0);
+	}
 }
 
 void ClientDLL_HudRedraw(int intermission)
@@ -388,7 +437,11 @@ kbutton_t* ClientDLL_FindKey(const char* name)
 
 void ClientDLL_CAM_Think()
 {
-	NOT_IMPLEMENTED;
+	if (g_pcls.state > ca_disconnected)
+	{
+		if (cl_funcs.pCamThink)
+			cl_funcs.pCamThink();
+	}
 }
 
 void ClientDLL_IN_Accumulate()

@@ -40,19 +40,14 @@ qboolean cl_inmovie;
 cvar_t console = { "console", "1.0", FCVAR_ARCHIVE, 0.0f, NULL };
 
 void CL_RecordHUDCommand(const char *cmdname) { NOT_IMPLEMENTED; }
-void CL_CheckForResend(void) { NOT_IMPLEMENTED; }
 qboolean CL_CheckFile(sizebuf_t *msg, char *filename) { return 1; }
 void CL_DecayLights(void) { NOT_IMPLEMENTED; }
-void CL_EmitEntities(void) { NOT_IMPLEMENTED; }
 void CL_InitClosest(void) { NOT_IMPLEMENTED; }
-void CL_PredictMove(qboolean repredicting) { NOT_IMPLEMENTED; }
 void CL_PrintLogos(void) { NOT_IMPLEMENTED; }
-qboolean CL_RequestMissingResources(void) { return 0; }
 void CL_UpdateSoundFade(void) { NOT_IMPLEMENTED; }
 void CL_AdjustClock(void) { NOT_IMPLEMENTED; }
 void Con_Shutdown(void) { NOT_IMPLEMENTED; }
 int DispatchDirectUserMsg(const char *pszName, int iSize, void *pBuf) { NOT_IMPLEMENTED; return 0; }
-void CL_RedoPrediction(void) { NOT_IMPLEMENTED; }
 void EXT_FUNC Con_NPrintf(int idx, const char *fmt, ...) { NOT_IMPLEMENTED; }
 void Sequence_OnLevelLoad(const char* mapName) { NOT_IMPLEMENTED; }
 void CL_WriteMessageHistory(int starting_count, int cmd) { NOT_IMPLEMENTED; }

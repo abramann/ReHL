@@ -100,6 +100,8 @@ int g_FPUCW_Mask_Round_Up = 0;
 
 FileFindHandle_t g_hfind = FILESYSTEM_INVALID_FIND_HANDLE;
 
+const char* file = "qconsole";
+
 enginefuncs_t g_engfuncsExportedToDlls = {
 	PF_precache_model_I, PF_precache_sound_I,
 	PF_setmodel_I, PF_modelindex,
@@ -1291,6 +1293,37 @@ void Con_Debug_f(void)
 
 void Con_Init(void)
 {
+	void *v0; // eax
+
+	con_debuglog = COM_CheckParm("-condebug");
+	if (con_debuglog)
+		FS_RemoveFile(file, 0);
+
+	con_text = (char *)Hunk_AllocName(0x4000, "context");
+	Q_memset(con_text, 32, 0x4000);
+	con_linewidth = -1;
+	con_times = (float *)Mem_Malloc(4 * con_num_times);
+	con_notifypos = Mem_Malloc(4 * con_num_times);
+	if (!con_times || !con_notifypos)
+		Sys_Error("Couldn't allocate space for %i console overlays.", con_num_times);
+
+	Con_CheckResize();
+	Con_DPrintf("Console initialized.\n");
+	Cvar_RegisterVariable(&con_fastmode);
+
+	Cvar_RegisterVariable(&con_notifytime);
+	Cvar_RegisterVariable(&con_color);
+	Cvar_RegisterVariable(&con_shifttoggleconsole);
+	Cvar_RegisterVariable(&con_mono);
+	Cmd_AddCommand("contimes", Con_SetTimes_f);
+	Cmd_AddCommand("toggleconsole", Con_ToggleConsole_f);
+	Cmd_AddCommand("hideconsole", Con_HideConsole_f);
+	Cmd_AddCommand("messagemode", Con_MessageMode_f);
+	Cmd_AddCommand("messagemode2", Con_MessageMode2_f);
+	Cmd_AddCommand((char *)"clear", Con_Clear_f);
+	Cmd_AddCommand((char *)"condebug", Con_Debug_f);
+	con_initialized = true;
+
 	con_debuglog = COM_CheckParm("-condebug");
 	Con_DPrintf("Console initialized.\n");
 	Cmd_AddCommand("condebug", Con_Debug_f);

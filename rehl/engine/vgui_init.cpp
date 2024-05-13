@@ -1,7 +1,7 @@
 #include "precompiled.h"
 #include "../FakeVGUI/App.h"
 #include "../FakeVGUI/Panel.h"
-
+#include "GameUI.h"
 
 #define BMP_TYPE 0x4D42
 
@@ -64,8 +64,7 @@ void VGui_Shutdown()
 {
 	VGuiWrap_Shutdown();
 	VGuiWrap2_Shutdown();
-	NOT_IMPLEMENTED;
-	//EngineSurface::freeEngineSurface();
+	EngineSurface::freeEngineSurface();
 }
 
 void VGui_CallEngineSurfaceAppHandler(void* event, void* userData)
@@ -240,7 +239,8 @@ void VGuiWrap_Shutdown()
 
 bool VGuiWrap_CallEngineSurfaceAppHandler(void * event, void * userData)
 {
-	NOT_IMPLEMENTED;
+	if (staticEngineSurface)
+		staticEngineSurface->AppHandler(event, userData);
 
 	return false;
 }
@@ -303,20 +303,23 @@ void VGuiWrap2_Shutdown()
 
 bool VGuiWrap2_CallEngineSurfaceAppHandler(void * event, void * userData)
 {
-	NOT_IMPLEMENTED;
+	if (staticUIFuncs)
+		staticUIFuncs->CallEngineSurfaceAppHandler(event, userData);
 	return false;
 }
 
 bool VGuiWrap2_IsGameUIVisible()
 {
-	NOT_IMPLEMENTED;
+	if (staticGameUIFuncs)
+		staticGameUIFuncs->IsGameUIActive();
 	return false;
 }
 
 bool VGuiWrap2_UseVGUI1()
 {
-	NOT_IMPLEMENTED;
-	return false;
+	//if (staticClient)
+	//	return (*(unsigned __int8(__cdecl **)(IClientVGUI *))(*(_DWORD *)staticClient + 20))(staticClient);
+	return true;
 }
 
 vgui::Panel * VGuiWrap2_GetPanel()

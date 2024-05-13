@@ -66,4 +66,6 @@ public:
 
 #define GAMEUI_INTERFACE_VERSION "GameUI007"
 
+extern IGameUI* staticGameUIFuncs;
+
 #endif // IGAMEUI_H

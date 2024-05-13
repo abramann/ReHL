@@ -4,7 +4,7 @@
 int pushed;
 int oldphysent;
 int oldvisent;
-int cl_correction_time;
+double cl_correction_time;
 cvar_t cl_showerror = { "cl_showerror", "0" };
 cvar_t cl_smoothtime = { "cl_smoothtime", "0" };
 int g_lastupdate_sequence = INT_MAX;

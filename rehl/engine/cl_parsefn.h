@@ -21,3 +21,5 @@ void CL_InitEventSystem();
 pfnUserMsgHook HookServerMsg(const char* pszName, pfnUserMsgHook pfn);
 
 void CL_HookEvent(char* name, void(*pfnEvent)(event_args_t*));
+
+qboolean CL_RequestMissingResources(void);

@@ -88,19 +88,18 @@ bool CEngine::Load(bool dedicated, const char *basedir, const char *cmdline)
 	if (Sys_InitGame(cmdline, basedir, game->GetMainWindowAddress(), dedicated))
 	{
 		success = true;
-#ifdef _WIN32
+
 		ForceReloadProfile();
-#endif // _WIN32
 	}
 	return success;
 }
 
 int CEngine::Frame()
 {
-#ifndef SWDS
+#ifndef SWDS && defined(SOUND)
 	NOT_IMPLEMENTED;
 	//(*(void(**)(void))(*(_DWORD *)cdaudio + 24))();
-#endif // SWDS
+#endif
 
 	if (!game->IsActiveApp())
 		game->SleepUntilInput(m_nDLLState != DLL_PAUSED ? MINIMIZED_SLEEP : NOT_FOCUS_SLEEP);
@@ -168,6 +167,18 @@ double CEngine::GetCurTime()
 
 void CEngine::TrapKey_Event(int key, bool down)
 {
+
+	if (m_bTrapMode && (down = 0, down))
+	{
+		m_bTrapMode = 0;
+		m_bDoneTrapping = 1;
+		m_nTrapKey = key;
+		m_nTrapButtons = 0;
+	}
+	else
+	{
+		Key_Event(key, down);
+	}
 }
 
 void CEngine::TrapMouse_Event(int buttons, bool down)

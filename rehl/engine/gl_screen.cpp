@@ -13,10 +13,13 @@ int scr_fullupdate = 0;
 
 float scr_centertime_start = 0;
 
+float gWorldToScreen[16] = { 0 };
 char scr_centerstring[1024] = {};
 
 float scr_con_current = 0;
 float scr_fov_value = 90;
+
+bool recursionGuard = false;
 
 bool scr_copytop = false;
 bool scr_copyeverything = false;
@@ -28,6 +31,7 @@ int glx = 0;
 int gly = 0;
 int glwidth = 0;
 int glheight = 0;
+int giHudLevel = 1;
 
 qpic_t* scr_paused = nullptr;
 
@@ -44,10 +48,13 @@ cvar_t scr_connectmsg = { "scr_connectmsg", "0" };
 cvar_t scr_connectmsg1 = { "scr_connectmsg1", "0" };
 cvar_t scr_connectmsg2 = { "scr_connectmsg2", "0" };
 
+extern cvar_t crosshair;
+
 void SCR_SizeUp_f();
 void SCR_SizeDown_f();
 void SCR_ScreenShot_f();
 qpic_t* Draw_PicFromWad(char *name);
+void SCR_TileClear();
 
 void Draw_ConsoleBackground(int lines)
 {
@@ -320,8 +327,7 @@ void SCR_DrawPause()
 
 void SCR_SetUpToDrawConsole()
 {
-	NOT_IMPLEMENTED;
-	//Con_CheckResize();
+	Con_CheckResize();
 }
 
 #ifdef REGS_DEBUG
@@ -341,17 +347,13 @@ void ReGS_DrawDebugInfo()
 
 void SCR_UpdateScreen()
 {
-	NOT_IMPLEMENTED;
-
-	static bool recursionGuard = false;
-
 	if (recursionGuard)
 		return;
 
 	recursionGuard = true;
 
-	//V_CheckGamma();
-
+	V_CheckGamma();
+	
 	if (!gfBackground && !scr_skipupdate)
 	{
 		if (scr_skiponeupdate)
@@ -374,25 +376,23 @@ void SCR_UpdateScreen()
 					(fCurrentTime - g_LastScreenUpdateTime) > 120)
 				{
 					Con_Printf("load failed.\n");
-					// TODO: implement - Solokiller
-					/*
 					COM_ExplainDisconnection( true, "Connection to server lost during level change." );
 					CL_Disconnect();
-					*/
 				}
 
 				if (g_modfuncs.m_pfnFrameRender1)
 					g_modfuncs.m_pfnFrameRender1();
 
-				// TODO: implement - Solokiller
+				V_UpdatePalette();
 
 				GL_BeginRendering(&glx, &gly, &glwidth, &glheight);
 
-				// TODO: implement - Solokiller
+				if (vid.recalc_refdef)
+					SCR_CalcRefdef();
 
 				SCR_SetUpToDrawConsole();
-
 				GLBeginHud();
+				SCR_TileClear();
 
 				// Most of these cases are now obsolete,
 				// but keep them to maintain the exclusion logic for the working cases - Solokiller
@@ -414,19 +414,17 @@ void SCR_UpdateScreen()
 				}
 				else
 				{
-					// TODO: implement - Solokiller
-					/*
-					GL_Bind( r_notexture_mip->gl_texturenum );
+					GL_Bind(r_notexture_mip->gl_texturenum);
 
-					if( vid.height > scr_con_current )
-					Sbar_Draw();
+					if (vid.height > scr_con_current)
+						Sbar_Draw();
 
-					if( developer.value != 0.0 )
+					//SCR_BeginLoadingPlaque();
+					if (developer.value != 0.0)
 					{
-					GL_Bind( r_notexture_mip->gl_texturenum );
-					Con_DrawNotify();
+						GL_Bind(r_notexture_mip->gl_texturenum);
+						Con_DrawNotify();
 					}
-					*/
 				}
 
 				SCR_ConnectMsg();
@@ -437,7 +435,7 @@ void SCR_UpdateScreen()
 				GLBeginHud();
 
 				NOT_IMPLEMENTED;
-
+			
 				// Draw FPS and net graph
 				//SCR_DrawFPS();
 				//SCR_NetGraph();
@@ -504,6 +502,52 @@ void SCR_EndLoadingPlaque()
 	VGuiWrap2_LoadingFinished("transition", "");
 }
 
+void Sbar_Draw()
+{
+	vec3_t angles;
+	vec3_t forward;
+	vec3_t point;
+	vec3_t screen;
+
+	if (!giHudLevel || vid.height == scr_con_current)
+		return;
+
+	scr_copyeverything = 1;
+	if (crosshair.value != 0.0)
+	{
+		float x = scr_vrect.x + scr_vrect.width / 2.0f;
+		float y = scr_vrect.y + scr_vrect.height / 2.0f;
+
+		VectorAdd(r_refdef.viewangles, m1.crosshairangle, angles);
+		AngleVectors(angles, forward, 0, 0);
+		VectorAdd(r_origin, forward, point);
+
+		ScreenTransform(point, screen);
+
+		int finalx = 0.5 * screen[0] * scr_vrect.width + 0.5 + x;
+		int finaly = 0.5 * screen[1] * scr_vrect.height + 0.5 + y;
+		DrawCrosshair(finalx, finaly);
+	}
+}
+
+int ScreenTransform(vec_t * point, vec_t * screen)
+{
+	screen[0] = gWorldToScreen[0] * point[0] + gWorldToScreen[4] * point[1] + gWorldToScreen[8] * point[2] + gWorldToScreen[12];
+	screen[1] = gWorldToScreen[1] * point[0] + gWorldToScreen[5] * point[1] + gWorldToScreen[9] * point[2] + gWorldToScreen[13];
+
+	float z = gWorldToScreen[3] * point[0] + gWorldToScreen[7] * point[1] + gWorldToScreen[11] * point[2] + gWorldToScreen[15];
+	if (z == 0)
+	{
+		return 1;
+	}
+
+	float depth = 1.0f / z;
+	screen[0] *= depth;
+	screen[1] *= depth;
+
+	return 0;
+}
+
 void SCR_SizeUp_f()
 {
 	NOT_IMPLEMENTED;
@@ -537,4 +581,27 @@ qpic_t* Draw_PicFromWad(char *name)
 	*(DWORD *)pic[1].data = 1065353216;
 	pic[2].width = 1065353216;
 	return pic;
+}
+
+void SCR_TileClear()
+{
+	if (r_refdef.vrect.x > 0)
+	{
+		Draw_TileClear(0, 0, r_refdef.vrect.x, 152);
+		Draw_TileClear(r_refdef.vrect.x + r_refdef.vrect.width, 0, r_refdef.vrect.width - r_refdef.vrect.x + 320, 152);
+	}
+	if (r_refdef.vrect.height <= 151)
+	{
+		Draw_TileClear(r_refdef.vrect.x, 0, r_refdef.vrect.width, r_refdef.vrect.y);
+		Draw_TileClear(
+			r_refdef.vrect.x,
+			r_refdef.vrect.height + r_refdef.vrect.y,
+			r_refdef.vrect.width,
+			152 - (r_refdef.vrect.height + r_refdef.vrect.y));
+	}
+}
+
+void SCR_CalcRefdef()
+{
+	NOT_IMPLEMENTED;
 }

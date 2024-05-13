@@ -31,8 +31,28 @@
 #include "renderer.h"
 
 
+extern cvar_t m_rawinput;
+extern cvar_t cl_mousegrab;
+extern bool s_bCursorVisible;
+
 volatile CGame g_Game;
 IGame *game = (IGame*)&g_Game;
+
+char CSWTCH_79[228] = 
+{
+	'a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z','1','2','3','4',
+	'5','6','7','8','9','0','\r','\x1B','\x7F','\t',' ','-','=','[',']','\\','\0',';','\'','`',',','.','/','\xAF','\x87','\x88',
+	'\x89','\x8A','\x8B','\x8C','\x8D','\x8E','\x8F','\x90','\x91','\x92','\0','\0','\xFF','\x93','\x97','\x96','\x94','\x98','\x95',
+	'\x83','\x82','\x81','\x80','\0','\xAC','\xB0','\xAD','\xAE','\xA9','\xA6','\xA7','\xA8','\xA3','\xA4','\xA5','\xA0','\xA1','\xA2',
+	'\xAA','\xAB','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',
+	'\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',
+	'\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',
+	'\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',
+	'\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\0','\xAB','\0','\0','\0','\x85','\x86','\x84','\xB1','\x85','\x86','\x84',
+	'\xB1',
+};
+
+uint32 mouseCode;
 
 void GetWindowNameFromGameDir(char* output, int outputBufferSize);
 
@@ -173,14 +193,227 @@ bool CGame::CreateGameWindow()
 	return true;
 }
 
-void CGame::SleepUntilInput(int time)
+void CGame::SleepUntilInput(int sleepTime)
 {
-	NOT_IMPLEMENTED_IGNORE;
+#ifdef SWDS
 #ifdef _WIN32
 	Sleep(time * 1000);
 #else // _WIN32
 	sleep(time);
 #endif // _WIN32
+#else
+	int deltaX;
+	int deltaY;
+
+	SDL_Event ev;
+
+	SDL_PumpEvents();
+
+	if (SDL_WaitEventTimeout(&ev, sleepTime) <= 0)
+		return;
+
+	while (true)
+	{
+		if (ev.type < SDL_TEXTINPUT)
+		{
+			if (ev.type == SDL_QUIT)
+			{
+				if (eng->GetState() == 1)
+					eng->SetQuitting(1);
+
+				switch (ev.window.event)
+				{
+				case 1:
+				case 12:
+					AppActivate(true);
+					break;
+
+				case 2:
+				case 13:
+					AppActivate(false);
+					break;
+
+				case 4:
+					CHECK_REQUIRED;
+					if (videomode->IsWindowedMode())
+					{
+						game->SetWindowXY(ev.window.data1, ev.window.data2);
+						videomode->UpdateWindowPosition();
+					}
+					break;
+
+				case 5:
+					game->SetWindowXY(ev.window.data1, ev.window.data2);
+					videomode->UpdateWindowPosition();
+					break;
+
+				case 14:
+					if (eng->GetState() == 1)
+						eng->SetQuitting(1);
+
+					SDL_DestroyWindow(m_hSDLWindow);
+					m_hSDLWindow = nullptr;
+					break;
+
+				default:
+					break;
+				}
+
+			}
+
+			else if (ev.type > SDL_WINDOWEVENT)
+			{
+				char k = '\0';
+
+				switch (ev.type)
+				{
+				case SDL_KEYDOWN:
+					if ((ev.window.data1 - 4) <= 227)
+						k = CSWTCH_79[ev.window.data1 - 4];
+
+					eng->TrapKey_Event(k, true);
+					break;
+
+				case SDL_KEYUP:
+					if (ev.window.data1 - 4 <= 227)
+						k = CSWTCH_79[ev.window.data1 - 4];
+
+					eng->TrapKey_Event(k, false);
+					break;
+
+				default:
+					break;
+				}
+			}
+		}
+	
+		else if (ev.type == SDL_TEXTINPUT)
+		{
+			if (key_dest == key_message)
+			{
+				int strLen = 119 - chat_bufferlen;
+
+				char* editText = &ev.edit.text[strlen(ev.edit.text)];
+
+				if (editText - (char *)&ev.jhat.hat <= 119 - chat_bufferlen)
+					strLen = editText - (char *)&ev.jhat.hat;
+
+				Q_strncpy(&chat_buffer[chat_bufferlen], ev.edit.text, strLen);
+
+				chat_bufferlen += strLen;
+
+				chat_buffer[chat_bufferlen] = '\0';
+			}
+		}
+
+		else if (ev.type > SDL_MOUSEBUTTONUP)
+		{
+			if (ev.type == SDL_MOUSEWHEEL)
+			{
+				eng->TrapKey_Event((*(short*)(&ev.syswm + 10) > 0) + 239, true);
+				eng->TrapKey_Event((*(short*)(&ev.syswm + 10) > 0) + 239, false);
+			}
+		}
+
+		else if (ev.type >= SDL_MOUSEBUTTONDOWN)
+		{
+			switch (ev.edit.text[4])
+			{
+			case 1:
+				if (ev.type == SDL_MOUSEBUTTONDOWN)
+				{
+					mouseCode |= 1;
+				}
+				else
+				{
+					mouseCode &= 0xFFFFFFFE;
+				}
+				break;
+			case 2:
+				if (ev.type == SDL_MOUSEBUTTONDOWN)
+				{
+					mouseCode |= 4;
+				}
+				else
+				{
+					mouseCode &= 0xFFFFFFFB;
+				}
+				break;
+			case 3:
+				if (ev.type == SDL_MOUSEBUTTONDOWN)
+				{
+					mouseCode |= 2;
+				}
+				else
+				{
+					mouseCode &= 0xFFFFFFFD;
+				}
+				break;
+			case 4:
+			case 6:
+			case 8:
+				if (ev.type == SDL_MOUSEBUTTONDOWN)
+				{
+					mouseCode |= 8;
+				}
+				else
+				{
+					mouseCode &= 0xFFFFFFF7;
+				}
+				break;
+			case 5:
+			case 7:
+			case 9:
+				if (ev.type == SDL_MOUSEBUTTONDOWN)
+				{
+					mouseCode |= 0x10;
+				}
+				else
+				{
+					mouseCode &= 0xFFFFFFEF;
+				}
+				break;
+			default:
+				break;
+			}
+
+			eng->TrapMouse_Event(mouseCode, ev.type == SDL_MOUSEBUTTONDOWN);
+		}
+
+		else if (ev.type == SDL_MOUSEMOTION && !(cl_mousegrab.value == 0.0 && (!m_bActiveApp)) && !(m_rawinput.value != 0.0 || !m_bActiveApp))
+		{
+			if (!g_BaseUISurface.IsCursorVisible() && !s_bCursorVisible && BUsesSDLInput())
+			{
+				if (m_bExpectSyntheticMouseMotion
+					&& ev.motion.x   == m_nMouseTargetX && ev.motion.y == m_nMouseTargetY)
+				{
+					m_bExpectSyntheticMouseMotion = 0;
+					if (m_rawinput.value == 0.0)
+						SDL_GetRelativeMouseState(&deltaX, &deltaY);
+
+					if (SDL_PollEvent(&ev) <= 0)
+						return;
+
+					continue;
+				}
+				if (!m_bCursorVisible)
+				{
+					if ((ev.window.data2 < m_nMouseTargetX - m_nWarpDelta || ev.window.data2 > m_nMouseTargetX + m_nWarpDelta)
+						|| (!(ev.motion.y >= m_nMouseTargetY - m_nWarpDelta && ev.motion.y <= m_nMouseTargetY + m_nWarpDelta)))
+					{
+						SDL_WarpMouseInWindow(m_hSDLWindow, m_nMouseTargetX, m_nMouseTargetY);
+						m_bExpectSyntheticMouseMotion = 1;
+					}
+				}
+			}
+		}
+
+		VGui_CallEngineSurfaceAppHandler(&ev, 0);
+
+		if (SDL_PollEvent(&ev) <= 0)
+			return;
+	}
+#endif
 }
 
 SDL_Window* CGame::GetMainWindow()

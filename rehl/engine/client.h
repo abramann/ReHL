@@ -297,6 +297,9 @@ void CL_UpdateSoundFade();
 void CL_AdjustClock();
 void CL_Save(const char *name);
 void CL_HudMessage(const char *pMessage);
+void CL_MoveToOnHandList(resource_t *pResource);
+void CL_RemoveFromResourceList(resource_t *pResource);
+void CL_AddToResourceList(resource_t *pResource, resource_t *pList);
 
 int Key_CountBindings();
 void Key_WriteBindings(FileHandle_t f);

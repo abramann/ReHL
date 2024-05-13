@@ -2,22 +2,18 @@
 #include "../FakeVGUI/Dar.h"
 #include "../FakeVGUI/InputStream.h"
 #include "../FakeVGUI/Image.h"
-#include "../FakeVGUI/App.h"
-#include "vgui2\KeyCode.h"
+//#include "../FakeVGUI/App.h"
+//#include "vgui2\KeyCode.h"
 #include <SDL.h>
 #include <SDL_syswm.h>
 
-class FontInfoVGUI;
 
-void CheckModState();
-void CheckModState(vgui::App *app , vgui::SurfaceBase *surface);
+class FontInfoVGUI;
 
 namespace vgui
 {
 	class Font;
 }
-
-vgui::MouseCode CSWTCH_59[4] = { vgui::MOUSE_MIDDLE, vgui::MOUSE_LEFT, vgui::MOUSE_RIGHT, vgui::MOUSE_LEFT };
 
 static SDL_Cursor* staticDefaultCursor[20];
 static SDL_Cursor* staticCurrentCursor;
@@ -25,7 +21,6 @@ static vgui::Font* staticFont;
 static FontInfoVGUI* staticFontInfoVGUI;
 static vgui::Dar<FontInfoVGUI*> staticFontInfoVGUIDar;
 static int staticContextCount;
-
 
 void EngineSurfaceWrap::AppHandler(void * event, void * userData)
 {
@@ -69,46 +64,18 @@ void EngineSurfaceWrap::AppHandler(void * event, void * userData)
 		{
 			if (pEvent->type == SDL_KEYDOWN)
 			{
-				pApp->internalKeyPressed((vgui::KeyCode) (vgui2::KeyCode_VirtualKeyToVGUI(motionX) - 1), this);
-
-				pApp->internalKeyTyped((vgui::KeyCode) (vgui2::KeyCode_VirtualKeyToVGUI(motionX) - 1), this);
+				pApp->internalMouseReleased(KeyCode_VirtualKeyToVGUI(motionX) - 1, this);
+				v14 = *(void(__cdecl **)(vgui::App *, __int32, EngineSurfaceWrap *const))(*(_DWORD *)v3 + 184);
 			}
 			else
 			{
-				if (pEvent->type != SDL_KEYUP)
+				if (SDL_KEYUP != 0x301)
 					return;
 
-				pApp->internalKeyReleased((vgui::KeyCode) (vgui2::KeyCode_VirtualKeyToVGUI(motionX) - 1), this);
+				v14 = *(void(__cdecl **)(vgui::App *, __int32, EngineSurfaceWrap *const))(*(_DWORD *)v3 + 188);
 			}
-
-			CheckModState(pApp, this);
-			return;
-		}
-
-
-		if (pEvent->type > SDL_MOUSEBUTTONUP)
-		{
-			if (pEvent->type == SDL_MOUSEWHEEL)
-				pApp->internalMouseWheeled(motionX, this);
-		}
-		else
-		{
-			vgui::MouseCode code = vgui::MOUSE_LEFT;
-
-			CHECK_REQUIRED;
-
-			//v5 = *(pEvent + 16)
-			//int i = v5 - 2;
-			int i = pEvent->motion.which - 2;
-			if (i <= 1)
-				code = CSWTCH_59[i];
-			if (pEvent->type == SDL_MOUSEBUTTONDOWN)
-				pApp->internalMousePressed(code, this);
-			else
-				pApp->internalMouseReleased(code, this);
-		}
 	}
-
+	NOT_IMPLEMENTED;
 }
 
 void EngineSurfaceWrap::lockCursor()
@@ -278,11 +245,11 @@ EngineSurfaceWrap::EngineSurfaceWrap(vgui::Panel * embeddedPanel, IEngineSurface
 	delete inputStream;
 
 	if (!SDL_WasInit(32))
-	{
-		SDL_SetHint("SDL_VIDEO_X11_XRANDR", "1");
-		SDL_SetHint("SDL_VIDEO_X11_XVIDMODE", "1");
-		SDL_InitSubSystem(32);
-	}
+		{
+			SDL_SetHint("SDL_VIDEO_X11_XRANDR", "1");
+			SDL_SetHint("SDL_VIDEO_X11_XVIDMODE", "1");
+			SDL_InitSubSystem(32);
+		}
 
 	staticDefaultCursor[1] = nullptr;
 	staticDefaultCursor[2] = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_ARROW);
@@ -320,9 +287,4 @@ void EngineSurfaceWrap::setAsTopMost(bool state)
 
 void EngineSurfaceWrap::createPopup(vgui::Panel * embeddedPanel)
 {
-}
-
-void CheckModState(vgui::App *app, vgui::SurfaceBase *surface)
-{
-	NOT_IMPLEMENTED;
 }

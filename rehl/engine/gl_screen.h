@@ -31,3 +31,9 @@ void SCR_UpdateScreen();
 void SCR_BeginLoadingPlaque(bool reconnect);
 
 void SCR_EndLoadingPlaque();
+
+void SCR_CalcRefdef();
+
+void Sbar_Draw();
+
+int ScreenTransform(vec_t *point, vec_t *screen);
