@@ -4,7 +4,7 @@
 #include "cl_tent.h"
 #include "quakedef.h"
 #include "cvar.h"
-
+#include "ref_params.h"
 
 struct lightstyle_t
 {
@@ -44,6 +44,7 @@ extern client_state_t m1;
 extern qboolean g_bIsCStrike;
 extern qboolean g_bIsCZero;
 
+extern dlight_t cl_dlights[MAX_DLIGHTS];
 
 void SetupStartupTimings();
 void AddStartupTiming(const char* name);
@@ -82,3 +83,4 @@ qboolean CL_PrecacheResources(void);
 void CL_ReadPackets(void);
 void CL_Move(void);
 void CL_CheckForResend(void);
+void CL_GGSpeeds(float flCurTime);

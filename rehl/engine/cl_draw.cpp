@@ -36,7 +36,26 @@ void SetCrosshair(HSPRITE_t hspr, wrect_t rc, int r, int g, int b)
 
 void DrawCrosshair(int x, int y)
 {
-	NOT_IMPLEMENTED;
+	if (!ghCrosshair)
+		return;
+	SPR_Set(ghCrosshair, gCrosshairR, gCrosshairG, gCrosshairB);
+
+	float spritey = y - (gCrosshairRc.bottom - gCrosshairRc.top) / 2;
+	float spritex = x - (gCrosshairRc.right - gCrosshairRc.left) / 2;
+
+	//g_engdstAddrs.pfnSPR_DrawHoles();
+
+	if (!gpSprite)
+		return;
+
+	if (vid.width > spritex && vid.height > spritey)
+	{
+		mspriteframe_t* frame = R_GetSpriteFrame(gpSprite, 0);
+		if (frame)
+			Draw_SpriteFrameHoles(frame, gSpritePalette, spritex, spritey, &gCrosshairRc);
+		else
+			Con_DPrintf("Client.dll SPR_DrawHoles error:  invalid frame\n");
+	}
 }
 
 void SPR_Init()

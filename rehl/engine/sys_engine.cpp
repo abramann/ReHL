@@ -97,7 +97,6 @@ bool CEngine::Load(bool dedicated, const char *basedir, const char *cmdline)
 int CEngine::Frame()
 {
 #ifndef SWDS && defined(SOUND)
-	NOT_IMPLEMENTED;
 	//(*(void(**)(void))(*(_DWORD *)cdaudio + 24))();
 #endif
 

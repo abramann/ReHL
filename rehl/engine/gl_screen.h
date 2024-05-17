@@ -16,6 +16,8 @@ extern int glheight;
 
 extern cvar_t scr_viewsize;
 
+extern float scr_fov_value;
+
 void SCR_Init();
 
 void SCR_DrawConsole();

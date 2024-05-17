@@ -160,8 +160,11 @@ cl_enginefunc_t cl_enginefuncs =
 
 int ClientDLL_Key_Event(int down, int keynum, const char *pszCurrentBinding)
 {
-	NOT_IMPLEMENTED;
-	return 0;
+	if (!VGui_Key_Event(down, keynum, pszCurrentBinding))
+		return false;
+	if (cl_funcs.pKeyEvent)
+		return cl_funcs.pKeyEvent(down, keynum, pszCurrentBinding);
+	return true;
 }
 
 void ClientDLL_Init()
@@ -821,6 +824,7 @@ void PlayerInfo_SetValueForKey(const char* key, const char* value)
 
 		if (g_pcls.state > ca_connecting)
 		{
+			NOT_IMPLEMENTED;
 			// TODO: implement - Solokiller
 			/*
 			MSG_WriteByte( &g_pcls.netchan.message, 3 );

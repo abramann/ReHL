@@ -30,8 +30,8 @@ using vgui2::ISurface;
 
 bool s_bCursorVisible = true;
 
-vgui2::IInputInternal* g_InputInternal = nullptr;
 
+extern vgui2::IInputInternal* g_InputInternal;
 
 vgui2::IInputInternal* inputinternal()
 {
@@ -191,7 +191,6 @@ static void CheckModState()
 void BaseUISurface::AppHandler(void* event, void* userData)
 {
 	SDL_Event ev = *reinterpret_cast<SDL_Event*>(event);
-
 	switch (ev.type)
 	{
 	case SDL_MOUSEMOTION:
@@ -1457,11 +1456,14 @@ void BaseUISurface::InternalThinkTraverse(vgui2::VPANEL panel)
 void BaseUISurface::InternalSolveTraverse(vgui2::VPANEL panel)
 {
 	vgui2::ipanel()->Solve(panel);
-
+	
 	for (int i = 0; i < vgui2::ipanel()->GetChildCount(panel); ++i)
 	{
 		auto child = vgui2::ipanel()->GetChild(panel, i);
 
+		int a[4];
+		vgui2::ipanel()->GetClipRect(child, a[0], a[1], a[2], a[3]);
+		
 		if (vgui2::ipanel()->IsVisible(child))
 		{
 			InternalSolveTraverse(child);

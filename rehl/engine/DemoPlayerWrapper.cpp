@@ -47,3 +47,9 @@ void DemoPlayer_ReadNetchanState(int *incoming_sequence, int *incoming_acknowled
 			reliable_sequence,
 			last_reliable_sequence);
 }
+
+void DemoPlayer_GetDemoViewInfo(ref_params_t * rp, float * view, int * viewmodel)
+{
+	if (s_DemoPlayer)
+		s_DemoPlayer->GetDemoViewInfo(rp, view, viewmodel);
+}

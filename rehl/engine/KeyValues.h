@@ -39,11 +39,11 @@ public:
 	virtual void RemoveSubKey(KeyValues *subKey);
 	virtual KeyValues *GetFirstSubKey();
 	virtual KeyValues *GetNextKey();
-	virtual int GetInt(const char *keyName, int defaultValue);
-	virtual float GetFloat(const char *keyName, float defaultValue);
-	virtual const char *GetString(const char *keyName, const char *defaultValue);
-	virtual const wchar_t *GetWString(const char *keyName, const wchar_t *defaultValue);
-	virtual void *GetPtr(const char *keyName, void *defaultValue);
+	virtual int GetInt(const char *keyName = nullptr, int defaultValue = 0);
+	virtual float GetFloat(const char *keyName = nullptr, float defaultValue = 0);
+	virtual const char *GetString(const char *keyName = nullptr, const char *defaultValue = "");
+	virtual const wchar_t *GetWString(const char *keyName = nullptr, const wchar_t *defaultValue = L"");
+	virtual void *GetPtr(const char *keyName = nullptr , void *defaultValue = nullptr);
 	virtual bool IsEmpty(const char *keyName);
 	virtual void SetWString(const char *keyName, const wchar_t *value);
 	virtual void SetString(const char *keyName, const char *value);
@@ -54,6 +54,8 @@ public:
 	virtual void Clear();
 	virtual types_t GetDataType(const char *keyName);
 	virtual void deleteThis();
+
+	uint64 GetUint64(const char *keyName = nullptr, uint64 defaultValue = 0);
 
 private:
 	int m_iKeyName;

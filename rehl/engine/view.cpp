@@ -1,9 +1,13 @@
 #include "precompiled.h"
+#include "cl_main.h"
+#include "chase.h"
 
 screenshake_t gVShake;
 
 void BuildGammaTable(float g);
 void FilterLightParams();
+void V_SetRefParams(ref_params_t *pparams);
+void V_GetRefParams(ref_params_t *pparams);
 
 int lightgammatable[1024];
 int lineargammatable[1024];
@@ -25,6 +29,10 @@ cvar_t v_texgamma = { "texgamma", "2.0" };
 cvar_t v_brightness = { "brightness", "0.0", FCVAR_ARCHIVE };
 cvar_t v_lambert = { "lambert", "1.5" };
 cvar_t v_direct = { "direct", "0.9" };
+
+vec3_t forward;
+vec3_t right;
+vec3_t up;
 
 float v_blend[4];
 
@@ -220,4 +228,132 @@ void V_UpdatePalette()
 			ramps[2][i] = texgammatable[i];;
 		}
 	}
+}
+
+void V_RenderView()
+{
+	VectorClear(r_soundOrigin);
+	VectorClear(r_playerViewportAngles);
+
+	if (con_forcedup || g_pcls.state != ca_active || g_pcls.signon != 2)
+		return;
+
+	ref_params_s angles;
+
+	m1.viewent.curstate.frame = 0.0;
+	m1.viewent.model = CL_GetModelByIndex(m1.stats[2]);
+	m1.viewent.curstate.modelindex = m1.stats[2];
+	m1.viewent.curstate.colormap = 0;
+	m1.viewent.index = m1.playernum + 1;
+
+	V_SetRefParams(&angles);
+
+	for (int viewnum = 0; angles.nextView; viewnum++)
+	{
+		if (viewnum == 0)
+		{
+			if (g_pcls.demoplayback || (CL_SetDemoViewInfo(&angles, m1.viewent.origin, m1.stats[2]), g_pcls.demoplayback))
+			{
+				if (!g_pcls.spectator)
+				{
+					CL_GetDemoViewInfo(&angles, m1.viewent.origin, &m1.stats[2]);
+
+					vec3_t clearview;
+					VectorCopy(angles.viewangles, clearview);
+					clearview[2] *= -1;
+
+					VectorCopy(clearview, m1.viewent.curstate.angles);
+					VectorCopy(clearview, m1.viewent.angles);
+					VectorCopy(clearview, m1.viewent.latched.prevangles);
+					VectorCopy(clearview, m1.viewent.latched.prevangles);
+
+					angles.nextView = 0;
+				}
+			}
+		}
+
+		V_GetRefParams(&angles);
+		if (angles.intermission)
+		{
+			m1.viewent.model = 0;
+		}
+		else if (!angles.paused && chase_active.value != 0.0)
+		{
+			Chase_Update();
+		}
+		
+		R_PushDlights();
+		if (!viewnum && r_refdef.onlyClientDraws)
+		{
+			qglClearColor(0.0, 0.0, 0.0, 0.0);
+			qglClear(GL_COLOR_BUFFER_BIT);
+		}
+	}
+}
+
+void V_SetRefParams(ref_params_t *pparams)
+{
+	CHECK_REQUIRED;
+	//values forward, up, right are used with no initializing
+	
+	Q_memset(pparams, 0, 232);
+	VectorCopy(r_refdef.vieworg, pparams->vieworg);
+	VectorCopy(r_refdef.viewangles, pparams->viewangles);
+	VectorCopy(forward, pparams->forward);
+	VectorCopy(right, pparams->right);
+	VectorCopy(up, pparams->up);
+	VectorCopy(m1.simvel, pparams->simvel);
+	VectorCopy(m1.simorg, pparams->simorg);
+	VectorCopy(m1.viewheight, pparams->viewheight);
+	VectorCopy(m1.viewangles, pparams->cl_viewangles);
+	VectorCopy(m1.crosshairangle, pparams->crosshairangle);
+	VectorCopy(m1.punchangle, pparams->punchangle);
+	VectorCopy(m1.crosshairangle, pparams->crosshairangle);
+
+	pparams->time = m1.time;
+	pparams->frametime = host_frametime;
+	pparams->intermission = m1.intermission != 0;
+	pparams->paused = m1.paused != false;
+	pparams->spectator = g_pcls.spectator != false;
+	pparams->onground = m1.onground != -1;
+	pparams->waterlevel = m1.waterlevel;
+	pparams->health = m1.stats[0];
+	pparams->viewsize = scr_viewsize.value;
+	pparams->maxclients = m1.maxclients;
+	pparams->viewentity = m1.viewentity;
+	pparams->playernum = m1.playernum;
+	pparams->max_entities = m1.max_edicts;
+	pparams->cmd = &m1.cmd;
+	pparams->demoplayback = g_pcls.demoplayback;
+	pparams->movevars = &movevars;
+	pparams->hardware = 1;
+	pparams->smoothing = m1.pushmsec;
+	pparams->viewport[0] = 0;
+	pparams->viewport[1] = 0;
+	pparams->viewport[2] = vid.width;
+	pparams->viewport[3] = vid.height;
+	pparams->nextView = 0;
+	pparams->onlyClientDraw = 0;
+}
+
+void V_GetRefParams(ref_params_t *pparams)
+{
+	VectorCopy(pparams->vieworg, r_refdef.vieworg);
+	VectorCopy(pparams->viewangles, r_refdef.viewangles);
+	VectorCopy(pparams->forward, forward);
+	VectorCopy(pparams->right, right);
+	VectorCopy(pparams->up, up);
+	VectorCopy(pparams->simvel, m1.simvel);
+	VectorCopy(pparams->simorg, m1.simorg);
+	VectorCopy(pparams->cl_viewangles, m1.viewangles);
+	VectorCopy(pparams->crosshairangle, m1.crosshairangle);
+	VectorCopy(pparams->punchangle, m1.punchangle);
+	VectorCopy(pparams->viewheight, m1.viewheight);
+
+	r_refdef.vrect.x = pparams->viewport[0];
+	r_refdef.vrect.y = pparams->viewport[1];
+	r_refdef.vrect.width = pparams->viewport[2];
+	r_refdef.vrect.height = pparams->viewport[3];
+
+	r_refdef.onlyClientDraws = pparams->onlyClientDraw;
 }

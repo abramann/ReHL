@@ -43,6 +43,7 @@ sizebuf_t net_message;
 qboolean noip;
 qboolean noipx;
 qboolean use_thread;
+char string_13466[1024];
 
 unsigned char net_message_buffer[NET_MAX_PAYLOAD];
 unsigned char in_message_buf[NET_MAX_PAYLOAD];
@@ -670,6 +671,15 @@ void NET_AdjustLag()
 		Cvar_SetValue("fakelag", 0.0);
 		gFakeLag = 0;
 	}
+}
+
+void NET_DrawString(int x, int y, int font, float r, float g, float b, char * fmt, ...)
+{
+	va_list __varargs;
+	va_start(__varargs, fmt);
+	vsnprintf(string_13466, 1024, fmt, __varargs);
+	Draw_SetTextColor(r, g, b);
+	Draw_String(x, y, string_13466);
 }
 
 qboolean NET_LagPacket(qboolean newdata, netsrc_t sock, netadr_t *from, sizebuf_t *data)

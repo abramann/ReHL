@@ -58,6 +58,7 @@ cvar_t host_limitlocal = { "host_limitlocal", "0", 0, 0.0f, NULL };
 cvar_t skill = { "skill", "1", 0, 0.0f, NULL };
 cvar_t deathmatch = { "deathmatch", "0", FCVAR_SERVER, 0.0f, NULL };
 cvar_t coop = { "coop", "0", FCVAR_SERVER, 0.0f, NULL };
+extern cvar_t cl_gamegauge;
 
 cvar_t sys_ticrate = { "sys_ticrate", "100.0", 0, 0.0f, NULL };
 
@@ -824,17 +825,11 @@ void Host_Speeds(double *time)
 		}
 		Con_Printf("%3i fps -- host(%3.0f) sv(%3.0f) cl(%3.0f) gfx(%3.0f) snd(%3.0f) ents(%d)\n", (int)fps, pass1, pass2, pass3, pass4, pass5, ent_count);
 	}
-
 #ifndef SWDS
-	NOT_IMPLEMENTED;
-	
-	/*
-	if (cl_gg.value != 0.0f)	// cvar_t cl_gamegauge
+	if (cl_gamegauge.value != 0.0f)	// cvar_t cl_gamegauge
 	{
-		//sub_1D10B2D
 		CL_GGSpeeds(time[3]);
 	}
-	*/
 #endif // SWDS
 }
 
@@ -928,7 +923,7 @@ void _Host_Frame(float time)
 	ClientDLL_CAM_Think();
 	CL_MoveSpectatorCamera();
 	host_times[3] = Sys_FloatTime();
-	Host_UpdateScreen();
+	//Host_UpdateScreen();
 	host_times[4] = Sys_FloatTime();
 	CL_DecayLights();
 	//Host_UpdateSounds();

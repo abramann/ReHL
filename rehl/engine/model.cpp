@@ -38,6 +38,9 @@ int tested;
 int ad_enabled;
 cachewad_t ad_wad;
 mod_known_info_t mod_known_info[MAX_KNOWN_MODELS];
+int gSpriteTextureFormat;
+qboolean gSpriteMipMap = false;
+uchar *pspritepal;
 
 extern byte mod_novis[1024];
 
@@ -58,30 +61,21 @@ void SW_Mod_Init(void)
 
 void* EXT_FUNC Mod_Extradata(model_t *mod)
 {
-	void *r;
+	void* cache = nullptr;
 
 	if (!mod)
-	{
-		return NULL;
-	}
+		return nullptr;
 
-	r = Cache_Check(&mod->cache);
-	if (r)
-	{
-		return r;
-	}
+	cache = Cache_Check(&mod->cache);
 
-	if (mod->type == mod_brush)
-	{
-		Sys_Error("%s: called with mod_brush!\n", __func__);
-	}
+	if (cache)
+		return cache;
 
-	Mod_LoadModel(mod, 1, 0);
+	Mod_LoadModel(mod, true, false);
 
-	if (mod->cache.data == NULL)
-	{
-		Sys_Error("%s: caching failed", __func__);
-	}
+	cache = mod->cache.data;
+	if (!cache)
+		Sys_Error("Mod_Extradata: caching failed");
 
 	return mod->cache.data;
 }
@@ -1672,13 +1666,15 @@ void Mod_LoadAliasModel(model_t *mod, void *buffer)
 	}
 }
 
-void *Mod_LoadSpriteFrame(void *pin, mspriteframe_t **ppframe)
+void *Mod_LoadSpriteFrame(void *pin, mspriteframe_t **ppframe, int framenum)
 {
 	dspriteframe_t		*pinframe;
-	mspriteframe_t		*pspriteframe;
+	mspriteframe_t		*dest;
 	int					width, height, size, origin[2];
 	unsigned short		*ppixout;
 	byte				*ppixin;
+	char name[256];
+	uchar bPal[768];
 
 	pinframe = (dspriteframe_t *)pin;
 
@@ -1686,46 +1682,52 @@ void *Mod_LoadSpriteFrame(void *pin, mspriteframe_t **ppframe)
 	height = LittleLong(pinframe->height);
 	size = width * height;
 
-	pspriteframe = (mspriteframe_t*) Hunk_AllocName(sizeof(mspriteframe_t) + size * r_pixbytes, loadname);
+	dest = (mspriteframe_t*) Hunk_AllocName(sizeof(mspriteframe_t), loadname);
 
-	Q_memset(pspriteframe, 0, sizeof(mspriteframe_t) + size);
-	*ppframe = pspriteframe;
+	Q_memset(dest, 0, sizeof(mspriteframe_t));
+	*ppframe = dest;
 
-	pspriteframe->width = width;
-	pspriteframe->height = height;
+	dest->width = width;
+	dest->height = height;
 	origin[0] = LittleLong(pinframe->origin[0]);
 	origin[1] = LittleLong(pinframe->origin[1]);
 
-	pspriteframe->up = (float)origin[1];
-	pspriteframe->down = (float)(origin[1] - height);
-	pspriteframe->left = (float)origin[0];
-	pspriteframe->right = (float)(width + origin[0]);
+	dest->up = (float)origin[1];
+	dest->down = (float)(origin[1] - height);
+	dest->left = (float)origin[0];
+	dest->right = (float)(width + origin[0]);
 
-	if (r_pixbytes == 1)
+	sprintf(name, "%s_%i", loadmodel->name, framenum);
+	uchar* pdata = (uchar*)pin + sizeof(dspriteframe_t);
+
+	int type = GLT_STUDIO;
+	
+	if (gSpriteTextureFormat != 2)
 	{
-		Q_memcpy(&pspriteframe->pixels[0], (byte *)(pinframe + 1), size);
+		if (gSpriteTextureFormat <= 2)
+		{
+			if (gSpriteTextureFormat >= 0)
+				type = GLT_SYSTEM;
+		}
+		else if (gSpriteTextureFormat == 3)
+		{
+			type = GLT_DECAL;
+		}
 	}
-	else if (r_pixbytes == 2)
-	{
-		ppixin = (byte *)(pinframe + 1);
-		ppixout = (unsigned short *)&pspriteframe->pixels[0];
 
-		/*
-		//seems to be disabled on server
-		for (i = 0; i < size; i++)
-			ppixout[i] = d_8to16table[ppixin[i]];
-		*/
-
-	}
+	Q_memcpy(bPal, pspritepal, 768);
+	int texnum;
+	if(gSpriteMipMap)
+		texnum = GL_LoadTexture(name, GLT_SPRITE, width, height, pdata, gSpriteMipMap, type, &bPal[4]);
 	else
-	{
-		Sys_Error("%s: driver set invalid r_pixbytes: %d\n", __func__, r_pixbytes);
-	}
+		texnum = GL_LoadTexture(name, GLT_HUDSPRITE, width, width, pdata, 0, type, &bPal[4]);
+
+	dest->gl_texturenum = texnum;
 
 	return (void *)((byte *)pinframe + sizeof(dspriteframe_t) + size);
 }
 
-void *Mod_LoadSpriteGroup(void *pin, mspriteframe_t **ppframe)
+void *Mod_LoadSpriteGroup(void *pin, mspriteframe_t **ppframe, int framenum)
 {
 	dspritegroup_t		*pingroup;
 	mspritegroup_t		*pspritegroup;
@@ -1737,7 +1739,7 @@ void *Mod_LoadSpriteGroup(void *pin, mspriteframe_t **ppframe)
 	pingroup = (dspritegroup_t *)pin;
 	numframes = LittleLong(pingroup->numframes);
 
-	pspritegroup = (mspritegroup_t*)Hunk_AllocName(sizeof(mspritegroup_t) + (numframes - 1) * sizeof(pspritegroup->frames[0]), loadname);
+	pspritegroup = (mspritegroup_t*)Hunk_AllocName(8 + numframes * 4, loadname);
 
 	pspritegroup->numframes = numframes;
 
@@ -1763,7 +1765,7 @@ void *Mod_LoadSpriteGroup(void *pin, mspriteframe_t **ppframe)
 
 	for (i = 0; i < numframes; i++)
 	{
-		ptemp = Mod_LoadSpriteFrame(ptemp, &pspritegroup->frames[i]);
+		ptemp = Mod_LoadSpriteFrame(ptemp, &pspritegroup->frames[i], i + 100 * framenum);
 	}
 
 	return ptemp;
@@ -1786,35 +1788,39 @@ void Mod_LoadSpriteModel(model_t *mod, void *buffer)
 		Sys_Error("%s: %s has wrong version number (%i should be %i)", __func__, mod->name, version, SPRITE_VERSION);
 
 	numframes = LittleLong(pin->numframes);
-	int palsize = *(uint16*)&pin[1];
+
+	gSpriteTextureFormat = pin->texFormat;
+
+	int palsize = *(short*)&pin[1];
+
+	int count = 3 * palsize + 2;
+
 	size = sizeof(msprite_t) + (numframes - 1) * sizeof(psprite->frames) + 2 + 8 * palsize;
 
-	psprite = (msprite_t*) Hunk_AllocName(size, loadname);
+	int frames_size = (numframes - 1) * sizeof(psprite->frames);
+	size = count + frames_size + sizeof(msprite_t);
+
+	psprite = (msprite_t*)Hunk_AllocName(size, loadname);
 
 	mod->cache.data = psprite;
 
 	psprite->type = LittleLong(pin->type);
+	psprite->texFormat = LittleLong(pin->texFormat);
 	psprite->maxwidth = LittleLong(pin->width);
 	psprite->maxheight = LittleLong(pin->height);
 	psprite->beamlength = LittleFloat(pin->beamlength);
 	mod->synctype = (synctype_t) LittleLong(pin->synctype);
 	psprite->numframes = numframes;
-
+	
 	mod->mins[0] = mod->mins[1] = float(-psprite->maxwidth / 2);
 	mod->maxs[0] = mod->maxs[1] = float(psprite->maxwidth / 2);
 	mod->mins[2] = float (- psprite->maxheight / 2);
 	mod->maxs[2] = float(psprite->maxheight / 2);
 
-	unsigned char *palsrc = (unsigned char*)(&pin[1]) + 2; //header + palette size
-	uint16* paldest = (uint16*)((char*)(psprite + 1) + sizeof(psprite->frames) * (numframes - 1)); //sprite + [frames-1]
-	*(paldest++) = palsize; //write palette size
-	for (i = 0; i < palsize; i++, paldest += 4, palsrc += 3)
-	{
-		paldest[3] = 0;
-		paldest[0] = palsrc[0];
-		paldest[1] = palsrc[1];
-		paldest[2] = palsrc[2];
-	}
+	psprite->paloffset = frames_size + 38;// sizeof(ms)
+	pspritepal = (uchar*)psprite + 36 + frames_size; // 	// Check here
+	count = 3 * palsize + 2;
+	Q_memcpy(pspritepal, (char *)buffer + 42, count);
 
 	//
 	// load the frames
@@ -1825,26 +1831,24 @@ void Mod_LoadSpriteModel(model_t *mod, void *buffer)
 	mod->numframes = numframes;
 	mod->flags = 0;
 
-	pframetype = (dspriteframetype_t *)((char*)(pin + 1) + 2 + 3*palsize);
+	pframetype = (dspriteframetype_t *)((char*)(pin + 1) + 2 + 3 * palsize);
 
-	for (i = 0; i < numframes; i++)
+	for (int i = 0; i < numframes; i++)
 	{
 		spriteframetype_t	frametype;
 
-		frametype = (spriteframetype_t) LittleLong(pframetype->type);
+		frametype = (spriteframetype_t)LittleLong(pframetype->type);
 		psprite->frames[i].type = frametype;
 
 		if (frametype == SPR_SINGLE)
 		{
 			pframetype = (dspriteframetype_t *)
-				Mod_LoadSpriteFrame(pframetype + 1,
-				&psprite->frames[i].frameptr);
+				Mod_LoadSpriteFrame(pframetype + 1, &psprite->frames[i].frameptr, i);
 		}
 		else
 		{
 			pframetype = (dspriteframetype_t *)
-				Mod_LoadSpriteGroup(pframetype + 1,
-				&psprite->frames[i].frameptr);
+				Mod_LoadSpriteGroup(pframetype + 1, &psprite->frames[i].frameptr, i);
 		}
 	}
 

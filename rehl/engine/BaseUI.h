@@ -6,6 +6,8 @@ class IBaseUI : public IBaseInterface
 {
 public:
 
+	virtual ~IBaseUI() {};
+
 	virtual void Initialize(CreateInterfaceFn* factories, int count) = 0;
 
 	virtual void Start(cl_enginefunc_t* engineFuncs, int interfaceVersion) = 0;

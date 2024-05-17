@@ -1676,3 +1676,8 @@ void CL_CheckForResend(void)
 		}
 	}
 }
+
+void CL_GGSpeeds(float flCurTime)
+{
+	NOT_IMPLEMENTED;
+}

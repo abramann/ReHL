@@ -43,9 +43,12 @@ char *szReslistsExt = ".lst";
 static HDC maindc;
 static HGLRC baseRC;
 
+void(*VID_FlipScreen)(void);
+
 int RunListenServer(void* instance, char* basedir, char* cmdline, char* postRestartCmdLineArgs, CreateInterfaceFn launcherFactory, CreateInterfaceFn filesystemFactory);
 void Sys_InitFloatTime();
 void Sys_ShutdownFloatTime();
+void Sys_VID_FlipScreen();
 
 const char *GetCurrentSteamAppName(void)
 {
@@ -501,6 +504,7 @@ int Sys_InitGame(const char *lpOrgCmdLine, const char *pBaseDir, SDL_Window** pp
 	TraceInit("Sys_InitLauncherInterface()", "Sys_ShutdownLauncherInterface()", 0);
 	Sys_InitLauncherInterface();
 
+	VID_FlipScreen = Sys_VID_FlipScreen;
 #ifndef SWDS
 
 	if (!GL_SetMode(pmainwindow, &maindc, &baseRC, "opengl32.dll", lpOrgCmdLine))
@@ -842,4 +846,10 @@ void Sys_InitFloatTime()
 void Sys_ShutdownFloatTime()
 {
 	curtime = lastcurtime = 0;
+}
+
+void Sys_VID_FlipScreen()
+{
+	if (pmainwindow)
+		SDL_GL_SwapWindow(pmainwindow);
 }

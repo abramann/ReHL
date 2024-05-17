@@ -4,7 +4,6 @@
 #include "gl_draw.h"
 #include "gl_vidnt.h"
 
-
 #include <SDL.h>
 #include <SDL_syswm.h>
 
@@ -17,6 +16,7 @@ cvar_t gl_ztrick = { "gl_ztrick", "0" };
 cvar_t gl_vsync = { "gl_vsync", "1", FCVAR_ARCHIVE };
 
 extern cvar_t  gl_clear;
+extern void(*VID_FlipScreen)(void);
 
 rect_t window_rect = {};
 
@@ -180,15 +180,15 @@ void GL_BeginRendering(int* x, int* y, int* width, int* height)
 	if (s_BackBufferFBO.s_hBackBufferFBO)
 	{
 		if (s_MSAAFBO.s_hBackBufferFBO)
-			qglBindFramebufferEXT(GL_DRAW_FRAMEBUFFER_NV, s_MSAAFBO.s_hBackBufferFBO);
+			qglBindFramebufferEXT(GL_DRAW_FRAMEBUFFER, s_MSAAFBO.s_hBackBufferFBO);
 		else
-			qglBindFramebufferEXT(GL_DRAW_FRAMEBUFFER_NV, s_BackBufferFBO.s_hBackBufferFBO);
+			qglBindFramebufferEXT(GL_DRAW_FRAMEBUFFER, s_BackBufferFBO.s_hBackBufferFBO);
 
 		glClearColor(0.0, 0.0, 0.0, 1.0);
 		if (gl_clear.value == 0.0f)
-			qglClear(GL_GLYPH_HAS_KERNING_BIT_NV);
+			qglClear(GL_DEPTH_BUFFER_BIT);
 		else
-			glClear(0x4100u);
+			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	}
 
 	GLimp_LogNewFrame();
@@ -196,7 +196,44 @@ void GL_BeginRendering(int* x, int* y, int* width, int* height)
 
 void GL_EndRendering()
 {
+	if (!s_BackBufferFBO.s_hBackBufferFBO)
+	{
+		VID_FlipScreen();
+		return;
+	}
+
 	NOT_IMPLEMENTED;
+
+	int nTextWidth, nTextHeight;
+	VideoMode_GetCurrentVideoMode(&nTextWidth, &nTextHeight,nullptr);
+	if (s_MSAAFBO.s_hBackBufferFBO)
+	{
+		qglBindFramebufferEXT(GL_DRAW_FRAMEBUFFER, s_BackBufferFBO.s_hBackBufferFBO);
+		qglBindFramebufferEXT(GL_READ_FRAMEBUFFER, s_MSAAFBO.s_hBackBufferFBO);
+		qglBlitFramebufferEXT(0, 0, nTextWidth, nTextHeight, 0, 0, nTextWidth, nTextHeight, GL_COLOR_BUFFER_BIT, GL_LINEAR);
+	}
+	qglBindFramebufferEXT(GL_DRAW_FRAMEBUFFER, 0);
+	qglBindFramebufferEXT(GL_READ_FRAMEBUFFER, s_BackBufferFBO.s_hBackBufferFBO);
+	glClearColor(0, 0, 0, 0);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	
+	int width = nTextWidth;
+	int tall = nTextHeight;
+
+	int windwidth = window_rect.right - window_rect.left;
+	int windheight = window_rect.bottom - window_rect.top;
+
+	s_fXMouseAspectAdjustment = 1.0;
+	s_fYMouseAspectAdjustment = 1.0;
+
+	if (s_bEnforceAspect)
+	{
+
+	}
+	else
+	{
+
+	}
 }
 
 bool GL_SetMode(SDL_Window* mainwindow, HDC* pmaindc, HGLRC* pbaseRC, const char* pszDriver, const char* pszCmdLine)

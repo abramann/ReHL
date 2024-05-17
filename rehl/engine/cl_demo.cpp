@@ -1,7 +1,11 @@
 #include "precompiled.h"
+#include "DemoPlayerWrapper.h"
 
 char gDemoMessageBuffer[512] = {};
 extern int host_framecount;
+demo_info_t g_rp;
+
+void CL_GetDemoViewInfo_OLD(ref_params_t *rp, vec_t *view, int *viewmodel);
 
 #pragma pack(push, 1)
 
@@ -208,7 +212,6 @@ void CL_BeginDemoStartup(void)
 
 
 void CL_StopPlayback(void)
-
 {
 	NOT_IMPLEMENTED;
 	//float fVar1;
@@ -257,3 +260,23 @@ void CL_Stop_f(void)
 	return;
 }
 
+void CL_SetDemoViewInfo(ref_params_t * rp, vec_t * view, int viewmodel)
+{
+	g_rp.rp = *rp;
+	g_rp.movevars = *rp->movevars;
+	VectorCopy(g_rp.view, view);
+	g_rp.viewmodel = viewmodel;
+}
+
+void CL_GetDemoViewInfo(ref_params_t * rp, float * view, int * viewmodel)
+{
+	if (DemoPlayer_IsActive())
+		DemoPlayer_GetDemoViewInfo(rp, view, viewmodel);
+	else
+		CL_GetDemoViewInfo_OLD(rp, view, viewmodel);
+}
+
+void CL_GetDemoViewInfo_OLD(ref_params_t *rp, vec_t *view, int *viewmodel)
+{
+	NOT_IMPLEMENTED;
+}

@@ -35,17 +35,34 @@ cl_enginefunc_dst_t g_engdstAddrs = k_engdstNull;
 client_static_t g_pcls;
 client_state_t g_pcl;
 
+double g_clockdelta = 0;
+
 qboolean cl_inmovie;
 
 cvar_t console = { "console", "1.0", FCVAR_ARCHIVE, 0.0f, NULL };
 
 void CL_RecordHUDCommand(const char *cmdname) { NOT_IMPLEMENTED; }
 qboolean CL_CheckFile(sizebuf_t *msg, char *filename) { return 1; }
-void CL_DecayLights(void) { NOT_IMPLEMENTED; }
+
+void CL_DecayLights(void) 
+{
+	if(g_pcls.signon != 2)
+		return;
+
+	NOT_IMPLEMENTED; 
+}
+
 void CL_InitClosest(void) { NOT_IMPLEMENTED; }
 void CL_PrintLogos(void) { NOT_IMPLEMENTED; }
 void CL_UpdateSoundFade(void) { NOT_IMPLEMENTED; }
-void CL_AdjustClock(void) { NOT_IMPLEMENTED; }
+void CL_AdjustClock(void)
+{ 
+	if (g_clockdelta == 0)
+		return;
+
+	NOT_IMPLEMENTED; 
+}
+
 void Con_Shutdown(void) { NOT_IMPLEMENTED; }
 int DispatchDirectUserMsg(const char *pszName, int iSize, void *pBuf) { NOT_IMPLEMENTED; return 0; }
 void EXT_FUNC Con_NPrintf(int idx, const char *fmt, ...) { NOT_IMPLEMENTED; }

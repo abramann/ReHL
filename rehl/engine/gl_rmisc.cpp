@@ -136,10 +136,14 @@ void R_Init()
 
 	R_InitParticles();
 	R_InitParticleTexture();
-
 	R_UploadEmptyTex();
 	for (int i = 0; i < 16; i++)
 		playertextures[i] = GL_GenTexture();
+}
+
+void R_PushDlights()
+{
+	NOT_IMPLEMENTED;
 }
 
 void R_InitParticles()

@@ -206,7 +206,7 @@ void Draw_Init()
 		texgammatable[i] = i;
 	}
 
-	LoadTransBMP("lambda");
+	draw_disc = LoadTransBMP("lambda");
 	Draw_ResetTextColor();
 }
 
@@ -221,13 +221,13 @@ void Draw_FillRGBA(int x, int y, int w, int h, int r, int g, int b, int a)
 	qglBlendFunc(GL_SRC_ALPHA, GL_LINES);
 	qglColor4f(r / 255.0, g / 255.0, b / 255.0, a / 255.0);
 
-	qglBegin(GL_RELATIVE_HORIZONTAL_LINE_TO_NV);
+	qglBegin(GL_QUADS);
 	qglVertex2f(x, y);
 	qglVertex2f(w + x, y);
 	qglVertex2f(w + x, h + y);
 	qglVertex2f(x, h + y);
 	qglEnd();
-
+	
 	qglColor3f(1.0, 1.0, 1.0);
 	qglEnable(GL_TEXTURE_2D);
 	qglDisable(GL_BLEND);
@@ -485,7 +485,50 @@ void AdjustSubRect(mspriteframe_t* pFrame, float* pfLeft, float* pfRight, float*
 
 void Draw_Frame(mspriteframe_t* pFrame, int ix, int iy, const wrect_t* prcSubRect)
 {
-	NOT_IMPLEMENTED;
+	float fLeft = 0.0;
+	float fRight = 1.0;
+	float fTop = 0.0;
+	float xa = ix;
+	int iWidth = pFrame->width;
+	int iHeight = pFrame->height;
+	float fBottom = 1.0;
+	float ya = (float)iy;
+	float x = xa + 0.5;
+	float y = ya + 0.5;
+
+	VGUI2_ResetCurrentTexture();
+	if (giScissorTest)
+	{
+		qglScissor(scissor_x, scissor_y, scissor_width, scissor_height);
+		qglEnable(GL_SCISSOR_TEST);
+	}
+	if (prcSubRect)
+		AdjustSubRect(pFrame, &fLeft, &fRight, &fTop, &fBottom, &iWidth, &iHeight, prcSubRect);
+
+	qglDepthMask(0);
+	GL_Bind(pFrame->gl_texturenum);
+
+	qglTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, 8448.0);
+	qglBegin(GL_QUADS);
+	qglTexCoord2f(fLeft, fTop);
+	qglVertex2f(x, y);
+	qglTexCoord2f(fRight, fTop);
+
+	qglVertex2f(iWidth + x, y);
+	qglTexCoord2f(fRight, fBottom);
+
+	GLfloat pfLeft = iHeight + y;
+	GLfloat pfRight = iWidth + x;
+	qglVertex2f(pfRight, pfLeft);
+
+	qglTexCoord2f(fLeft, fBottom);
+
+	pfLeft = iHeight + y;
+	qglVertex2f(x, pfLeft);
+
+	qglEnd();
+	qglDepthMask(1);
+	qglDisable(GL_SCISSOR_TEST);
 }
 
 void Draw_SpriteFrame(mspriteframe_t* pFrame, unsigned short* pPalette, int x, int y, const wrect_t* prcSubRect)
@@ -497,13 +540,11 @@ void Draw_SpriteFrameHoles(mspriteframe_t* pFrame, unsigned short* pPalette, int
 {
 	qglEnable(GL_ALPHA_TEST);
 
-	/* - TODO: implement gl_spriteblend - ScriptedSnark
 	if (gl_spriteblend.value != 0.0)
 	{
-	qglBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	qglEnable(GL_BLEND);
+		qglBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		qglEnable(GL_BLEND);
 	}
-	*/
 
 	Draw_Frame(pFrame, x, y, prcSubRect);
 	qglDisable(GL_ALPHA_TEST);
@@ -578,7 +619,6 @@ int GL_LoadTexture2(char * identifier, GL_TEXTURETYPE textureType, int width, in
 				{
 					loaded->servercount = gHostSpawnCount;
 				}
-
 				if (loaded->paletteIndex < 0)
 				{
 					return loaded->texnum;
@@ -589,15 +629,12 @@ int GL_LoadTexture2(char * identifier, GL_TEXTURETYPE textureType, int width, in
 				}
 			}
 		}
+		slot = &gltextures[numgltextures++];
 	}
 
-	if (!slot)
-	{
-		bool reached_max = numgltextures + 1 <= MAX_GLTEXTURES;
-		slot = &gltextures[numgltextures++];
-		if (!reached_max)
-			Sys_Error("Texture Overflow: MAX_GLTEXTURES");
-	}
+	if (numgltextures >= MAX_GLTEXTURES)
+		Sys_Error("Texture Overflow: MAX_GLTEXTURES");
+
 	if (!slot->texnum)
 	{
 		slot->texnum = GL_GenTexture();
@@ -687,14 +724,12 @@ qpic_t * LoadTransBMP(char *pszName)
 qpic_t * LoadTransPic(char *pszName, qpic_t *ppic)
 {
 	if (!ppic)
-	{
 		return nullptr;
-	}
 
 	int width = ppic->width;
 	int height = ppic->height;
 
-	qpic_t* pNewPic = (qpic_t *)Mem_Malloc(sizeof(qpic_t)); // Why allocating 32?
+	qpic_t* pNewPic = (qpic_t *)Mem_Malloc(32); // Why allocating 32?
 
 	pNewPic->width = width;
 	pNewPic->height = height;
@@ -722,8 +757,8 @@ qpic_t * LoadTransPic(char *pszName, qpic_t *ppic)
 		}
 	}
 
-	numgltextures++;
 	gltexture_t * glt = &gltextures[numgltextures];
+	numgltextures++;
 	Q_strcpy(glt->identifier, pszName);
 
 	int texnum;
@@ -752,9 +787,15 @@ qpic_t * LoadTransPic(char *pszName, qpic_t *ppic)
 
 	CHECK_REQUIRED;
 
-	// Probably wrong implement
+	// Correct implement
 	*(DWORD*)pNewPic->data = gltextures[numgltextures].texnum;
+	pNewPic[1].width = 0;
+	*(DWORD*)pNewPic[1].data = 1.0f;
+	pNewPic[1].height = 0;
+	pNewPic[2].width = 1.0f;
+
 	Mem_Free(pImageData);
+
 	return pNewPic;
 }
 
@@ -854,8 +895,7 @@ void GL_Upload32(unsigned int *data, int width, int height, qboolean mipmap, int
 
 			Q_memcpy(scaled_25071, data, size);
 			::texels += scaled_height * scaled_width;
-			DebugBreak();
-			// Check here
+
 			qglTexImage2D(GL_TEXTURE_2D, 0, iComponent, scaled_width, scaled_height, 0, iFormat, GL_UNSIGNED_BYTE, scaled_25071);
 		}
 	}

@@ -208,3 +208,9 @@ void KeyValues::deleteThis()
 	NOT_IMPLEMENTED;
 
 }
+
+uint64 KeyValues::GetUint64(const char * keyName, uint64 defaultValue)
+{
+	NOT_IMPLEMENTED;
+	return uint64();
+}

@@ -185,6 +185,7 @@ NOXREF int NET_CountLaggedList(packetlag_t *pList);
 void NET_ClearLaggedList(packetlag_t *pList);
 void NET_AddToLagged(netsrc_t sock, packetlag_t *pList, packetlag_t *pPacket, netadr_t *net_from_, sizebuf_t messagedata, float timestamp);
 void NET_AdjustLag();
+void NET_DrawString(int x, int y, int font, float r, float g, float b, char *fmt, ...);
 qboolean NET_LagPacket(qboolean newdata, netsrc_t sock, netadr_t *from, sizebuf_t *data);
 void NET_FlushSocket(netsrc_t sock);
 qboolean NET_GetLong(unsigned char *pData, int size, int *outSize);

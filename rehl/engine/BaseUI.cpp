@@ -11,7 +11,7 @@
 #include "vgui2\IVGui.h"
 #include "Cursor.h"
 #include "EnginePanel.h"
-
+#include "VClientVGUI.h"
 
 static bool m_bConsoleShowing;
 
@@ -19,17 +19,15 @@ IMouseControl* mousecontrol = nullptr;
 
 cl_enginefunc_t gEngfuncs;
 
-namespace vgui2
-{
-	IInputInternal* g_InputInternal = nullptr;
-}
+vgui2::IInputInternal* g_InputInternal = nullptr;
+
 
 // gameui
 IGameUI* staticGameUIFuncs = nullptr;
 static IGameConsole* staticGameConsole = nullptr;
 static ICareerUI* staticCareerUI = nullptr;
 
-class IClientVGUI* staticClient = nullptr;
+IClientVGUI* staticClient = nullptr;
 
 // hw
 static BaseUISurface* staticSurface = nullptr;
@@ -104,7 +102,7 @@ void CBaseUI::Initialize(CreateInterfaceFn* factories, int count)
 		++m_iNumFactories;
 	}
 
-	vgui2::g_InputInternal = (vgui2::IInputInternal*)(m_FactoryList[1](VGUI_INPUTINTERNAL_INTERFACE_VERSION, nullptr));
+	g_InputInternal = (vgui2::IInputInternal*)(m_FactoryList[1](VGUI_INPUTINTERNAL_INTERFACE_VERSION, nullptr));
 
 	if (cl_funcs.pClientFactory)
 	{
@@ -254,9 +252,7 @@ void CBaseUI::Start(cl_enginefunc_t* engineFuncs, int interfaceVersion)
 	staticPanel->SetBounds(0, 0, swide, stall);
 	staticGameUIPanel->SetBounds(0, 0, swide, stall);
 	staticClientDLLPanel->SetBounds(0, 0, swide, stall);
-
 	staticGameConsole->Initialize();
-
 	if (staticGameConsole)
 	{
 		staticGameConsole->SetParent(staticGameUIPanel->GetVPanel());
@@ -291,7 +287,24 @@ void CBaseUI::CallEngineSurfaceAppHandler(void* pEvent, void* pUserData)
 
 void CBaseUI::Paint(int x, int y, int right, int bottom)
 {
-	NOT_IMPLEMENTED;
+	if (!staticSurface)
+		return
+
+	staticSurface->RunFrame();
+
+	staticGameUIFuncs->RunFrame();
+
+	vgui2::ivgui()->RunFrame();
+
+	g_BaseUISurface.SetScreenBounds(x, y, right - x, bottom - y);
+
+	staticPanel->SetBounds(0, 0, right, bottom);
+
+	staticGameUIPanel->SetBounds(0, 0, right, bottom);
+
+	staticClientDLLPanel->SetBounds(0, 0, right, bottom);
+
+	vgui2::surface()->PaintTraverse(staticPanel->GetVPanel());
 }
 
 void CBaseUI::HideGameUI()

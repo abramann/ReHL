@@ -2,9 +2,10 @@
 #include "../FakeVGUI/App.h"
 #include "../FakeVGUI/Panel.h"
 #include "GameUI.h"
+#include "VClientVGUI.h"
+#include "FakeVGUI\SurfaceBase.h"
 
 #define BMP_TYPE 0x4D42
-
 
 #ifdef _WIN32
 #include <Windows.h>
@@ -48,11 +49,46 @@ struct BITMAPINFO
 };
 #endif
 
+class CDummyApp : public vgui::App
+{
+public:
+	void main(int argc, char* argv[]) override;
+	CDummyApp() : App()
+	{
+
+	}
+	//~CDummyApp() = delete;
+protected:
+	void platTick() override;
+
+	char baseclass[556];
+};
+
+void CDummyApp::main(int argc, char* argv[])
+{
+	// Nothing
+}
+
+void CDummyApp::platTick()
+{
+	// Nothing
+}
+
+// App for VGUI programs, globally accessed through vgui::App::getInstance().
+CDummyApp theApp;
+
+void AllowFog(int allowed);
+
 CUtlVector<char> g_TempConsoleBuffer;
 
 static EngineSurfaceWrap* staticEngineSurface = nullptr;
 static vgui::Panel* staticPanel = nullptr;
 static IBaseUI* staticUIFuncs = nullptr;
+
+extern bool scr_drawloading;
+
+qboolean staticExclusiveInputShadow = false;
+qboolean isFogEnabled = false;
 
 void VGui_Startup()
 {
@@ -211,7 +247,6 @@ void VGuiWrap_Startup()
 		return;
 
 	auto pApp = vgui::App::getInstance();
-
 	pApp->reset();
 
 	staticPanel = new vgui::Panel(0, 0, 320, 240);
@@ -270,7 +305,27 @@ void VGuiWrap_SetVisible(bool state)
 
 void VGuiWrap_Paint(bool paintAll)
 {
-	NOT_IMPLEMENTED;
+	g_engdstAddrs.VGui_GetPanel();
+
+	if (!staticPanel)
+		return;
+
+	VGuiWrap_SetRootPanelSize();
+	staticPanel->repaint();
+	auto pApp = vgui::App::getInstance();
+	pApp->externalTick();
+	if (paintAll)
+		staticPanel->paintTraverse();
+	else
+	{
+		int extents[4];
+		staticPanel->getAbsExtents(
+			extents[0],
+			extents[1],
+			extents[2],
+			extents[3]);
+		VGui_ViewportPaintBackground(extents);
+	}
 }
 
 void VGuiWrap2_Startup()
@@ -311,14 +366,15 @@ bool VGuiWrap2_CallEngineSurfaceAppHandler(void * event, void * userData)
 bool VGuiWrap2_IsGameUIVisible()
 {
 	if (staticGameUIFuncs)
-		staticGameUIFuncs->IsGameUIActive();
+		return staticGameUIFuncs->IsGameUIActive();
 	return false;
 }
 
 bool VGuiWrap2_UseVGUI1()
 {
-	//if (staticClient)
-	//	return (*(unsigned __int8(__cdecl **)(IClientVGUI *))(*(_DWORD *)staticClient + 20))(staticClient);
+	if (staticClient)
+		NOT_IMPLEMENTED;
+		//	return (*(unsigned __int8(__cdecl **)(IClientVGUI *))(*(_DWORD *)staticClient + 20))(staticClient);
 	return true;
 }
 
@@ -351,13 +407,55 @@ bool VGuiWrap2_GameUIKeyPressed()
 
 bool VGuiWrap2_Key_Event(int down, int keynum, const char * pszCurrentBinding)
 {
-	NOT_IMPLEMENTED;
-	return false;
+	if (staticUIFuncs)
+		return staticUIFuncs->Key_Event(down, keynum, pszCurrentBinding) == 0;
+	return true;
 }
 
 void VGuiWrap2_Paint()
 {
-	NOT_IMPLEMENTED;
+	if (!staticGameUIFuncs)
+		return;
+
+	RECT rect;
+	POINT pnt;
+
+	pnt.x = 0;
+	pnt.y = 0;
+	rect.top = 0;
+	if (VideoMode_IsWindowed())
+	{
+		SDL_GetWindowPosition(pmainwindow,(int*) &pnt.x, (int*)&pnt.y);
+		SDL_GetWindowSize(pmainwindow, (int*)&rect.right, (int*)&rect.bottom);
+	}
+	else
+	{
+		pnt.y = 0;
+		pnt.x = 0;
+		VideoMode_GetCurrentVideoMode((int*)&rect.right, (int*)&rect.bottom, 0);
+	}
+
+	rect.bottom += rect.top;
+	AllowFog(false);
+
+	staticUIFuncs->Paint(pnt.x, pnt.y, rect.right, rect.bottom);
+
+	if (!staticClient)//|| (*(unsigned __int8(__cdecl **)(IClientVGUI *))(*(_DWORD *)staticClient + 20))(staticClient))
+	{
+		qboolean exculsiveInput = staticGameUIFuncs->HasExclusiveInput();
+		if (exculsiveInput != staticExclusiveInputShadow)
+		{
+			if (exculsiveInput)
+				VGuiWrap_ReleaseMouse();
+			else
+			{
+				VGuiWrap_GetMouse();
+				ClearIOStates();
+			}
+		}
+		staticExclusiveInputShadow = exculsiveInput;
+	}
+	AllowFog(true);
 }
 
 void VGuiWrap2_NotifyOfServerDisconnect()
@@ -412,6 +510,78 @@ int VGuiWrap2_IsInCareerMatch()
 	return 0;
 }
 
+void VGui_ViewportPaintBackground(int* extents)
+{
+	int exts;
+	rect_t rect;
+	rect_t pnt;
+
+	g_engdstAddrs.VGui_ViewportPaintBackground(&extents);
+	GLFinishHud();
+
+	int x = glx;
+	int y = gly;
+	int width = glwidth;
+	int height = glheight;
+
+	SDL_GetWindowPosition(pmainwindow, &pnt.left, &pnt.top);
+
+	if (VideoMode_IsWindowed())
+		SDL_GetWindowSize(pmainwindow, &rect.right, &rect.bottom);
+	else
+		VideoMode_GetCurrentVideoMode(&rect.right, &rect.bottom, 0);
+
+	exts = extents[3];
+	glx = *extents - pnt.left;
+	gly = glheight + pnt.top - exts;
+	glwidth = extents[2] - *extents;
+	glheight = exts - extents[1];
+
+	SCR_CalcRefdef();
+	V_RenderView();
+	GLBeginHud();
+
+	if (g_pcls.state == ca_active && g_pcls.signon == ca_connecting)
+	{
+		AllowFog(false);
+		ClientDLL_HudRedraw(g_pcl.intermission == 1);
+		AllowFog(true);
+	}
+
+	if (!scr_drawloading && (g_pcl.intermission != 1 || key_dest))
+		SCR_DrawConsole();
+
+	SCR_DrawLoading();
+
+	if (g_pcls.state == ca_active && g_pcls.signon == 2)
+		Sbar_Draw();
+
+	GLFinishHud();
+
+	glx = x;
+	gly = y;
+	glwidth = width;
+	glheight = height;
+
+	SCR_CalcRefdef();
+	GLBeginHud();
+}
+
+void AllowFog(int allowed)
+{
+	GL_BLEND;
+	if (allowed && isFogEnabled)
+	{
+		qglEnable(GL_FOG);
+	}
+	else
+	{
+		isFogEnabled = qglIsEnabled(GL_FOG);
+		if (isFogEnabled)
+			qglDisable(GL_FOG);
+	}
+}
+
 int EXT_FUNC VGuiWrap2_GetLocalizedStringLength(const char * label)
 {
 	NOT_IMPLEMENTED;
@@ -443,25 +613,3 @@ ICareerUI * VguiWrap2_GetCareerUI()
 	NOT_IMPLEMENTED;
 	return nullptr;
 }
-
-class CDummyApp : public vgui::App
-{
-public:
-	void main(int argc, char* argv[]) override;
-	//~CDummyApp() = delete;
-protected:
-	void platTick() override;
-};
-
-void CDummyApp::main(int argc, char* argv[])
-{
-	// Nothing
-}
-
-void CDummyApp::platTick()
-{
-	// Nothing
-}
-
-// App for VGUI programs, globally accessed through vgui::App::getInstance().
-static CDummyApp theApp;

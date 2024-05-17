@@ -11,14 +11,13 @@ int scr_erase_lines = 0;
 int scr_erase_center = 0;
 int scr_fullupdate = 0;
 
+float scr_fov_value = 90.0f;
 float scr_centertime_start = 0;
 
 float gWorldToScreen[16] = { 0 };
 char scr_centerstring[1024] = {};
 
 float scr_con_current = 0;
-float scr_fov_value = 90;
-
 bool recursionGuard = false;
 
 bool scr_copytop = false;
@@ -29,8 +28,8 @@ qboolean scr_skiponeupdate = false;
 
 int glx = 0;
 int gly = 0;
-int glwidth = 0;
-int glheight = 0;
+GLsizei glwidth = 320;
+GLsizei glheight = 200;
 int giHudLevel = 1;
 
 qpic_t* scr_paused = nullptr;
@@ -49,12 +48,15 @@ cvar_t scr_connectmsg1 = { "scr_connectmsg1", "0" };
 cvar_t scr_connectmsg2 = { "scr_connectmsg2", "0" };
 
 extern cvar_t crosshair;
+extern cvar_t cl_showfps;
+extern double rolling_fps;
 
 void SCR_SizeUp_f();
 void SCR_SizeDown_f();
 void SCR_ScreenShot_f();
 qpic_t* Draw_PicFromWad(char *name);
 void SCR_TileClear();
+void SCR_DrawFPS();
 
 void Draw_ConsoleBackground(int lines)
 {
@@ -89,8 +91,7 @@ void GL_BreakOnError()
 
 void SCR_DrawConsole()
 {
-	NOT_IMPLEMENTED;
-	//Con_DrawNotify();
+	Con_DrawNotify();
 }
 
 void SCR_DrawCenterString()
@@ -428,16 +429,16 @@ void SCR_UpdateScreen()
 				}
 
 				SCR_ConnectMsg();
-				VGui_Paint();
+				//VGui_Paint();
 
 				GLFinishHud();
 
 				GLBeginHud();
 
-				NOT_IMPLEMENTED;
+				//NOT_IMPLEMENTED;
 			
 				// Draw FPS and net graph
-				//SCR_DrawFPS();
+				SCR_DrawFPS();
 				//SCR_NetGraph();
 
 #ifdef REGS_DEBUG
@@ -455,6 +456,7 @@ void SCR_UpdateScreen()
 				if (g_modfuncs.m_pfnFrameRender2)
 					g_modfuncs.m_pfnFrameRender2();
 
+				auto er = glGetError();
 				GL_EndRendering();
 
 				g_LastScreenUpdateTime = fCurrentTime;
@@ -524,9 +526,9 @@ void Sbar_Draw()
 
 		ScreenTransform(point, screen);
 
-		int finalx = 0.5 * screen[0] * scr_vrect.width + 0.5 + x;
-		int finaly = 0.5 * screen[1] * scr_vrect.height + 0.5 + y;
-		DrawCrosshair(finalx, finaly);
+		int crosshairx = 0.5 * screen[0] * scr_vrect.width + 0.5 + x;
+		int crosshairy = 0.5 * screen[1] * scr_vrect.height + 0.5 + y;
+		DrawCrosshair(crosshairx, crosshairy);
 	}
 }
 
@@ -603,5 +605,51 @@ void SCR_TileClear()
 
 void SCR_CalcRefdef()
 {
-	NOT_IMPLEMENTED;
+	float x, y;
+
+	scr_fullupdate = 0;
+	vid.recalc_refdef = 0;
+	scr_viewsize.value = 120.0;
+
+	if (scr_fov_value > 10.0f)
+		scr_fov_value = 10.0f;
+	else if (scr_fov_value > 150.0f)
+		scr_fov_value = 150.0f;
+
+	float height = glheight;
+
+	if (glwidth < 96)
+	{
+		x = glwidth - 96;
+		r_refdef.vrect.width = 96;
+		height *= 96.0f / (int)glwidth;
+	}
+	else
+	{
+		r_refdef.vrect.width = glwidth;
+		x = (glwidth - (int)glwidth) / 2.0f;
+	}
+
+	if (glheight >= (int)height)
+	{
+		y = (glheight - (int)height) / 2.0f;
+		r_refdef.vrect.height = height;
+	}
+	else
+	{
+		y = 0;
+		r_refdef.vrect.height = glheight;
+	}
+	
+	scr_vrect = r_refdef.vrect;
+}
+
+void SCR_DrawFPS()
+{
+	if (cl_showfps.value == 0.0 || host_frametime <= 0.0)
+		return;
+
+	rolling_fps = 0.6 * rolling_fps + host_frametime * 0.4;
+	int fps = floor(1.0 / rolling_fps);
+	NET_DrawString(2, 2, 0, 1.0, 1.0, 1.0, "%d fps", fps);
 }

@@ -95,8 +95,8 @@ NOXREF void *Mod_LoadAliasGroup(void *pin, int *pframeindex, int numv, trivertx_
 NOXREF void *Mod_LoadAliasSkin(void *pin, int *pskinindex, int skinsize, aliashdr_t *pheader);
 NOXREF void *Mod_LoadAliasSkinGroup(void *pin, int *pskinindex, int skinsize, aliashdr_t *pheader);
 NOXREF void Mod_LoadAliasModel(model_t *mod, void *buffer);
-void *Mod_LoadSpriteFrame(void *pin, mspriteframe_t **ppframe);
-void *Mod_LoadSpriteGroup(void *pin, mspriteframe_t **ppframe);
+void *Mod_LoadSpriteFrame(void *pin, mspriteframe_t **ppframe, int framenum);
+void *Mod_LoadSpriteGroup(void *pin, mspriteframe_t **ppframe, int framenum);
 void Mod_LoadSpriteModel(model_t *mod, void *buffer);
 NOXREF void Mod_UnloadSpriteTextures(model_t *pModel);
 void Mod_Print(void);

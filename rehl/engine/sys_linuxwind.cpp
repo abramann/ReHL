@@ -451,10 +451,14 @@ void CGame::SetWindowSize(int w, int h)
 
 void CGame::GetWindowRect(int *x, int *y, int *w, int *h)
 {
-	if (x) *x = 0;
-	if (y) *y = 0;
-	if (w) *w = 0;
-	if (h) *h = 0;
+	if (x)
+		*x = m_x;
+	if (y)
+		*y = m_y;
+	if (w)
+		*w = m_width;
+	if (h)
+		*h = m_height;
 }
 
 bool CGame::IsActiveApp()
@@ -477,7 +481,9 @@ void CGame::PlayAVIAndWait(const char *aviFile)
 
 void CGame::SetCursorVisible(bool bState)
 {
-	NOT_IMPLEMENTED;
+	m_bCursorVisible = bState;
+	if (!bState && cl_mousegrab.value == 0.0)
+		SDL_SetWindowGrab(m_hSDLWindow, SDL_FALSE);
 }
 
 void CGame::SetActiveApp(bool active)
