@@ -32,8 +32,17 @@
 #include "cl_ents.h"
 
 cl_enginefunc_dst_t g_engdstAddrs = k_engdstNull;
-client_static_t g_pcls;
+
+#ifdef SHARED_GAME_DATA
+client_state_t* sp_g_pcl = ADDRESS_OF_DATA(client_state_t*, 0x16F02);
+client_state_t& g_pcl = *sp_g_pcl;
+
+client_static_t * sp_g_pcls = ADDRESS_OF_DATA(client_static_t *, 0x15ECD);
+client_static_t & g_pcls = *sp_g_pcls;
+#else
 client_state_t g_pcl;
+client_static_t g_pcls;
+#endif
 
 double g_clockdelta = 0;
 

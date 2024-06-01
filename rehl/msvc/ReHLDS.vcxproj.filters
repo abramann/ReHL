@@ -461,34 +461,66 @@
     <ClCompile Include="..\vgui2\VGui_Controls.cpp">
       <Filter>engine\client\vgui2</Filter>
     </ClCompile>
-    <ClCompile Include="..\vgui2\Panel.cpp" />
-    <ClCompile Include="..\engine\ToolTip.cpp" />
-    <ClCompile Include="BuildGroup.cpp" />
-    <ClCompile Include="..\engine\KeyValues.cpp" />
-    <ClCompile Include="..\engine\BaseUISurface.cpp" />
     <ClCompile Include="..\engine\FontTextureCache.cpp">
       <Filter>engine\client</Filter>
     </ClCompile>
-    <ClCompile Include="..\engine\gl_hud.cpp" />
     <ClCompile Include="..\public\utlsymbol.cpp">
       <Filter>public</Filter>
     </ClCompile>
-    <ClCompile Include="..\vgui2\EditablePanel.cpp" />
-    <ClCompile Include="..\vgui2\FocusNavGroup.cpp" />
-    <ClCompile Include="..\engine\FontManager.cpp" />
-    <ClCompile Include="..\engine\gl_screen.cpp" />
     <ClCompile Include="..\engine\gl_rmisc.cpp">
       <Filter>engine\client</Filter>
     </ClCompile>
     <ClCompile Include="..\engine\thread.cpp">
       <Filter>engine\client</Filter>
     </ClCompile>
-    <ClCompile Include="..\engine\DemoPlayerWrapper.cpp" />
     <ClCompile Include="..\engine\MixerControls.cpp">
       <Filter>engine\client</Filter>
     </ClCompile>
     <ClCompile Include="studio_api.cpp">
       <Filter>engine\client</Filter>
+    </ClCompile>
+    <ClCompile Include="..\engine\hooker.cpp" />
+    <ClCompile Include="..\engine\BaseUISurface.cpp">
+      <Filter>engine</Filter>
+    </ClCompile>
+    <ClCompile Include="BuildGroup.cpp">
+      <Filter>engine</Filter>
+    </ClCompile>
+    <ClCompile Include="..\engine\DemoPlayerWrapper.cpp">
+      <Filter>engine</Filter>
+    </ClCompile>
+    <ClCompile Include="..\vgui2\EditablePanel.cpp">
+      <Filter>engine</Filter>
+    </ClCompile>
+    <ClCompile Include="..\vgui2\FocusNavGroup.cpp">
+      <Filter>engine</Filter>
+    </ClCompile>
+    <ClCompile Include="..\engine\FontAmalgma.cpp">
+      <Filter>engine</Filter>
+    </ClCompile>
+    <ClCompile Include="..\engine\FontManager.cpp">
+      <Filter>engine</Filter>
+    </ClCompile>
+    <ClCompile Include="..\engine\gl_hud.cpp">
+      <Filter>engine</Filter>
+    </ClCompile>
+    <ClCompile Include="..\engine\gl_screen.cpp">
+      <Filter>engine</Filter>
+    </ClCompile>
+    <ClCompile Include="..\engine\KeyCode.cpp">
+      <Filter>engine</Filter>
+    </ClCompile>
+    <ClCompile Include="..\engine\KeyValues.cpp">
+      <Filter>engine</Filter>
+    </ClCompile>
+    <ClCompile Include="..\vgui2\Panel.cpp">
+      <Filter>engine</Filter>
+    </ClCompile>
+    <ClCompile Include="..\engine\ToolTip.cpp">
+      <Filter>engine</Filter>
+    </ClCompile>
+    <ClCompile Include="..\engine\LinuxFont.cpp">
+      <Filter>engine</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -1398,7 +1430,6 @@
     <ClInclude Include="..\engine\gl_hud.h">
       <Filter>engine\client</Filter>
     </ClInclude>
-    <ClInclude Include="..\engine\EnginePanel.h" />
     <ClInclude Include="..\vgui2\EditablePanel.h">
       <Filter>engine\client\vgui2</Filter>
     </ClInclude>
@@ -1438,6 +1469,9 @@
     </ClInclude>
     <ClInclude Include="..\engine\r_studio.h">
       <Filter>engine\client</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\EnginePanel.h">
+      <Filter>engine</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

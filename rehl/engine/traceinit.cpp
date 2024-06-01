@@ -28,7 +28,11 @@
 
 #include "precompiled.h"
 
+#ifdef SHARED_GAME_DATA
+CInitTracker* sp_g_InitTracker = ADDRESS_OF_DATA(CInitTracker*, 0xB4470);
+#else
 CInitTracker g_InitTracker;
+#endif
 
 CInitTracker::CInitTracker(void)
 {
@@ -108,10 +112,18 @@ void CInitTracker::Shutdown(const char *shutdown, int listnum)
 
 void TraceInit(const char *i, const char *s, int listnum)
 {
+#if SHARED_GAME_DATA
+	sp_g_InitTracker->Init(i, s, listnum);
+#else
 	g_InitTracker.Init(i, s, listnum);
+#endif
 }
 
 void TraceShutdown(const char *s, int listnum)
 {
+#if SHARED_GAME_DATA
+	sp_g_InitTracker->Shutdown(s, listnum);
+#else
 	g_InitTracker.Shutdown(s, listnum);
+#endif
 }

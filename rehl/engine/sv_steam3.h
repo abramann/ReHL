@@ -118,6 +118,9 @@ public:
 		m_CallbackGameOverlayActivated(this, &CSteam3Client::OnGameOverlayActivated)
 	{}
 
+	void SetLoggedOn(bool newLoggedOn) { m_bLoggedOn = newLoggedOn; }
+	bool BLoggedOn()    const { return m_bLoggedOn; }
+
 	virtual void Shutdown();
 
 	int InitiateGameConnection(void *pData, int cbMaxData, uint64 steamID, uint32 unIPServer, uint16 usPortServer, bool bSecure);
@@ -126,8 +129,13 @@ public:
 	void RunFrame();
 };
 
-extern CSteam3Server *s_Steam3Server;
+#ifdef SHARED_GAME_DATA
+extern CSteam3Server*& s_Steam3Server;
+extern CSteam3Client& s_Steam3Client;
+#else
+extern CSteam3Server* s_Steam3Server;
 extern CSteam3Client s_Steam3Client;
+#endif
 
 uint64 ISteamGameServer_CreateUnauthenticatedUserConnection();
 bool ISteamGameServer_BUpdateUserData(uint64 steamid, const char *netname, uint32 score);

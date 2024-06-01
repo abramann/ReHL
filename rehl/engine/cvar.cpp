@@ -32,15 +32,18 @@
 	All cvar names are case insensitive! Values not.
 */
 
-cvar_t *cvar_vars = NULL;
+#ifdef SHARED_GAME_DATA
+cvar_t** sp_cvar_vars = ADDRESS_OF_DATA(cvar_t**, 0x2E9DC);
+cvar_t* & cvar_vars = *sp_cvar_vars;
+#else
+cvar_t* cvar_vars = NULL;
+#endif
 cvarhook_t *cvar_hooks = NULL;
 char cvar_null_string[] = "";
 
 void Cvar_Init(void)
 {
-#ifndef SWDS
-	// TODO: add client code, possibly none.
-#endif
+	// Nothing
 }
 
 void Cvar_Shutdown(void)
@@ -313,9 +316,113 @@ void EXT_FUNC Cvar_DirectSet_internal(struct cvar_s *var, const char *value)
 #endif
 }
 
-void Cvar_DirectSet(struct cvar_s *var, const char *value)
+void Cvar_DirectSet(cvar_t *var, const char *value)
 {
-	g_RehldsHookchains.m_Cvar_DirectSet.callChain(Cvar_DirectSet_internal, var, value);
+	char szNew[1024];
+	int flags = var->flags;
+	char* s1 = (char*)value;
+
+	if (!value || !var)
+		return;
+
+	if (!((flags & 0x2000) == 0 ||
+		(
+			*value != '/' &&
+			!Q_strstr(value, ":") &&
+			!Q_strstr(value, "..") &&
+			!Q_strstr(value, "\\"))))
+	{
+		Con_Printf("Refusing to set %s to %s (invalid path)\n", var->name, value);
+		return;
+	}
+	if (flags & 0x80)
+	{
+		szNew[0] = '\0';
+		int j = 0;
+		if (Q_UnicodeValidate(value))
+		{
+			Q_strcpy_s(szNew, (char*)value);
+		}
+		else
+		{
+			for (int i = 0; value[i] != '\0'; i++)
+			{
+				if (value[i] - ' ' <= '^')
+					szNew[j++] = value[i];
+			}
+		}
+		if (!Q_UnicodeValidate(&szNew[j]))
+			Q_UnicodeRepair(&szNew[j]);
+		if (Q_strlen(szNew) == 0)
+			Q_strcpy(szNew, "empty");
+
+		s1 = szNew;
+	}
+	if (flags & 0x200)
+	{
+		if (s1 != szNew)
+			Q_strncpy(szNew, s1, 1024);
+		s1 = szNew;
+		Q_StripUnprintableAndSpace(szNew);
+	}
+	if (flags & 0x1000)
+	{
+		if (s1 != szNew)
+			Q_strncpy(szNew, s1, 1024);
+		s1 = szNew;
+		szNew[strcspn(szNew, ";\n")] = 0;
+	}
+	if (flags & 2)
+	{
+		if (g_pcls.state
+			|| (SV_BroadcastCommand("fullserverinfo \"%s\"\n", Info_Serverinfo()),
+				g_pcls.state))
+		{
+			Info_SetValueForKey(g_pcls.userinfo, var->name, s1, 256);
+			if (Q_strcmp(var->string, s1) <= 0)
+			{
+				Z_Free(var->string);
+				var->string = (char *)Z_Malloc(Q_strlen(s1) + 1);;
+				Q_strcpy(var->string, s1);
+				var->value = Q_atof(var->string);
+				return;
+			}
+			if (g_pcls.state > (unsigned int)ca_connecting)
+			{
+				MSG_WriteByte(&g_pcls.netchan.message, 3);
+				SZ_Print(&g_pcls.netchan.message, va("setinfo \"%s\" \"%s\"\n", var->name, s1));
+			}
+		}
+	}
+	if (flags & 4 && Q_strcmp(var->string, s1))
+	{
+		if ((flags & 0x100) == 0)
+		{
+			if (flags & 0x20)
+			{
+				Log_Printf("Server cvar \"%s\" = \"%s\"\n", var->name, "***PROTECTED***");
+				SV_BroadcastPrintf("\"%s\" changed to \"%s\"\n", var->name, "***PROTECTED***");
+			}
+			else
+			{
+				Log_Printf("Server cvar \"%s\" = \"%s\"\n", var->name, s1);
+				SV_BroadcastPrintf("\"%s\" changed to \"%s\"\n", var->name, s1);
+			}
+		}
+		char* val = s1;
+		if (flags & 0x20)
+		{
+			val = "0";
+			if (Q_strlen(s1) > 0 && Q_stricmp(s1, "none"))
+				val = "1";
+		}
+		Steam_SetCVar(var->name, val);
+	}
+
+	Z_Free(var->string);
+	var->string = (char *)Z_Malloc(Q_strlen(s1) + 1);;
+	Q_strcpy(var->string, s1);
+	var->value = Q_atof(var->string);
 }
 
 void Cvar_Set(const char *var_name, const char *value)
@@ -739,6 +846,13 @@ void Cvar_UnlinkExternals(void)
 void Cvar_CmdInit(void)
 {
 	Cmd_AddCommand("cvarlist", Cmd_CvarList_f);
+}
+
+qboolean Cvar_CommandWithPrivilegeCheck(qboolean bIsPrivileged)
+{
+	return Call_Function<qboolean, qboolean>(0x2EAB0, bIsPrivileged);
+	NOT_IMPLEMENTED;
+	return qboolean();
 }
 
 qboolean Cvar_HookVariable(const char *var_name, cvarhook_t *pHook)

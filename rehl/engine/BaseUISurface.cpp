@@ -18,7 +18,11 @@ static vgui::Dar<vgui2::VPANEL> staticPopupList;
 extern cvar_t sdl_double_click_size;
 extern cvar_t sdl_double_click_time;
 
+#ifdef SHARED_GAME_DATA
+extern cvar_t& cl_mousegrab;
+#else
 extern cvar_t cl_mousegrab;
+#endif
 extern cvar_t m_rawinput;
 
 BaseUISurface g_BaseUISurface;
@@ -344,6 +348,8 @@ void BaseUISurface::SetEmbeddedPanel(vgui2::VPANEL panel)
 
 void BaseUISurface::PushMakeCurrent(vgui2::VPANEL panel, bool useInsets)
 {
+	CHECK_REQUIRED;
+
 	int insets[4] = {};
 
 	m_iCurrentTexture = 0;
@@ -452,7 +458,6 @@ void BaseUISurface::DrawPrintText(const wchar_t* text, int textLen)
 void BaseUISurface::DrawUnicodeChar(wchar_t wch)
 {
 	NOT_IMPLEMENTED;
-	/*
 	if (!m_hCurrentFont)
 		return;
 
@@ -464,7 +469,7 @@ void BaseUISurface::DrawUnicodeChar(wchar_t wch)
 	int a, b, c;
 	GetCharABCwide(m_hCurrentFont, wch, a, b, c);
 
-	const bool bUnderlined = FontManager().GetFontUnderlined(m_hCurrentFont);
+	bool bUnderlined = FontManager()->GetFontUnderlined(m_hCurrentFont);
 
 	int wide = b;
 
@@ -501,7 +506,6 @@ void BaseUISurface::DrawUnicodeChar(wchar_t wch)
 
 		DrawSetTextPos(x, y);
 	}
-	*/
 }
 
 void BaseUISurface::DrawUnicodeCharAdd(wchar_t wch)
@@ -936,7 +940,7 @@ void BaseUISurface::SetTopLevelFocus(vgui2::VPANEL subFocus)
 
 vgui2::HFont BaseUISurface::CreateFont()
 {
-	return FontManager()->CreateFont();
+	return FontManager()->_CreateFont();
 }
 
 bool BaseUISurface::AddGlyphSetToFont(vgui2::HFont font, const char* windowsFontName, int tall, int weight, int blur, int scanlines, int flags, int lowRange, int highRange)
@@ -976,13 +980,13 @@ int BaseUISurface::GetCharacterWidth(vgui2::HFont font, int ch)
 {
 	NOT_IMPLEMENTED;
 	return 0;
-	//return FontManager().GetCharacterWidth(font, ch);
+	//return FontManager()->GetCharacterWidth(font, ch);
 }
 
 void BaseUISurface::GetTextSize(vgui2::HFont font, const wchar_t* text, int& wide, int& tall)
 {
 	NOT_IMPLEMENTED;
-	//FontManager().GetTextSize(font, text, wide, tall);
+	//FontManager()->GetTextSize(font, text, wide, tall);
 }
 
 vgui2::VPANEL BaseUISurface::GetNotifyPanel()
@@ -1302,7 +1306,7 @@ int BaseUISurface::GetFontAscent(vgui2::HFont font, wchar_t wch)
 {
 	NOT_IMPLEMENTED;
 	return 0;
-	//return FontManager().GetFontAscent(font, wch);
+	//return FontManager()->GetFontAscent(font, wch);
 }
 
 void BaseUISurface::SetAllowHTMLJavaScript(bool state)
@@ -1461,9 +1465,6 @@ void BaseUISurface::InternalSolveTraverse(vgui2::VPANEL panel)
 	{
 		auto child = vgui2::ipanel()->GetChild(panel, i);
 
-		int a[4];
-		vgui2::ipanel()->GetClipRect(child, a[0], a[1], a[2], a[3]);
-		
 		if (vgui2::ipanel()->IsVisible(child))
 		{
 			InternalSolveTraverse(child);
@@ -1592,7 +1593,7 @@ bool CFontTextureCache::GetTextureForChar(vgui2::HFont font, wchar_t wch, int* t
 
 	if (index == m_CharCache.InvalidIndex())
 	{
-		auto pFont = FontManager().GetFontForChar(font, wch);
+		auto pFont = FontManager()->GetFontForChar(font, wch);
 
 		if (!pFont)
 			return false;

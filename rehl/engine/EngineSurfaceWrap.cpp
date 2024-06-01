@@ -69,16 +69,18 @@ void EngineSurfaceWrap::AppHandler(void * event, void * userData)
 		{
 			if (pEvent->type == SDL_KEYDOWN)
 			{
-				pApp->internalKeyPressed((vgui::KeyCode) (vgui2::KeyCode_VirtualKeyToVGUI(motionX) - 1), this);
+				NOT_IMPLEMENTED;
+				//pApp->internalKeyPressed((vgui::KeyCode) (vgui2::KeyCode_VirtualKeyToVGUI(motionX) - 1), this);
 
-				pApp->internalKeyTyped((vgui::KeyCode) (vgui2::KeyCode_VirtualKeyToVGUI(motionX) - 1), this);
+				//pApp->internalKeyTyped((vgui::KeyCode) (vgui2::KeyCode_VirtualKeyToVGUI(motionX) - 1), this);
 			}
 			else
 			{
 				if (pEvent->type != SDL_KEYUP)
 					return;
+				NOT_IMPLEMENTED;
 
-				pApp->internalKeyReleased((vgui::KeyCode) (vgui2::KeyCode_VirtualKeyToVGUI(motionX) - 1), this);
+				//pApp->internalKeyReleased((vgui::KeyCode) (vgui2::KeyCode_VirtualKeyToVGUI(motionX) - 1), this);
 			}
 
 			CheckModState(pApp, this);

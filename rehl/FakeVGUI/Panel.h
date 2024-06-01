@@ -31,11 +31,11 @@ namespace vgui
 		Panel(int x, int y, int wide, int tall);
 
 		virtual void  setPos(int x, int y);
-		virtual void  getPos(int *const x, int *const y);
+		virtual void  getPos(int& x, int& y);
 		virtual void  setSize(int wide, int tall);
-		virtual void  getSize(int *const wide, int *const tall);
+		virtual void  getSize(int& wide, int& tall);
 		virtual void  setBounds(int x, int y, int wide, int tall);
-		virtual void  getBounds(int *const x, int *const y, int *const wide, int *const tall);
+		virtual void  getBounds(int& x, int& y, int& wide, int& tall);
 		virtual int  getWide();
 		virtual int  getTall();
 		virtual vgui::Panel * getParent();
@@ -44,8 +44,8 @@ namespace vgui
 		virtual bool  isVisibleUp();
 		virtual void  repaint();
 		virtual void  repaintAll();
-		virtual void  getAbsExtents(int *const x0, int *const y0, int *const x1, int *const y1);
-		virtual void  getClipRect(int *const x0, int *const y0, int *const x1, int *const y1);
+		virtual void  getAbsExtents(int& x0, int& y0, int& x1, int& y1);
+		virtual void  getClipRect(int& x0, int& y0, int& x1, int& y1);
 		virtual void  setParent(vgui::Panel *newParent);
 		virtual void  addChild(vgui::Panel *child);
 		virtual void  insertChildAt(vgui::Panel *child, int index);
@@ -64,13 +64,13 @@ namespace vgui
 		virtual void  removeRepaintSignal(vgui::RepaintSignal *s);
 		virtual bool  isWithin(int x, int y);
 		virtual vgui::Panel * isWithinTraverse(int x, int y);
-		virtual void  localToScreen(int *const x, int *const y);
-		virtual void  screenToLocal(int *const x, int *const y);
+		virtual void  localToScreen(int& x, int& y);
+		virtual void  screenToLocal(int& x, int& y);
 		virtual void  setCursor(vgui::Cursor *cursor);
 		virtual void  setCursor(vgui::Scheme::SchemeCursor scu);
 		vgui::Cursor * getCursor();
 		virtual void  setMinimumSize(int wide, int tall);
-		virtual void  getMinimumSize(int *const wide, int *const tall);
+		virtual void  getMinimumSize(int& wide, int& tall);
 		virtual void  requestFocus();
 		virtual bool  hasFocus();
 		virtual int  getChildCount();
@@ -87,10 +87,10 @@ namespace vgui
 		virtual void  setPaintBorderEnabled(bool state);
 		virtual void  setPaintBackgroundEnabled(bool state);
 		virtual void  setPaintEnabled(bool state);
-		virtual void  getInset(int *const left, int *const top, int *const right, int *const bottom);
-		virtual void  getPaintSize(int *const wide, int *const tall);
+		virtual void  getInset(int& left, int& top, int& right, int& bottom);
+		virtual void  getPaintSize(int& wide, int& tall);
 		virtual void  setPreferredSize(int wide, int tall);
-		virtual void  getPreferredSize(int *const wide, int *const tall);
+		virtual void  getPreferredSize(int& wide, int& tall);
 		virtual vgui::SurfaceBase * getSurfaceBase();
 		virtual bool  isEnabled();
 		virtual void  setEnabled(bool state);
@@ -105,8 +105,8 @@ namespace vgui
 		virtual void  setBgColor(vgui::Scheme::SchemeColor sc);
 		virtual void  setFgColor(int r, int g, int b, int a);
 		virtual void  setBgColor(int r, int g, int b, int a);
-		virtual void  getFgColor(int *const r, int *const g, int *const b, int *const a);
-		virtual void  getBgColor(int *const r, int *const g, int *const b, int *const a);
+		virtual void  getFgColor(int& r, int& g, int& b, int& a);
+		virtual void  getBgColor(int& r, int& g, int& b, int& a);
 		virtual void  setBgColor(Color *p_color);
 		virtual void  setFgColor(Color *p_color);
 		virtual void  getBgColor(Color *const color);
@@ -114,7 +114,7 @@ namespace vgui
 		virtual void  setAsMouseCapture(bool state);
 		virtual void  setAsMouseArena(bool state);
 		virtual vgui::App * getApp();
-		virtual void  getVirtualSize(int *const wide, int *const tall);
+		virtual void  getVirtualSize(int& wide, int& tall);
 		virtual void  setLayoutInfo(vgui::LayoutInfo *layoutInfo);
 		vgui::LayoutInfo * getLayoutInfo();
 		virtual bool  isCursorNone();

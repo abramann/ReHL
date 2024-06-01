@@ -29,16 +29,23 @@
 #include "precompiled.h"
 #include "gl_vidnt.h"
 #include "renderer.h"
-
+#include "hooker.h"
 
 extern cvar_t m_rawinput;
-extern cvar_t cl_mousegrab;
 extern bool s_bCursorVisible;
 
+#ifdef SHARED_GAME_DATA
+IGame** sp_game = ADDRESS_OF_DATA(IGame**, 0xAC778);
+IGame*& game = *sp_game;
+extern cvar_t& cl_mousegrab;
+
+#else
 volatile CGame g_Game;
 IGame *game = (IGame*)&g_Game;
+extern cvar_t cl_mousegrab;
+#endif
 
-char CSWTCH_79[228] = 
+char CSWTCH_79[228] =
 {
 	'a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z','1','2','3','4',
 	'5','6','7','8','9','0','\r','\x1B','\x7F','\t',' ','-','=','[',']','\\','\0',';','\'','`',',','.','/','\xAF','\x87','\x88',
@@ -52,7 +59,12 @@ char CSWTCH_79[228] =
 	'\xB1',
 };
 
+#ifdef SHARED_GAME_DATA
+uint32* sp_mouseCode = ADDRESS_OF_DATA(uint32*, 0xB02FF);
+uint32& mouseCode = *sp_mouseCode;
+#else
 uint32 mouseCode;
+#endif
 
 void GetWindowNameFromGameDir(char* output, int outputBufferSize);
 
@@ -79,12 +91,14 @@ bool CGame::Shutdown()
 
 bool CGame::CreateGameWindow()
 {
+	//return Call_Method<bool, CGame>(0xB0B90, this);
 	if (COM_CheckParm("-noontop"))
 		SDL_SetHint("SDL_ALLOW_TOPMOST", "0");
 
+#ifndef _WIN32
 	SDL_SetHint("SDL_VIDEO_X11_XRANDR", "1");
 	SDL_SetHint("SDL_VIDEO_X11_XVIDMODE", "1");
-
+#endif
 	SDL_InitSubSystem(SDL_INIT_EVERYTHING);
 	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
 	SDL_GL_SetAttribute(SDL_GL_ACCELERATED_VISUAL, 1);
@@ -95,7 +109,7 @@ bool CGame::CreateGameWindow()
 	SDL_GL_SetAttribute(SDL_GL_ALPHA_SIZE, 0);
 
 	char gameWindowName[512];
-	strcpy(gameWindowName, "Half-Life");
+	Q_strcpy(gameWindowName, "Half-Life");
 
 	// Check if liblist overrides the window title.
 	GetWindowNameFromGameDir(gameWindowName, sizeof(gameWindowName));
@@ -195,6 +209,7 @@ bool CGame::CreateGameWindow()
 
 void CGame::SleepUntilInput(int sleepTime)
 {
+	return Call_Method<void, CGame, int>(0xAFF40, this, sleepTime);
 #ifdef SWDS
 #ifdef _WIN32
 	Sleep(time * 1000);
@@ -216,10 +231,10 @@ void CGame::SleepUntilInput(int sleepTime)
 	{
 		if (ev.type < SDL_TEXTINPUT)
 		{
-			if (ev.type == SDL_QUIT)
+			if (ev.type == SDL_WINDOWEVENT)
 			{
-				if (eng->GetState() == 1)
-					eng->SetQuitting(1);
+				//if (eng->GetState() == 1)
+				//	eng->SetQuitting(1);
 
 				switch (ev.window.event)
 				{
@@ -258,35 +273,36 @@ void CGame::SleepUntilInput(int sleepTime)
 				default:
 					break;
 				}
-
 			}
-
-			else if (ev.type > SDL_WINDOWEVENT)
+			else
 			{
-				char k = '\0';
-
-				switch (ev.type)
+				if (ev.type > SDL_WINDOWEVENT)
 				{
-				case SDL_KEYDOWN:
-					if ((ev.window.data1 - 4) <= 227)
-						k = CSWTCH_79[ev.window.data1 - 4];
+					char k = '\0';
 
-					eng->TrapKey_Event(k, true);
-					break;
+					switch (ev.type)
+					{
+					case SDL_KEYDOWN:
+						if ((ev.window.data1 - 4) <= 227)
+							k = CSWTCH_79[ev.window.data1 - 4];
 
-				case SDL_KEYUP:
-					if (ev.window.data1 - 4 <= 227)
-						k = CSWTCH_79[ev.window.data1 - 4];
+						eng->TrapKey_Event(k, true);
+						break;
 
-					eng->TrapKey_Event(k, false);
-					break;
+					case SDL_KEYUP:
+						if (ev.window.data1 - 4 <= 227)
+							k = CSWTCH_79[ev.window.data1 - 4];
 
-				default:
-					break;
+						eng->TrapKey_Event(k, false);
+						break;
+
+					default:
+						break;
+					}
 				}
 			}
 		}
-	
+
 		else if (ev.type == SDL_TEXTINPUT)
 		{
 			if (key_dest == key_message)
@@ -385,7 +401,7 @@ void CGame::SleepUntilInput(int sleepTime)
 			if (!g_BaseUISurface.IsCursorVisible() && !s_bCursorVisible && BUsesSDLInput())
 			{
 				if (m_bExpectSyntheticMouseMotion
-					&& ev.motion.x   == m_nMouseTargetX && ev.motion.y == m_nMouseTargetY)
+					&& ev.motion.x == m_nMouseTargetX && ev.motion.y == m_nMouseTargetY)
 				{
 					m_bExpectSyntheticMouseMotion = 0;
 					if (m_rawinput.value == 0.0)
@@ -493,6 +509,8 @@ void CGame::SetActiveApp(bool active)
 
 void CGame::AppActivate(bool fActive)
 {
+	Call_Method<void, CGame, bool>(0xB0960, this,fActive);
+	return;
 	NOT_IMPLEMENTED;
 }
 

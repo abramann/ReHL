@@ -1,4 +1,5 @@
 #pragma once
+#include "ref_params.h"
 
 typedef struct screenshake_s
 {
@@ -21,3 +22,7 @@ int V_ScreenShake(const char* pszName, int iSize, void* pbuf);
 int V_ScreenFade(const char* pszName, int iSize, void* pbuf);
 void V_UpdatePalette();
 void V_RenderView();
+void V_SetRefParams(ref_params_t *pparams);
+void V_GetRefParams(ref_params_t *pparams);
+void FilterLightParams();
+void BuildGammaTable(float g);

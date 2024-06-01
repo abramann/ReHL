@@ -62,6 +62,23 @@ namespace vgui2
 		
 		static const char *GetPanelClassName();
 
+		static void ChainToMap(void);
+
+		struct PanelMessageFunc_OnDefaultButtonSet
+		{
+			static void InitVar(void);
+		};
+
+		struct PanelMessageFunc_OnCurrentDefaultButtonSet
+		{
+			static void InitVar(void);
+		};
+
+		struct PanelMessageFunc_OnFindDefaultButton
+		{
+			static void InitVar(void);
+		};
+
 	private:
 		typedef void(*EditablePanel_RegisterMap)();
 

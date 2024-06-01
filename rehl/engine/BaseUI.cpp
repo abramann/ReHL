@@ -12,6 +12,7 @@
 #include "Cursor.h"
 #include "EnginePanel.h"
 #include "VClientVGUI.h"
+#include "IHTMLChromeController.h"
 
 static bool m_bConsoleShowing;
 
@@ -73,7 +74,7 @@ void CBaseUI::Initialize(CreateInterfaceFn* factories, int count)
 	m_FactoryList[1] = Sys_GetFactory(m_hVGuiModule);
 	
 #if defined(UNRESOLVED_ISSUE) && defined(_DEBUG)
-	m_hChromeModule = reinterpret_cast<CSysModule*>(GetModuleHandleA("chromehtml.dll"));
+	m_hChromeModule = nullptr;// reinterpret_cast<CSysModule*>(GetModuleHandleA("chromehtml.dll"));
 #else
 	m_hChromeModule = Sys_LoadModule("chromehtml." LIBRARY_PREFIX);
 #endif

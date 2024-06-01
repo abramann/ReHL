@@ -31,10 +31,100 @@
 #include "gl_draw.h"
 #include "DemoPlayerWrapper.h"
 
-double realtime;
 double rolling_fps;
+#ifdef SHARED_GAME_DATA
+quakeparms_t* sp_host_parms = ADDRESS_OF_DATA(quakeparms_t*, 0x57D54);
+quakeparms_t& host_parms = *sp_host_parms;
+
+qboolean* sp_host_initialized = ADDRESS_OF_DATA(qboolean*, 0x5805C);
+qboolean& host_initialized = *sp_host_initialized;;
+
+double* sp_realtime = ADDRESS_OF_DATA(double*, 0x57D76);
+double&  realtime = *sp_realtime;
+
+
+cvar_t * sp_host_killtime = ADDRESS_OF_DATA(cvar_t *, 0x56046);
+cvar_t & host_killtime = *sp_host_killtime;
+
+cvar_t * sp_sys_ticrate = ADDRESS_OF_DATA(cvar_t *, 0x56050);
+cvar_t & sys_ticrate = *sp_sys_ticrate;
+
+cvar_t * sp_fps_max = ADDRESS_OF_DATA(cvar_t *, 0x5605A);
+cvar_t & fps_max = *sp_fps_max;
+
+cvar_t * sp_fps_override = ADDRESS_OF_DATA(cvar_t *, 0x56064);
+cvar_t & fps_override = *sp_fps_override;
+
+cvar_t * sp_host_name = ADDRESS_OF_DATA(cvar_t *, 0x5606E);
+cvar_t & host_name = *sp_host_name;
+
+cvar_t * sp_host_limitlocal = ADDRESS_OF_DATA(cvar_t *, 0x56078);
+cvar_t & host_limitlocal = *sp_host_limitlocal;
+
+cvar_t * sp_sys_timescale = ADDRESS_OF_DATA(cvar_t *, 0x56088) - 3;
+cvar_t & sys_timescale = *sp_sys_timescale;
+
+cvar_t * sp_host_framerate = ADDRESS_OF_DATA(cvar_t *, 0x56082);
+cvar_t & host_framerate = *sp_host_framerate;
+
+cvar_t * sp_host_speed = ADDRESS_OF_DATA(cvar_t *, 0x56095);
+cvar_t & host_speed = *sp_host_speed;
+
+cvar_t * sp_host_profile = ADDRESS_OF_DATA(cvar_t *, 0x5609F);
+cvar_t & host_profile = *sp_host_profile;
+
+cvar_t * sp_sv_stats = ADDRESS_OF_DATA(cvar_t *, 0x560DC);
+cvar_t & sv_stats = *sp_sv_stats;
+
+cvar_t* sp_developer = ADDRESS_OF_DATA(cvar_t*, 0x560E6);
+cvar_t& developer = *sp_developer;
+
+cvar_t * sp_deathmatch = ADDRESS_OF_DATA(cvar_t *, 0x560F3);
+cvar_t & deathmatch = *sp_deathmatch;
+
+cvar_t * sp_coop = ADDRESS_OF_DATA(cvar_t *, 0x56FD);
+cvar_t & coop = *sp_coop;
+
+cvar_t * sp_pausable = ADDRESS_OF_DATA(cvar_t *, 0x56107);
+cvar_t & pausable = *sp_pausable;
+
+cvar_t * sp_skill = ADDRESS_OF_DATA(cvar_t *, 0x56111);
+cvar_t & skill = *sp_skill; 
+
+cvar_t * sp_host_speeds = ADDRESS_OF_DATA(cvar_t *, 0x56096);
+cvar_t & host_speeds = *sp_host_speeds; 
+
+#else
+double realtime;
 quakeparms_t host_parms;
+
 qboolean host_initialized;
+cvar_t developer = { "developer", "0", 0, 0.0f, NULL };
+cvar_t sys_timescale = { "sys_timescale", "1.0", 0, 0.0f, NULL };
+
+cvar_t host_killtime = { "host_killtime", "0.0", 0, 0.0f, NULL };
+cvar_t sys_ticrate = { "sys_ticrate", "100.0", 0, 0.0f, NULL };
+cvar_t fps_max = { "fps_max", "100.0", FCVAR_ARCHIVE, 0.0f, NULL };
+cvar_t fps_override = { "fps_override", "0", 0, 0.0f, NULL };
+cvar_t host_name = { "hostname", "Half-Life", 0, 0.0f, NULL };
+cvar_t host_limitlocal = { "host_limitlocal", "0", 0, 0.0f, NULL };
+cvar_t host_framerate = { "host_framerate", "0", 0, 0.0f, NULL };
+cvar_t host_speeds = { "host_speeds", "0", 0, 0.0f, NULL };
+cvar_t host_profile = { "host_profile", "0", 0, 0.0f, NULL };
+
+
+
+
+
+
+cvar_t sv_stats = { "sv_stats", "1", 0, 0.0f, NULL };
+cvar_t deathmatch = { "deathmatch", "0", FCVAR_SERVER, 0.0f, NULL };
+cvar_t coop = { "coop", "0", FCVAR_SERVER, 0.0f, NULL };
+cvar_t pausable = { "pausable", "1", FCVAR_SERVER, 0.0f, NULL };
+cvar_t skill = { "skill", "1", 0, 0.0f, NULL };
+#endif
+
+cvar_t suitvolume = { "suitvolume", "0.25", FCVAR_ARCHIVE, 0.0f, NULL };
 double host_frametime;
 //unsigned short *host_basepal;
 int host_framecount;
@@ -50,29 +140,11 @@ unsigned short *host_basepal;
 //unsigned char *host_colormap;
 //const char *g_InGameAdsAllowed[3];
 
-cvar_t host_name = { "hostname", "Half-Life", 0, 0.0f, NULL };
-cvar_t host_speeds = { "host_speeds", "0", 0, 0.0f, NULL };
-cvar_t host_profile = { "host_profile", "0", 0, 0.0f, NULL };
-cvar_t developer = { "developer", "0", 0, 0.0f, NULL };
-cvar_t host_limitlocal = { "host_limitlocal", "0", 0, 0.0f, NULL };
-cvar_t skill = { "skill", "1", 0, 0.0f, NULL };
-cvar_t deathmatch = { "deathmatch", "0", FCVAR_SERVER, 0.0f, NULL };
-cvar_t coop = { "coop", "0", FCVAR_SERVER, 0.0f, NULL };
 extern cvar_t cl_gamegauge;
 
-cvar_t sys_ticrate = { "sys_ticrate", "100.0", 0, 0.0f, NULL };
-
 void sys_timescale_hook_callback(cvar_t *cvar);
-cvarhook_t sys_timescale_hook = { sys_timescale_hook_callback, NULL, NULL };
-cvar_t sys_timescale = { "sys_timescale", "1.0", 0, 0.0f, NULL };
 
-cvar_t fps_max = { "fps_max", "100.0", FCVAR_ARCHIVE, 0.0f, NULL };
-cvar_t host_killtime = { "host_killtime", "0.0", 0, 0.0f, NULL };
-cvar_t sv_stats = { "sv_stats", "1", 0, 0.0f, NULL };
-cvar_t fps_override = { "fps_override", "0", 0, 0.0f, NULL };
-cvar_t host_framerate = { "host_framerate", "0", 0, 0.0f, NULL };
-cvar_t pausable = { "pausable", "1", FCVAR_SERVER, 0.0f, NULL };
-cvar_t suitvolume = { "suitvolume", "0.25", FCVAR_ARCHIVE, 0.0f, NULL };
+cvarhook_t sys_timescale_hook = { sys_timescale_hook_callback, NULL, NULL };
 
 NOXREF void Host_EndGame(const char *message, ...)
 {
@@ -149,18 +221,14 @@ void NORETURN Host_Error(const char *error, ...)
 void Host_InitLocal(void)
 {
 	Host_InitCommands();
+
 	Cvar_RegisterVariable(&host_killtime);
 	Cvar_RegisterVariable(&sys_ticrate);
-	Cvar_RegisterVariable(&sys_timescale);
-	Cvar_HookVariable(sys_timescale.name, &sys_timescale_hook);
-
 	Cvar_RegisterVariable(&fps_max);
 	Cvar_RegisterVariable(&fps_override);
 	Cvar_RegisterVariable(&host_name);
 	Cvar_RegisterVariable(&host_limitlocal);
-
-	sys_timescale.value = 1.0f;
-
+	sys_timescale.value = 1.0;
 	Cvar_RegisterVariable(&host_framerate);
 	Cvar_RegisterVariable(&host_speeds);
 	Cvar_RegisterVariable(&host_profile);
@@ -257,7 +325,7 @@ void Host_WriteConfiguration(void)
 		Con_Printf("skipping config.cfg output, no keys bound\n");
 		return;
 	}
-
+	
 	bSetFileToReadOnly = FALSE;
 	f = FS_OpenPathID("config.cfg", "w", "GAMECONFIG");
 	if (!f)
@@ -1097,9 +1165,11 @@ void Host_Version(void)
 
 int Host_Init(quakeparms_t *parms)
 {
+	return Call_Function<int, quakeparms_t*>(0x57D30, parms);
+
 	char versionString[256];
 
-	CRehldsPlatformHolder::get()->srand(CRehldsPlatformHolder::get()->time(NULL));
+	srand(time(0));
 
 	Q_memcpy(&host_parms, parms, sizeof(host_parms));
 	com_argc = parms->argc;
@@ -1121,7 +1191,7 @@ int Host_Init(quakeparms_t *parms)
 	Ed_StrPool_Init();
 #endif //REHLDS_FIXES
 
-	FR_Init(); //don't put it under REHLDS_FLIGHT_REC to allow recording via Rehlds API
+	//FR_Init(); //don't put it under REHLDS_FLIGHT_REC to allow recording via Rehlds API
 
 	Cbuf_Init();
 	Cmd_Init();
@@ -1151,8 +1221,7 @@ int Host_Init(quakeparms_t *parms)
 	Host_Version();
 
 	//Rehlds Security
-	Rehlds_Security_Init();
-
+	//Rehlds_Security_Init();
 
 	Q_snprintf(versionString, sizeof(versionString), "%s,%i,%i", gpszVersionString, PROTOCOL_VERSION, build_number());
 	Cvar_Set("sv_version", versionString);
@@ -1220,8 +1289,12 @@ int Host_Init(quakeparms_t *parms)
 
 void Host_Shutdown(void)
 {
+#ifdef SHARED_GAME_DATA
+	qboolean* sp_isdown = ADDRESS_OF_DATA(qboolean*, 0x58041);
+	qboolean& isdown = *sp_isdown;
+#else
 	static qboolean isdown = FALSE;
-
+#endif
 	int i;
 	client_t *pclient;
 

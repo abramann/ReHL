@@ -43,4 +43,10 @@ public:
 	virtual int Run(void *instance, char *basedir, char *cmdline, char *postRestartCmdLineArgs, CreateInterfaceFn launcherFactory, CreateInterfaceFn filesystemFactory) = 0;
 };
 
+class CEngineAPI : public IEngineAPI
+{
+public:
+	EXT_FUNC int Run(void *instance, char *basedir, char *cmdline, char *postRestartCmdLineArgs, CreateInterfaceFn launcherFactory, CreateInterfaceFn filesystemFactory);
+};
+
 #define VENGINE_LAUNCHER_API_VERSION "VENGINE_LAUNCHER_API_VERSION002"

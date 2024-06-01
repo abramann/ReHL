@@ -5,58 +5,78 @@
 #include "vgui2\IPanel.h"
 #include "MessageMap.h"
 
-bool vgui2::EditablePanel::Unknown::chained = false;
-bool vgui2::EditablePanel::Unknown::OnDefaultButtonSet_InitVar_bAdded = false;
-bool vgui2::EditablePanel::Unknown::OnCurrentDefaultButtonSet_InitVar_bAdded = false;
-bool vgui2::EditablePanel::Unknown::OnFindDefaultButton_InitVar_bAdded = false;
 
+void vgui2::EditablePanel::ChainToMap(void)
+{
+	static bool chained = false;
+	if (chained)
+		return;
+
+	chained = true;
+
+	vgui::PanelMessageMap* pMsgMap = vgui::FindOrAddPanelMessageMap("EditablePanel");
+	pMsgMap->pfnClassName = vgui2::EditablePanel::GetPanelClassName;
+	pMsgMap->baseMap = vgui::FindOrAddPanelMessageMap("Panel");
+}
+
+void vgui2::EditablePanel::PanelMessageFunc_OnDefaultButtonSet::InitVar(void)
+{
+	ADD_ONE_TIME;
+
+	vgui::PanelMessageMap* pMsgMap = vgui::FindOrAddPanelMessageMap("EditablePanel");
+
+	vgui::MessageMapItem_t src;
+	memset(&src, 0, sizeof(vgui::MessageMapItem_t));
+
+	src.name = "DefaultButtonSet";
+	src.func = NullFunction; // (void(*)(vgui2::Panel *))(elf_hash_bucket + 401);
+	src.numParams = 1;
+	src.firstParamType = vgui::DATATYPE_PTR;
+	src.firstParamName = "button";
+
+	pMsgMap->entries.InsertBefore(pMsgMap->entries.Size(), src);
+}
+
+void vgui2::EditablePanel::PanelMessageFunc_OnCurrentDefaultButtonSet::InitVar(void)
+{
+	ADD_ONE_TIME;
+
+	vgui::PanelMessageMap* pMsgMap = vgui::FindOrAddPanelMessageMap("EditablePanel");
+
+	vgui::MessageMapItem_t src;
+	memset(&src, 0, sizeof(vgui::MessageMapItem_t));
+
+	src.name = "CurrentDefaultButtonSet";
+	src.func = NullFunction; // EditablePanel::CurrentDefaultButtonSet;
+	src.numParams = 1;
+	src.firstParamType = vgui::DATATYPE_PTR;
+	src.firstParamName = "button";
+
+	pMsgMap->entries.InsertBefore(pMsgMap->entries.Size(), src);
+}
+
+void vgui2::EditablePanel::PanelMessageFunc_OnFindDefaultButton::InitVar(void)
+{
+	ADD_ONE_TIME;
+
+	vgui::PanelMessageMap* pMsgMap = vgui::FindOrAddPanelMessageMap("EditablePanel");
+
+	vgui::MessageMapItem_t src;
+	memset(&src, 0, sizeof(vgui::MessageMapItem_t));
+
+	src.name = "FindDefaultButton";
+	src.func = NullFunction; // (void(*)(vgui2::Panel *))(elf_hash_bucket + 409);
+	pMsgMap->entries.InsertBefore(pMsgMap->entries.Size(), src);
+}
 
 vgui2::EditablePanel::EditablePanel(Panel *parent, const char *panelName) : Panel(parent, panelName), m_NavGroup(this)
 {
-	vgui::MessageMapItem_t src;
-
-	if (!Unknown::chained)
-	{
-		Unknown::chained = true;
-		vgui::PanelMessageMap* pMsgMap = vgui::FindOrAddPanelMessageMap("EditablePanel");
-		pMsgMap->pfnClassName = vgui2::EditablePanel::GetPanelClassName;
-		pMsgMap->baseMap = vgui::FindOrAddPanelMessageMap("Panel");
-	}
-	if (!Unknown::OnDefaultButtonSet_InitVar_bAdded)
-	{
-		Unknown::OnDefaultButtonSet_InitVar_bAdded = true;
-		vgui::PanelMessageMap* pMsgMap = vgui::FindOrAddPanelMessageMap("EditablePanel");
-		memset(&src, 0, sizeof(vgui::MessageMapItem_t));
-		src.name = "DefaultButtonSet";
-		//src.func.__pfn = (void(*)(vgui2::Panel *))(elf_hash_bucket + 401);
-		src.numParams = 1;
-		src.firstParamType = vgui::DATATYPE_PTR;
-		src.firstParamName = "button";
-
-		pMsgMap->entries.InsertBefore(pMsgMap->entries.Size(), src);
-	}
-	if (!Unknown::OnCurrentDefaultButtonSet_InitVar_bAdded)
-	{
-		Unknown::OnCurrentDefaultButtonSet_InitVar_bAdded = 1;
-		vgui::PanelMessageMap* pMsgMap = vgui::FindOrAddPanelMessageMap("EditablePanel");
-		memset(&src, 0, sizeof(vgui::MessageMapItem_t));
-		src.name = "CurrentDefaultButtonSet";
-		//src.func.__pfn = (void(*)(vgui2::Panel *))(elf_hash_bucket + 405);
-		src.numParams = 1;
-		src.firstParamType = vgui::DATATYPE_PTR;
-		src.firstParamName = "button";
-		pMsgMap->entries.InsertBefore(pMsgMap->entries.Size(), src);
-	}
-	if (!Unknown::OnFindDefaultButton_InitVar_bAdded)
-	{
-		Unknown::OnFindDefaultButton_InitVar_bAdded = true;
-		vgui::PanelMessageMap* pMsgMap = vgui::FindOrAddPanelMessageMap("EditablePanel");
-		memset(&src, 0, sizeof(vgui::MessageMapItem_t));
-		src.name = "FindDefaultButton";
-		//src.func.__pfn = (void(*)(vgui2::Panel *))(elf_hash_bucket + 409);
-		pMsgMap->entries.InsertBefore(pMsgMap->entries.Size(), src);
-	}
-
+	EditablePanel::ChainToMap();
+	PanelMessageFunc_OnDefaultButtonSet::InitVar();
+	PanelMessageFunc_OnCurrentDefaultButtonSet::InitVar();
+	PanelMessageFunc_OnFindDefaultButton::InitVar();
+	m_OnDefaultButtonSet_register;
+	
 	_buildGroup = new BuildGroup(this, this);
 	m_pszConfigName = NULL;
 	m_iConfigID = 0;
@@ -69,52 +89,10 @@ vgui2::EditablePanel::EditablePanel(Panel *parent, const char *panelName) : Pane
 //-----------------------------------------------------------------------------
 vgui2::EditablePanel::EditablePanel(Panel *parent, const char *panelName, HScheme hScheme) : Panel(parent, panelName, hScheme), m_NavGroup(this)
 {
-	vgui::MessageMapItem_t src;
-
-	if (!Unknown::chained)
-	{
-		Unknown::chained = true;
-		vgui::PanelMessageMap* pMsgMap = vgui::FindOrAddPanelMessageMap("EditablePanel");
-		pMsgMap->pfnClassName = vgui2::EditablePanel::GetPanelClassName;
-		pMsgMap->baseMap = vgui::FindOrAddPanelMessageMap("Panel");
-	}
-
-	if (!Unknown::OnDefaultButtonSet_InitVar_bAdded)
-	{
-		Unknown::OnDefaultButtonSet_InitVar_bAdded = true;
-		vgui::PanelMessageMap* pMsgMap = vgui::FindOrAddPanelMessageMap("EditablePanel");
-		memset(&src, 0, sizeof(vgui::MessageMapItem_t));
-		src.name = "DefaultButtonSet";
-		//src.func.__pfn = (void(*)(vgui2::Panel *))(elf_hash_bucket + 401);
-		src.numParams = 1;
-		src.firstParamType = vgui::DATATYPE_PTR;
-		src.firstParamName = "button";
-
-		pMsgMap->entries.InsertBefore(pMsgMap->entries.Size(), src);
-	}
-
-	if (!Unknown::OnCurrentDefaultButtonSet_InitVar_bAdded)
-	{
-		Unknown::OnCurrentDefaultButtonSet_InitVar_bAdded = 1;
-		vgui::PanelMessageMap* pMsgMap = vgui::FindOrAddPanelMessageMap("EditablePanel");
-		memset(&src, 0, sizeof(vgui::MessageMapItem_t));
-		src.name = "CurrentDefaultButtonSet";
-		//src.func.__pfn = (void(*)(vgui2::Panel *))(elf_hash_bucket + 405);
-		src.numParams = 1;
-		src.firstParamType = vgui::DATATYPE_PTR;
-		src.firstParamName = "button";
-		pMsgMap->entries.InsertBefore(pMsgMap->entries.Size(), src);
-	}
-
-	if (!Unknown::OnFindDefaultButton_InitVar_bAdded)
-	{
-		Unknown::OnFindDefaultButton_InitVar_bAdded = true;
-		vgui::PanelMessageMap* pMsgMap = vgui::FindOrAddPanelMessageMap("EditablePanel");
-		memset(&src, 0, sizeof(vgui::MessageMapItem_t));
-		src.name = "FindDefaultButton";
-		//src.func.__pfn = (void(*)(vgui2::Panel *))(elf_hash_bucket + 409);
-		pMsgMap->entries.InsertBefore(pMsgMap->entries.Size(), src);
-	}
+	ChainToMap();
+	PanelMessageFunc_OnDefaultButtonSet::InitVar();
+	PanelMessageFunc_OnCurrentDefaultButtonSet::InitVar();
+	PanelMessageFunc_OnFindDefaultButton::InitVar();
 
 	_buildGroup = new BuildGroup(this, this);
 	m_pszConfigName = NULL;
@@ -165,8 +143,9 @@ void vgui2::EditablePanel::OnSizeChanged(int wide, int tall)
 		int x, y, w, t;
 		child->GetBounds(x, y, w, t);
 
-		int ex;
-		int ey;
+		CHECK_REQUIRED;
+		//int ex;
+		//int ey;
 		// The correct version of this code would say:
 		// if ( resize != AUTORESIZE_NO )
 		// but we're very close to shipping and this causes artifacts in other vgui panels that now
@@ -430,4 +409,3 @@ const char * vgui2::EditablePanel::GetPanelClassName()
 {
 	return "Panel";
 }
-

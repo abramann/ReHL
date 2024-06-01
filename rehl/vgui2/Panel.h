@@ -9,6 +9,16 @@
 #include "MessageMap.h"
 #include "BuildGroup.h"
 
+#define ADD_ONE_TIME \
+	static bool bAdded = false;\
+	if(bAdded)\
+		return;\
+	bAdded = true;
+
+// TODO: This null function is set to fill the `func` for the added message maps
+// Figure out the right functions to call
+static vgui::MessageFunc_t NullFunction = nullptr;
+
 namespace vgui2
 {
 	class IBorder;
@@ -21,29 +31,30 @@ namespace vgui2
 	{
 		enum
 		{
-			BUILDMODE_EDITABLE = 0x1,
-			BUILDMODE_DELETABLE = 0x2,
-			BUILDMODE_SAVE_XPOS_RIGHTALIGNED = 0x4,
-			BUILDMODE_SAVE_XPOS_CENTERALIGNED = 0x8,
-			BUILDMODE_SAVE_YPOS_BOTTOMALIGNED = 0x10,
-			BUILDMODE_SAVE_YPOS_CENTERALIGNED = 0x20,
+			BUILDMODE_EDITABLE = 1,
+			BUILDMODE_DELETABLE = 2,
+			BUILDMODE_SAVE_XPOS_RIGHTALIGNED = 4,
+			BUILDMODE_SAVE_XPOS_CENTERALIGNED = 8,
+			BUILDMODE_SAVE_YPOS_BOTTOMALIGNED = 16,
+			BUILDMODE_SAVE_YPOS_CENTERALIGNED = 32,
 		};
 
 	public:
 
 		enum PinCorner_e
 		{
-			PIN_TOPLEFT = 0x0,
-			PIN_TOPRIGHT = 0x1,
-			PIN_BOTTOMLEFT = 0x2,
-			PIN_BOTTOMRIGHT = 0x3,
+			PIN_TOPLEFT,
+			PIN_TOPRIGHT,
+			PIN_BOTTOMLEFT,
+			PIN_BOTTOMRIGHT,
 		};
+
 		enum AutoResize_e
 		{
-			AUTORESIZE_NO = 0x0,
-			AUTORESIZE_RIGHT = 0x1,
-			AUTORESIZE_DOWN = 0x2,
-			AUTORESIZE_DOWNANDRIGHT = 0x3,
+			AUTORESIZE_NO,
+			AUTORESIZE_RIGHT,
+			AUTORESIZE_DOWN,
+			AUTORESIZE_DOWNANDRIGHT,
 		};
 
 		Panel();
@@ -52,7 +63,7 @@ namespace vgui2
 		Panel(Panel* parent, const char* panelName, vgui2::HScheme scheme);
 
 		virtual ~Panel();
-
+		
 		virtual VPANEL GetVPanel();
 		virtual void Think();
 		virtual void PerformApplySchemeSettings();
@@ -271,40 +282,145 @@ namespace vgui2
 		BaseTooltip *vgui2::Panel::GetTooltip();
 
 		void SetTooltip(BaseTooltip *pToolTip, const char *pszText);
+
+		static void ChainToMap(void);
+
+		static const char * GetPanelClassName();
+
 protected:
 
-		typedef void(*Panel_RegisterMap)(void);
-		typedef void(*PanelMessageFunc_Repaint)(void);
-		typedef void(*PanelMessageFunc_OnCommand)(const char * command);
-		typedef void(*PanelMessageFunc_OnMouseCaptureLost)(void);
-		typedef void(*PanelMessageFunc_OnSetFocus)(void);
-		typedef void(*PanelMessageFunc_OnKillFocus)(void);
-		typedef void(*PanelMessageFunc_OnDelete)(void);
-		typedef void(*PanelMessageFunc_OnTick)(void);
-		typedef void(*PanelMessageFunc_OnCursorMoved)(int x, int y);
-		typedef void(*PanelMessageFunc_OnMouseFocusTicked)(void);
-		typedef void(*PanelMessageFunc_OnRequestFocus)(vgui2::VPANEL subFocus, vgui2::VPANEL defaultPanel);
-		typedef void(*PanelMessageFunc_InternalCursorMoved)(int x, int y);
-		typedef void(*PanelMessageFunc_InternalCursorEntered)(void);
-		typedef void(*PanelMessageFunc_InternalCursorExited)(void);
-		typedef void(*PanelMessageFunc_InternalMousePressed)(int code);
-		typedef void(*PanelMessageFunc_InternalMouseDoublePressed)(int code);
-		typedef void(*PanelMessageFunc_InternalMouseReleased)(int code);
-		typedef void(*PanelMessageFunc_InternalMouseWheeled)(int delta);
-		typedef void(*PanelMessageFunc_InternalKeyCodePressed)(int code);
-		typedef void(*PanelMessageFunc_InternalKeyCodeTyped)(int code);
-		typedef void(*PanelMessageFunc_InternalKeyTyped)(int code);
-		typedef void(*PanelMessageFunc_InternalKeyCodeReleased)(int unichar);
-		typedef void(*PanelMessageFunc_InternalKeyFocusTicked)(void);
-		typedef void(*PanelMessageFunc_InternalMouseFocusTicked)(void);
-		typedef void(*PanelMessageFunc_InternalInvalidateLayout)(void);
-		typedef void(*PanelMessageFunc_InternalMove)(void);
+	struct Panel_RegisterMap
+	{
+		static bool unknown;
+	};
 
-		typedef void(*PanelMessageFunc_OnDefaultButtonSet)(Panel* defaultButton);
-		typedef void(*PanelMessageFunc_OnCurrentDefaultButtonSet)(Panel* defaultButton);
-		typedef void(*PanelMessageFunc_OnFindDefaultButton)();
+	struct PanelMessageFunc_Repaint
+	{
+		static void InitVar(void);
+	};
+
+	struct PanelMessageFunc_OnCommand
+	{
+		static void InitVar(void);
+	};
+
+	struct PanelMessageFunc_OnMouseCaptureLost
+	{
+		static void InitVar(void);
+	};
+
+	struct PanelMessageFunc_OnSetFocus
+	{
+		static void InitVar(void);
+	};
+
+	struct PanelMessageFunc_OnKillFocus
+	{
+		static void InitVar(void);
+	};
+
+	struct PanelMessageFunc_OnDelete
+	{
+		static void InitVar(void);
+	};
+
+	struct PanelMessageFunc_OnTick
+	{
+		static void InitVar(void);
+	};
+
+	struct PanelMessageFunc_OnCursorMoved
+	{
+		static void InitVar(void);
+	};
+
+	struct PanelMessageFunc_OnMouseFocusTicked
+	{
+		static void InitVar(void);
+	};
+
+	struct PanelMessageFunc_OnRequestFocus
+	{
+		static void InitVar(void);
+	};
+
+	struct PanelMessageFunc_InternalCursorMoved
+	{
+		static void InitVar(void);
+	};
+
+	struct PanelMessageFunc_InternalCursorEntered
+	{
+		static void InitVar(void);
+	};
+
+	struct PanelMessageFunc_InternalCursorExited
+	{
+		static void InitVar(void);
+	};
+
+	struct PanelMessageFunc_InternalMousePressed
+	{
+		static void InitVar(void);
+	};
+	
+	struct PanelMessageFunc_InternalMouseDoublePressed
+	{
+		static void InitVar(void);
+	};
+
+	struct PanelMessageFunc_InternalMouseReleased
+	{
+		static void InitVar(void);
+	};
+
+	struct PanelMessageFunc_InternalMouseWheeled
+	{
+		static void InitVar(void);
+	};
+
+	struct PanelMessageFunc_InternalKeyCodePressed
+	{
+		static void InitVar(void);
+	};
+
+	struct PanelMessageFunc_InternalKeyCodeTyped
+	{
+		static void InitVar(void);
+	};
+	
+	struct PanelMessageFunc_InternalKeyTyped
+	{
+		static void InitVar(void);
+	};
+
+	struct PanelMessageFunc_InternalKeyCodeReleased
+	{
+		static void InitVar(void);
+	};
+
+	struct PanelMessageFunc_InternalKeyFocusTicked
+	{
+		static void InitVar(void);
+	};
+
+	struct PanelMessageFunc_InternalMouseFocusTicked
+	{
+		static void InitVar(void);
+	};
+
+	struct PanelMessageFunc_InternalInvalidateLayout
+	{
+		static void InitVar(void);
+	};
+
+	struct PanelMessageFunc_InternalMove
+	{
+		static void InitVar(void);
+	};
 
 	private:
+
 		vgui2::Panel::Panel_RegisterMap m_RegisterClass;
 		PanelMessageFunc_Repaint m_Repaint_register;
 		PanelMessageFunc_OnCommand m_OnCommand_register;

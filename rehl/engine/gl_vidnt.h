@@ -2,13 +2,23 @@
 #include "vmodes.h"
 #include <SDL.h>
 
+#ifdef SHARED_GAME_DATA
+extern SDL_Window**& pmainwindow;
+extern int& window_center_x;
+extern int& window_center_y;
+
+extern const char*& gl_extensions;
+#else
+extern SDL_Window** pmainwindow;
+extern int window_center_x;
+extern int window_center_y;
+extern const char* gl_extensions;
+#endif
+
 // Multitexture
 #define QGL_TEXTURE0_SGIS 0x835E
 #define QGL_TEXTURE1_SGIS 0x835F
 #define QGL_TEXTURE2_SGIS 0x8360
-
-extern int window_center_x;
-extern int window_center_y;
 
 extern int TEXTURE0_SGIS;
 extern int TEXTURE1_SGIS;
@@ -19,7 +29,6 @@ extern int gl_mtexable;
 extern const char* gl_vendor;
 extern const char* gl_renderer;
 extern const char* gl_version;
-extern const char* gl_extensions;
 
 extern const char* gl_renderer;
 
@@ -31,7 +40,7 @@ void GL_BeginRendering(int* x, int* y, int* width, int* height);
 
 void GL_EndRendering();
 
-//bool GL_SetMode(SDL_Window* mainwindow, HDC* pmaindc, HGLRC* pbaseRC, const char* pszDriver, const char* pszCmdLine);
+//bool GL_SetMode(SDL_Window* mainwindow, HDC* pmaindc, HGLRC* pbaseRC, int fD3D, const char* pszDriver, const char* pszCmdLine);
 
 bool VID_Init(unsigned short *palette);
 

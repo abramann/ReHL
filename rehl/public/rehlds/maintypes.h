@@ -70,4 +70,6 @@ typedef enum sv_delta_s
 	sv_packet_delta,
 } sv_delta_t;
 
+typedef unsigned char uchar;
+
 #endif // MAINTYPES_H

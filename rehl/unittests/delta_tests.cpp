@@ -43,7 +43,7 @@ NOINLINE void _InitDeltaField(delta_description_t* fieldDesc, int expectedOffset
 	}
 
 	fieldDesc->fieldType = type;
-	strcpy(fieldDesc->fieldName, name);
+	Q_strcpy(fieldDesc->fieldName, name);
 	fieldDesc->fieldOffset = off;
 	fieldDesc->fieldSize = sz;
 	fieldDesc->significant_bits = bits;
@@ -84,7 +84,7 @@ NOINLINE void _MarkAndEnsureCorrectResults(const char* action, delta_t* delta, v
 	int numFields = 0;
 
 	char localFieldsStr[512];
-	strcpy(localFieldsStr, szFields);
+	Q_strcpy(localFieldsStr, szFields);
 
 	// parse fields
 	int prevEnd = -1;
@@ -352,7 +352,7 @@ TEST(TestDelta_Test, Delta, 1000) {
 	// change float + float + string
 	testdata[2].f_18 = 2.0;
 	testdata[2].wb_20 = 2.0;
-	strcpy(testdata[2].s_24, "TestDelta_Test");
+	Q_strcpy(testdata[2].s_24, "TestDelta_Test");
 
 	result[2] = delta->pdd[10].significant_bits + delta->pdd[12].significant_bits + strlen(testdata[2].s_24) * 8 + 8 + (13 / 8 * 8 + 8);
 

@@ -11,9 +11,23 @@
 
 bool bNeedsFullScreenModeSwitch = false;
 
+#ifdef SHARED_GAME_DATA
+IVideoMode** sp_videomode = ADDRESS_OF_DATA(IVideoMode**, 0xAEC9E);
+IVideoMode*& videomode = *sp_videomode;
+
+viddef_t* sp_vid = ADDRESS_OF_DATA(viddef_t*, 0xC21AD);
+viddef_t& vid = *sp_vid; // global video state
+
+qboolean* sp_g_bDisableMSAAFBO = ADDRESS_OF_DATA(qboolean*, 0x4DA37);
+qboolean& g_bDisableMSAAFBO = *sp_g_bDisableMSAAFBO;
+#else
 IVideoMode* videomode = nullptr;
 
-viddef_t vid;
+viddef_t vid; // global video state
+
+qboolean g_bDisableMSAAFBO;
+
+#endif
 
 CVideoMode_Common::CVideoMode_Common()
 {
@@ -24,9 +38,10 @@ CVideoMode_Common::CVideoMode_Common()
 
 void SetupSDLVideoModes()
 {
+#ifndef _WIN32
 	SDL_SetHint("SDL_VIDEO_X11_XRANDR", "1");
 	SDL_SetHint("SDL_VIDEO_X11_XVIDMODE", "1");
-
+#endif
 	SDL_InitSubSystem(SDL_INIT_VIDEO);
 
 	const int iNumModes = SDL_GetNumDisplayModes(0);
@@ -71,6 +86,7 @@ static int VideoModeCompare(const void* arg1, const void* arg2)
 
 bool CVideoMode_Common::Init(void* pvInstance)
 {
+	//return Call_Method<bool, CVideoMode_Common, void*>(0xAD810, this, pvInstance);
 	if (!game->CreateGameWindow())
 		return false;
 
@@ -242,8 +258,8 @@ void CVideoMode_Common::CenterEngineWindow(SDL_Window* hWndCenter, int width, in
 void CVideoMode_Common::AdjustWindowForMode()
 {
 	auto pMode = GetCurrentMode();
-	// TODO: Check from Snd_Release
-	//Snd_ReleaseBuffer();
+
+	Snd_ReleaseBuffer();
 
 	vid.width = pMode->width;
 	vid.height = pMode->height;
@@ -269,7 +285,7 @@ void CVideoMode_Common::AdjustWindowForMode()
 
 	CenterEngineWindow(reinterpret_cast<SDL_Window*>(game->GetMainWindow()), width, height);
 
-	//Snd_AcquireBuffer();
+	Snd_AcquireBuffer();
 	VOX_Init();
 
 	UpdateWindowPosition();
@@ -522,14 +538,15 @@ void CVideoMode_Common::SetInitialized(bool init)
 
 void CVideoMode_Common::UpdateWindowPosition()
 {
+	//return Call_Method<void, CVideoMode_Common>(0xADB40, this);
 	rect_t window_rect;
 	int x, y, w, h;
 
 	game->GetWindowRect(&x, &y, &w, &h);
 
 	window_rect.left = x;
-	window_rect.right = x + w;
-	window_rect.top = y;
+	window_rect.right = y;
+	window_rect.top = x + w;
 	window_rect.bottom = y + h;
 	VID_UpdateWindowVars(&window_rect, x + w / 2, y + h / 2);
 }
@@ -567,6 +584,11 @@ void CVideoMode_Common::ChangeDisplaySettingsToFullscreen()
 CVideoMode_OpenGL::CVideoMode_OpenGL(bool windowed)
 {
 	m_bWindowed = windowed;
+}
+
+CVideoMode_OpenGL::~CVideoMode_OpenGL()
+{
+	NOT_IMPLEMENTED;
 }
 
 bool CVideoMode_OpenGL::Init(void* pvInstance)
@@ -631,6 +653,8 @@ void CVideoMode_OpenGL::ChangeDisplaySettingsToFullscreen()
 
 void VideoMode_Create()
 {
+	//Call_Function<void>(0xAEBA0);
+	//return;
 	bool bWindowed;
 
 	if (registry->ReadInt("ScreenWindowed", 0) ||
@@ -657,6 +681,7 @@ void VideoMode_Create()
 	if (!COM_CheckParm("-d3d"))
 		COM_CheckParm("-gl");
 
+	g_bDisableMSAAFBO = false;
 	videomode = new CVideoMode_OpenGL(bWindowed);
 }
 

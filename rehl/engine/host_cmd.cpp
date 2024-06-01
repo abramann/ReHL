@@ -41,8 +41,13 @@ int gHostSpawnCount;
 qboolean g_bMajorMapChange;
 
 int g_iQuitCommandIssued;
-char *g_pPostRestartCmdLineArgs;
 
+#ifdef SHARE_GAME_DATA
+char** p_g_pPostRestartCmdLineArgs = (char**)ADDRESS_OF_DATA(588E9);
+char*& g_pPostRestartCmdLineArgs = *p_g_pPostRestartCmdLineArgs;
+#else
+char *g_pPostRestartCmdLineArgs;
+#endif
 int r_dointerp = 1;
 
 SV_SAVEGAMECOMMENT_FUNC g_pSaveGameCommentFunc = &Host_SavegameComment;
@@ -177,6 +182,8 @@ void SV_GetPlayerHulls(void)
 
 void Host_InitializeGameDLL(void)
 {
+	NOT_IMPLEMENTED;
+	// Not needed, and if so, just share the vars. - Wefaq
 	Cbuf_Execute();
 	NET_Config(g_psvs.maxclients > 1);
 
@@ -1210,7 +1217,11 @@ void Host_Reconnect_f(void)
 
 char *Host_SaveGameDirectory(void)
 {
+#ifdef SHARED_GAME_DATA
+	char* szDirectory = ADDRESS_OF_DATA(char*, 0x59F28);
+#else
 	static char szDirectory[MAX_PATH];
+#endif
 	Q_memset(szDirectory, 0, sizeof(szDirectory));
 	Q_snprintf(szDirectory, sizeof(szDirectory), "SAVE/");
 	return szDirectory;

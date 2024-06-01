@@ -32,6 +32,7 @@
 #include "modinfo.h"
 #include "FileSystem.h"
 #include "pr_dlls.h"
+#include "modinfo.h"
 
 // vmodes.h must be included before cdll_int.h (wrect_t declaration)
 #include "vmodes.h"
@@ -39,24 +40,58 @@
 
 const int MAX_DISCONNECT_REASON = 256;
 
-extern FileFindHandle_t g_hfind;
 extern enginefuncs_t g_engfuncsExportedToDlls;
 
 extern char gszDisconnectReason[MAX_DISCONNECT_REASON];
 extern char gszExtendedDisconnectReason[MAX_DISCONNECT_REASON];
 
 extern qboolean gfExtendedError;
-extern qboolean g_bIsDedicatedServer;
 extern int giSubState;
-extern int giActive;
 extern int giStateInfo;
 extern DLL_FUNCTIONS gEntityInterface;
 extern NEW_DLL_FUNCTIONS gNewDLLFunctions;
 extern modfuncs_t g_modfuncs;
 extern extensiondll_t g_rgextdll[50];
 
-extern int g_iextdllMac;
+#ifdef SHARED_GAME_DATA
+extern int& giActive;
+extern int& giActive;
+extern qboolean& g_bIsDedicatedServer;
+extern modinfo_t& gmodinfo;
+
+extern double& curtime;
+extern double& lastcurtime;
+extern qboolean& g_bIsDedicatedServer;
+#ifdef _WIN32
+extern int& g_PerfCounterInitialized;
+extern CRITICAL_SECTION& g_PerfCounterMutex;
+extern int& g_PerfCounterShiftRightAmount;
+extern double& g_PerfCounterSlice;
+extern int& g_WinNTOrHigher;
+
+extern void(*&Launcher_ConsolePrintf)(char *, ...);
+
+extern FileFindHandle_t& g_hfind;
+#endif
+#else
+extern int giActive;
+extern qboolean g_bIsDedicatedServer;
 extern modinfo_t gmodinfo;
+extern double curtime;
+extern double lastcurtime;
+extern modinfo_t gmodinfo;
+extern qboolean g_bIsDedicatedServer;
+#ifdef _WIN32
+extern int g_PerfCounterInitialized;
+extern CRITICAL_SECTION g_PerfCounterMutex;
+extern int g_PerfCounterShiftRightAmount;
+extern double g_PerfCounterSlice;
+extern int g_WinNTOrHigher;
+extern void(*Launcher_ConsolePrintf)(char *, ...);
+extern FileFindHandle_t g_hfind;
+#endif
+#endif
+extern int g_iextdllMac;
 extern qboolean gfBackground;
 
 #ifndef _WIN32
@@ -65,29 +100,21 @@ extern qboolean gHasMMXTechnology;
 extern qboolean g_bPrintingKeepAliveDots;
 
 extern qboolean con_debuglog;
-extern void(*Launcher_ConsolePrintf)(char *, ...);
 
 #ifdef _WIN32
-	extern int g_PerfCounterInitialized;
-	extern CRITICAL_SECTION g_PerfCounterMutex;
-
-	extern int g_PerfCounterShiftRightAmount;
-	extern double g_PerfCounterSlice;
-	extern double g_CurrentTime;
-	extern double g_StartTime;
-
 	extern int g_FPUCW_Mask_Prec_64Bit;
 	extern int g_FPUCW_Mask_Prec_64Bit_2;
 	extern int g_FPUCW_Mask_Round_Trunc;
 	extern int g_FPUCW_Mask_Round_Up;
 
-	extern int g_WinNTOrHigher;
 #endif //_WIN32
 
 #ifdef _WIN32
-	extern void __cdecl Sys_InitHardwareTimer();
+	extern void Sys_InitHardwareTimer();
+	extern void Sys_SetStartTime();
 #endif //_WIN32
 
+void Sys_InitFloatTime();
 NOXREF void Sys_PageIn(void *ptr, int size);
 const char *Sys_FindFirst(const char *path, char *basename);
 const char *Sys_FindFirstPathID(const char *path, char *pathid);

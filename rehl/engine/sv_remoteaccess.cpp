@@ -321,7 +321,7 @@ void CServerRemoteAccess::SetValue(const char *variable, const char *value)
 	{
 		var = Cvar_FindVar(variable);
 		if (var)
-			Cvar_DirectSet(var, value);
+			Cvar_DirectSet(var, (char*)value);
 	}
 }
 

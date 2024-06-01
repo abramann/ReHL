@@ -24,7 +24,7 @@ void* NLoadBlobFile(const char* pstFileName, BlobFootprint_t* pblobfootprint, vo
 	if (fLoadAsDll)
 	{
 		char rgchNew[2048];
-		strcpy(rgchNew, pstFileName);
+		Q_strcpy(rgchNew, pstFileName);
 
 		char rgchLocalPath[2048];
 		g_pFileSystem->GetLocalPath(rgchNew, rgchLocalPath, ARRAYSIZE(rgchLocalPath));

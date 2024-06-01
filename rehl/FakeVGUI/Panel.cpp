@@ -10,7 +10,7 @@ void Panel::setPos(int x, int y)
 {
 }
 
-void Panel::getPos(int * const x, int * const y)
+void Panel::getPos(int& x, int& y)
 {
 }
 
@@ -18,7 +18,7 @@ void Panel::setSize(int wide, int tall)
 {
 }
 
-void Panel::getSize(int * const wide, int * const tall)
+void Panel::getSize(int& wide, int& tall)
 {
 }
 
@@ -26,7 +26,7 @@ void Panel::setBounds(int x, int y, int wide, int tall)
 {
 }
 
-void Panel::getBounds(int * const x, int * const y, int * const wide, int * const tall)
+void Panel::getBounds(int& x, int& y, int& wide, int& tall)
 {
 }
 
@@ -67,11 +67,11 @@ void Panel::repaintAll()
 {
 }
 
-void Panel::getAbsExtents(int * const x0, int * const y0, int * const x1, int * const y1)
+void Panel::getAbsExtents(int& x0, int& y0, int& x1, int& y1)
 {
 }
 
-void Panel::getClipRect(int * const x0, int * const y0, int * const x1, int * const y1)
+void Panel::getClipRect(int& x0, int& y0, int& x1, int& y1)
 {
 }
 
@@ -157,11 +157,11 @@ Panel * Panel::isWithinTraverse(int x, int y)
 	return nullptr;
 }
 
-void Panel::localToScreen(int * const x, int * const y)
+void Panel::localToScreen(int& x, int& y)
 {
 }
 
-void Panel::screenToLocal(int * const x, int * const y)
+void Panel::screenToLocal(int& x, int& y)
 {
 }
 
@@ -182,7 +182,7 @@ void Panel::setMinimumSize(int wide, int tall)
 {
 }
 
-void Panel::getMinimumSize(int * const wide, int * const tall)
+void Panel::getMinimumSize(int& wide, int& tall)
 {
 }
 
@@ -254,11 +254,11 @@ void Panel::setPaintEnabled(bool state)
 {
 }
 
-void Panel::getInset(int * const left, int * const top, int * const right, int * const bottom)
+void Panel::getInset(int& left, int& top, int& right, int& bottom)
 {
 }
 
-void Panel::getPaintSize(int * const wide, int * const tall)
+void Panel::getPaintSize(int& wide, int& tall)
 {
 }
 
@@ -266,7 +266,7 @@ void Panel::setPreferredSize(int wide, int tall)
 {
 }
 
-void Panel::getPreferredSize(int * const wide, int * const tall)
+void Panel::getPreferredSize(int& wide, int& tall)
 {
 }
 
@@ -330,11 +330,11 @@ void Panel::setBgColor(int r, int g, int b, int a)
 {
 }
 
-void Panel::getFgColor(int * const r, int * const g, int * const b, int * const a)
+void Panel::getFgColor(int& r, int& g, int& b, int& a)
 {
 }
 
-void Panel::getBgColor(int * const r, int * const g, int * const b, int * const a)
+void Panel::getBgColor(int& r, int& g, int& b, int& a)
 {
 }
 
@@ -367,7 +367,7 @@ App * Panel::getApp()
 	return nullptr;
 }
 
-void Panel::getVirtualSize(int * const wide, int * const tall)
+void Panel::getVirtualSize(int& wide, int& tall)
 {
 }
 

@@ -81,10 +81,17 @@ void AllowFog(int allowed);
 
 CUtlVector<char> g_TempConsoleBuffer;
 
-static EngineSurfaceWrap* staticEngineSurface = nullptr;
 static vgui::Panel* staticPanel = nullptr;
-static IBaseUI* staticUIFuncs = nullptr;
+#ifdef SHARED_GAME_DATA
+IBaseUI** sp_staticUIFuncs = ADDRESS_OF_DATA(IBaseUI**, 0x70D7);
+IBaseUI*& staticUIFuncs = *sp_staticUIFuncs;
 
+EngineSurfaceWrap** sp_staticEngineSurface = ADDRESS_OF_DATA(EngineSurfaceWrap**, 0xC1341);
+static EngineSurfaceWrap*& staticEngineSurface = *sp_staticEngineSurface;
+#else
+static IBaseUI* staticUIFuncs = nullptr;
+static EngineSurfaceWrap* staticEngineSurface = nullptr;
+#endif
 extern bool scr_drawloading;
 
 qboolean staticExclusiveInputShadow = false;
@@ -227,8 +234,8 @@ void VGuiWrap_SetRootPanelSize()
 
 		if (VideoMode_IsWindowed())
 		{
-			SDL_GetWindowPosition(pmainwindow, &x, &y);
-			SDL_GetWindowSize(pmainwindow, &rect.right, &rect.bottom);
+			SDL_GetWindowPosition(*pmainwindow, &x, &y);
+			SDL_GetWindowSize(*pmainwindow, &rect.right, &rect.bottom);
 		}
 		else
 		{
@@ -425,8 +432,8 @@ void VGuiWrap2_Paint()
 	rect.top = 0;
 	if (VideoMode_IsWindowed())
 	{
-		SDL_GetWindowPosition(pmainwindow,(int*) &pnt.x, (int*)&pnt.y);
-		SDL_GetWindowSize(pmainwindow, (int*)&rect.right, (int*)&rect.bottom);
+		SDL_GetWindowPosition(*pmainwindow,(int*) &pnt.x, (int*)&pnt.y);
+		SDL_GetWindowSize(*pmainwindow, (int*)&rect.right, (int*)&rect.bottom);
 	}
 	else
 	{
@@ -524,10 +531,10 @@ void VGui_ViewportPaintBackground(int* extents)
 	int width = glwidth;
 	int height = glheight;
 
-	SDL_GetWindowPosition(pmainwindow, &pnt.left, &pnt.top);
+	SDL_GetWindowPosition(*pmainwindow, &pnt.left, &pnt.top);
 
 	if (VideoMode_IsWindowed())
-		SDL_GetWindowSize(pmainwindow, &rect.right, &rect.bottom);
+		SDL_GetWindowSize(*pmainwindow, &rect.right, &rect.bottom);
 	else
 		VideoMode_GetCurrentVideoMode(&rect.right, &rect.bottom, 0);
 

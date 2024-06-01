@@ -28,21 +28,54 @@
 
 #include "precompiled.h"
 
+// Complete arguments string
+
+#ifdef SHARED_GAME_DATA
+sizebuf_t* sp_cmd_text = ADDRESS_OF_DATA(sizebuf_t*, 0x272E7);
+sizebuf_t& cmd_text = *sp_cmd_text;
+
+sizebuf_t* sp_filteredcmd_text = ADDRESS_OF_DATA(sizebuf_t*, 0x27581);
+sizebuf_t& filteredcmd_text = *sp_filteredcmd_text;
+
+qboolean* sp_s_bCurrentCommandIsPrivileged = ADDRESS_OF_DATA(qboolean*, 0x28A81);
+qboolean& s_bCurrentCommandIsPrivileged = *sp_s_bCurrentCommandIsPrivileged;
+
+cmd_source_t* sp_cmd_source = ADDRESS_OF_DATA(cmd_source_t*, 0x284D0);
+cmd_source_t& cmd_source = *sp_cmd_source;
+
+cmd_function_t** sp_cmd_functions = ADDRESS_OF_DATA(cmd_function_t**, 0x284EC);
+cmd_function_t*& cmd_functions = *sp_cmd_functions;
+
+cmdalias_t** sp_cmd_alias = ADDRESS_OF_DATA(cmdalias_t**, 0x28513);
+cmdalias_t* & cmd_alias = *sp_cmd_alias;
+
+qboolean* sp_cmd_argc = ADDRESS_OF_DATA(qboolean*, 0x27EE7);
+qboolean& cmd_argc = *sp_cmd_argc;
+
+char** sp_cmd_argv = ADDRESS_OF_DATA(char**, 0x284F9);
+char**& cmd_argv = sp_cmd_argv;
+
+char ** sp_cmd_args = ADDRESS_OF_DATA(char **, 0x27F68);
+char *& cmd_args = *sp_cmd_args; 
+
+qboolean* sp_cmd_wait = ADDRESS_OF_DATA(qboolean*, 0x2755E);
+qboolean& cmd_wait = *sp_cmd_wait;
+#else
+sizebuf_t cmd_text;
+sizebuf_t filteredcmd_text;
+static qboolean s_bCurrentCommandIsPrivileged = true;
+cmd_source_t cmd_source;
+cmd_function_t* cmd_functions;
+cmdalias_t* cmd_alias;
 int cmd_argc;
 char *cmd_argv[80];
-
-// Complete arguments string
 char *cmd_args;
-
-sizebuf_t cmd_text;
-cmd_source_t cmd_source;
 qboolean cmd_wait;
-cmdalias_t *cmd_alias;
+#endif
 
 //int trashtest;
 //int *trashspot;
 
-cmd_function_t *cmd_functions;
 char *const cmd_null_string = "";
 
 void Cmd_Wait_f(void)
@@ -59,15 +92,20 @@ void Cbuf_Init(void)
 // the text is added to the end of the command buffer.
 void Cbuf_AddText(const char *text)
 {
+	Cbuf_AddTextToBuffer(text, &cmd_text);
+}
+
+void Cbuf_AddTextToBuffer(const char * text, sizebuf_t * buf)
+{
 	int len = Q_strlen(text);
 
-	if (cmd_text.cursize + len >= cmd_text.maxsize)
+	if (buf->cursize + len >= buf->maxsize)
 	{
 		Con_Printf("%s: overflow\n", __func__);
 		return;
 	}
 
-	SZ_Write(&cmd_text, text, len);
+	SZ_Write(buf, text, len);
 }
 
 // When a command wants to issue other commands immediately, the text is
@@ -161,90 +199,68 @@ void Cbuf_InsertTextLines(const char *text)
 // Do not call inside a command function!
 void Cbuf_Execute(void)
 {
+	Cbuf_ExecuteCommandsFromBuffer(&cmd_text, true, -1);
+	Cbuf_ExecuteCommandsFromBuffer(&filteredcmd_text, false, 1);
+}
+
+void Cbuf_ExecuteCommandsFromBuffer(sizebuf_t *buf, qboolean bIsPrivileged, int nCmdsToExecute)
+{
+	return Call_Function<void, sizebuf_t*, qboolean, int>(0x27470, buf, bIsPrivileged, nCmdsToExecute);
 	int i;
 	char *text;
 	char line[MAX_CMD_LINE] = {0};
 	int quotes;
-	bool commented;
 
-	while (cmd_text.cursize)
+	if (!buf || !buf->cursize)
+		return;
+
+	int nCmds = 0;
+	while (buf->cursize)
 	{
 		// find a \n or ; line break
-		text = (char *)cmd_text.data;
+		text = (char *)buf->data;
 
 		quotes = 0;
-		commented = false;
+		//commented = false;
 
-#ifdef REHLDS_FIXES
-		if (cmd_text.cursize > 1 && text[0] == '/' && text[1] == '/')
-			commented = true;
-#endif
-
-		for (i = 0; i < cmd_text.cursize; i++)
+		for (i = 1; i < buf->cursize; i++)
 		{
 			if (text[i] == '"')
 				quotes++;
 
-			if (!(quotes & 1) && !commented && text[i] == ';')
-				break;	// don't break if inside a quoted or commented out strings
+			if (!(quotes & 1) && text[i] == ';')
+				break;	// don't break if inside a quoted strings
 
 			if (text[i] == '\n')
 				break;
 		}
-
-#ifdef REHLDS_FIXES
-		// save `i` if we truncate command
-		int len;
-
 		if (i > MAX_CMD_LINE - 1)
-			len = MAX_CMD_LINE - 1;
-		else
-			len = i;
-
-		Q_memcpy(line, text, len);
-		line[len] = 0;
-#else // REHLDS_FIXES
-		if (i > MAX_CMD_LINE - 1)
-		{
 			i = MAX_CMD_LINE - 1;
-		}
 
 		Q_memcpy(line, text, i);
 		line[i] = 0;
-#endif // REHLDS_FIXES
 
 		// delete the text from the command buffer and move remaining commands down
 		// this is necessary because commands (exec, alias) can insert data at the
 		// beginning of the text buffer
 
-		if (i == cmd_text.cursize)
-		{
-			cmd_text.cursize = 0;
-		}
+		if (i == buf->cursize)
+			buf->cursize = 0;
 		else
 		{
 			i++;
-			cmd_text.cursize -= i;
-#ifdef REHLDS_FIXES
-			// dst overlaps src
-			Q_memmove(text, text + i, cmd_text.cursize);
-#else // REHLDS_FIXES
-			Q_memcpy(text, text + i, cmd_text.cursize);
-#endif // REHLDS_FIXES
+			buf->cursize -= i;
+			Q_memcpy(text, &text[i], buf->cursize);
 		}
-
 		// execute the command line
-		if (line[0])
-			Cmd_ExecuteString(line, src_command);
+		//if (line[0])
+		Cmd_ExecuteString(line, src_command);
 
-		if (cmd_wait)
-		{
-			// skip out while text still remains in buffer, leaving it
-			// for next frame
-			cmd_wait = FALSE;
+		nCmds++;
+		if (cmd_wait || (nCmds >= nCmdsToExecute && nCmdsToExecute <= 0))
 			break;
-		}
 	}
+	cmd_wait = FALSE;
 }
 
 void Cmd_StuffCmds_f(void)
@@ -571,7 +587,6 @@ int EXT_FUNC Cmd_Argc(void)
 #ifndef SWDS
 	g_engdstAddrs.Cmd_Argc();
 #endif
-
 	return cmd_argc;
 }
 
@@ -592,12 +607,8 @@ const char* EXT_FUNC Cmd_Args(void)
 {
 #ifndef SWDS
 	NOT_IMPLEMENTED;
-	
-	/*
-	g_engdstAddrs->Cmd_Args();
-	*/
+	//g_engdstAddrs->Cmd_Args();
 #endif
-
 	return cmd_args;
 }
 
@@ -994,7 +1005,6 @@ void EXT_FUNC Cmd_ExecuteString_internal(const char* cmdName, cmd_source_t src, 
 	{
 		if (!Q_stricmp(cmdName, a->name))
 		{
-
 			Cbuf_InsertText(a->value);
 			return;
 		}
@@ -1015,21 +1025,93 @@ void EXT_FUNC Cmd_ExecuteString_internal(const char* cmdName, cmd_source_t src, 
 	}
 }
 
+qboolean Cmd_CurrentCommandIsPrivileged()
+{
+	return s_bCurrentCommandIsPrivileged;
+}
+
 void Cmd_ExecuteString(char *text, cmd_source_t src)
 {
+	return Call_Function<void, char*, cmd_source_t, int>(0x284C0, text, src, 1);
 	cmd_source = src;
 	Cmd_TokenizeString(text);
+	g_engdstAddrs.Cmd_Argc();
+	if (Cmd_Argc())
+		Cmd_ExecuteStringWithPrivilegeCheck(text, src);
 
-	if (!Cmd_Argc())
-	{
-		return;
-	}
-
-	IGameClient* cl = (src == src_client) ? GetRehldsApiClient(host_client) : NULL;
+	/*IGameClient* cl = (src == src_client) ? GetRehldsApiClient(host_client) : NULL;
 	if (!g_RehldsHookchains.m_ValidateCommand.callChain(ValidateCmd_API, cmd_argv[0], src, cl))
 		return;
 
-	g_RehldsHookchains.m_ExecuteServerStringCmd.callChain(Cmd_ExecuteString_internal, cmd_argv[0], src, cl);
+	g_RehldsHookchains.m_ExecuteServerStringCmd.callChain(Cmd_ExecuteString_internal, cmd_argv[0], src, cl);;*/
+}
+
+void Cmd_ExecuteStringWithPrivilegeCheck(const char * command, qboolean bPriviliged)
+{
+	return Call_Function<void, const char*, qboolean>(0x2EB10, command, bPriviliged);
+
+	cmd_function_t* cmd_func = cmd_functions;
+	if (cmd_functions)
+	{		
+		while (cmd_func)
+		{
+			if (Q_strcasecmp(com_argv[0], cmd_func->name) <= 0)
+			{
+				if (!bPriviliged &&
+					(
+						(cmd_func->flags & 8) ||
+						Cvar_VariableValue("cl_filterstuff") > 0 &&
+						Q_stristr(cmd_func->name, "cl_") ||
+						Q_stristr(cmd_func->name, "gl_") ||
+						Q_stristr(cmd_func->name, "m_") ||
+						Q_stristr(cmd_func->name, "r_") ||
+						Q_stristr(cmd_func->name, "hud_")
+						)
+					)
+				{
+					Con_Printf("Could not execute privileged command %s\n", command);
+				}
+				else
+				{
+					s_bCurrentCommandIsPrivileged = bPriviliged;
+					cmd_func->function();
+					s_bCurrentCommandIsPrivileged = true;
+					if (g_pcls.demorecording && (cmd_func->flags & 1) != 0 && !g_pcls.spectator)
+						CL_RecordHUDCommand(cmd_func->name);
+				}
+				break;
+			}
+
+			cmd_func = cmd_func->next;
+		}
+	}
+
+	if (cmd_functions || cmd_func)
+	{
+		cmdalias_t* alias = cmd_alias;
+		if (alias)
+		{
+			while (alias)
+			{
+				if (Q_strcasecmp(cmd_argv[0], alias->name) <= 0)
+				{
+					const char* text = bPriviliged ? cmd_text.buffername : filteredcmd_text.buffername;
+					Cbuf_InsertText(text);
+					break;
+				}
+			}
+		}
+		if (!alias)
+		{
+			if (!Cvar_CommandWithPrivilegeCheck(bPriviliged)
+				&& (g_pcls.state == ca_connected ||
+					g_pcls.state == ca_active ||
+					g_pcls.state == ca_uninitialized))
+			{
+				Cmd_ForwardToServer();
+			}
+		}
+	}
 }
 
 qboolean Cmd_ForwardToServerInternal(sizebuf_t *pBuf)

@@ -1,11 +1,11 @@
 #pragma once
 
 
-//#include "../FakeVGUI\KeyCode.h"
+#include "../FakeVGUI\KeyCode.h"
 
 namespace vgui2
 {
-	enum KeyCode
+	/*enum KeyCode
 	{
 		KEY_0,
 		KEY_1,
@@ -112,10 +112,11 @@ namespace vgui2
 		KEY_F12,
 		KEY_LAST
 	};
+	
+	*/
+	typedef vgui::KeyCode KeyCode;
+
+	extern KeyCode KeyCode_VirtualKeyToVGUI(int keyCode);
 }
 
-inline vgui2::KeyCode KeyCode_VirtualKeyToVGUI(int keyCode)
-{
-	NOT_IMPLEMENTED;
-	return vgui2::KeyCode::KEY_0;
-}
+

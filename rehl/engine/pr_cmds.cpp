@@ -44,12 +44,18 @@ vec_t gHullMaxs[4][3] = {
 
 unsigned char gMsgData[512];
 
+#ifdef SHARED_GAME_DATA
+int* sp_idum = ADDRESS_OF_DATA(int*, 0x70722);
+int& idum = *sp_idum;
+#else
+int32 idum;
+#endif
+
 edict_t *gMsgEntity;
 int gMsgDest;
 int gMsgType;
 qboolean gMsgStarted;
 vec3_t gMsgOrigin;
-int32 idum;
 int g_groupop;
 int g_groupmask;
 unsigned char checkpvs[1024];
@@ -2393,7 +2399,7 @@ void EXT_FUNC PF_changelevel_I(const char *s1, const char *s2)
 
 void SeedRandomNumberGenerator(void)
 {
-	idum = -(int)CRehldsPlatformHolder::get()->time(NULL);
+	idum = -time(0);
 	if (idum > 1000)
 	{
 		idum = -idum;

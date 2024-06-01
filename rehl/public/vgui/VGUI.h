@@ -27,6 +27,6 @@ typedef unsigned long HFont;
 // the value of an invalid font handle
 const VPANEL NULL_PANEL = 0;
 const HFont INVALID_FONT = 0;
-const HPanel INVALID_PANEL = 0xffffffff;
+const HPanel INVALID_PANEL = -1;
 
 } // namespace vgui2

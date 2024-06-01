@@ -48,6 +48,33 @@ static char *CopyString(const char *in)
 //-----------------------------------------------------------------------------
 vgui2::Panel::Panel()
 {
+	ChainToMap();
+	PanelMessageFunc_Repaint::InitVar();
+	PanelMessageFunc_OnCommand::InitVar();
+	PanelMessageFunc_OnMouseCaptureLost::InitVar();
+	PanelMessageFunc_OnSetFocus::InitVar();
+	PanelMessageFunc_OnKillFocus::InitVar();
+	PanelMessageFunc_OnDelete::InitVar();
+	PanelMessageFunc_OnTick::InitVar();
+	PanelMessageFunc_OnCursorMoved::InitVar();
+	PanelMessageFunc_OnMouseFocusTicked::InitVar();
+	PanelMessageFunc_OnRequestFocus::InitVar();
+	PanelMessageFunc_InternalCursorMoved::InitVar();
+	PanelMessageFunc_InternalCursorEntered::InitVar();
+	PanelMessageFunc_InternalCursorExited::InitVar();
+	PanelMessageFunc_InternalMousePressed::InitVar();
+	PanelMessageFunc_InternalMouseDoublePressed::InitVar();
+	PanelMessageFunc_InternalMouseReleased::InitVar();
+	PanelMessageFunc_InternalMouseWheeled::InitVar();
+	PanelMessageFunc_InternalKeyCodePressed::InitVar();
+	PanelMessageFunc_InternalKeyCodeTyped::InitVar();
+	PanelMessageFunc_InternalKeyTyped::InitVar();
+	PanelMessageFunc_InternalKeyCodeReleased::InitVar();
+	PanelMessageFunc_InternalKeyFocusTicked::InitVar();
+	PanelMessageFunc_InternalMouseFocusTicked::InitVar();
+	PanelMessageFunc_InternalInvalidateLayout::InitVar();
+	PanelMessageFunc_InternalMove::InitVar();
+
 	Init(0, 0, 64, 24);
 }
 
@@ -56,6 +83,8 @@ vgui2::Panel::Panel()
 //-----------------------------------------------------------------------------
 vgui2::Panel::Panel(Panel *parent)
 {
+	ChainToMap();
+
 	Init(0, 0, 64, 24);
 	SetParent(parent);
 }
@@ -65,6 +94,33 @@ vgui2::Panel::Panel(Panel *parent)
 //-----------------------------------------------------------------------------
 vgui2::Panel::Panel(Panel *parent, const char *panelName)
 {
+	ChainToMap();
+	PanelMessageFunc_Repaint::InitVar();
+	PanelMessageFunc_OnCommand::InitVar();
+	PanelMessageFunc_OnMouseCaptureLost::InitVar();
+	PanelMessageFunc_OnSetFocus::InitVar();
+	PanelMessageFunc_OnKillFocus::InitVar();
+	PanelMessageFunc_OnDelete::InitVar();
+	PanelMessageFunc_OnTick::InitVar();
+	PanelMessageFunc_OnCursorMoved::InitVar();
+	PanelMessageFunc_OnMouseFocusTicked::InitVar();
+	PanelMessageFunc_OnRequestFocus::InitVar();
+	PanelMessageFunc_InternalCursorMoved::InitVar();
+	PanelMessageFunc_InternalCursorEntered::InitVar();
+	PanelMessageFunc_InternalCursorExited::InitVar();
+	PanelMessageFunc_InternalMousePressed::InitVar();
+	PanelMessageFunc_InternalMouseDoublePressed::InitVar();
+	PanelMessageFunc_InternalMouseReleased::InitVar();
+	PanelMessageFunc_InternalMouseWheeled::InitVar();
+	PanelMessageFunc_InternalKeyCodePressed::InitVar();
+	PanelMessageFunc_InternalKeyCodeTyped::InitVar();
+	PanelMessageFunc_InternalKeyTyped::InitVar();
+	PanelMessageFunc_InternalKeyCodeReleased::InitVar();
+	PanelMessageFunc_InternalKeyFocusTicked::InitVar();
+	PanelMessageFunc_InternalMouseFocusTicked::InitVar();
+	PanelMessageFunc_InternalInvalidateLayout::InitVar();
+	PanelMessageFunc_InternalMove::InitVar();
+
 	Init(0, 0, 64, 24);
 	SetName(panelName);
 	SetParent(parent);
@@ -76,6 +132,33 @@ vgui2::Panel::Panel(Panel *parent, const char *panelName)
 //-----------------------------------------------------------------------------
 vgui2::Panel::Panel(Panel *parent, const char *panelName, HScheme scheme)
 {
+	ChainToMap();
+	PanelMessageFunc_Repaint::InitVar();
+	PanelMessageFunc_OnCommand::InitVar();
+	PanelMessageFunc_OnMouseCaptureLost::InitVar();
+	PanelMessageFunc_OnSetFocus::InitVar();
+	PanelMessageFunc_OnKillFocus::InitVar();
+	PanelMessageFunc_OnDelete::InitVar();
+	PanelMessageFunc_OnTick::InitVar();
+	PanelMessageFunc_OnCursorMoved::InitVar();
+	PanelMessageFunc_OnMouseFocusTicked::InitVar();
+	PanelMessageFunc_OnRequestFocus::InitVar();
+	PanelMessageFunc_InternalCursorMoved::InitVar();
+	PanelMessageFunc_InternalCursorEntered::InitVar();
+	PanelMessageFunc_InternalCursorExited::InitVar();
+	PanelMessageFunc_InternalMousePressed::InitVar();
+	PanelMessageFunc_InternalMouseDoublePressed::InitVar();
+	PanelMessageFunc_InternalMouseReleased::InitVar();
+	PanelMessageFunc_InternalMouseWheeled::InitVar();
+	PanelMessageFunc_InternalKeyCodePressed::InitVar();
+	PanelMessageFunc_InternalKeyCodeTyped::InitVar();
+	PanelMessageFunc_InternalKeyTyped::InitVar();
+	PanelMessageFunc_InternalKeyCodeReleased::InitVar();
+	PanelMessageFunc_InternalKeyFocusTicked::InitVar();
+	PanelMessageFunc_InternalMouseFocusTicked::InitVar();
+	PanelMessageFunc_InternalInvalidateLayout::InitVar();
+	PanelMessageFunc_InternalMove::InitVar();
+
 	Init(0, 0, 64, 24);
 	SetName(panelName);
 	SetParent(parent);
@@ -209,8 +292,12 @@ const char *vgui2::Panel::GetModuleName()
 
 vgui::PanelMessageMap * vgui2::Panel::GetMessageMap()
 {
-	NOT_IMPLEMENTED;
-	return nullptr;
+	static vgui::PanelMessageMap * s_pMap;
+	if (s_pMap)
+		return s_pMap;
+
+	s_pMap = vgui::FindOrAddPanelMessageMap("Panel");
+	return s_pMap;
 }
 
 //-----------------------------------------------------------------------------
@@ -315,6 +402,16 @@ vgui2::Panel *vgui2::Panel::GetParent()
 void vgui2::Panel::SetVisible(bool state)
 {
 	vgui2::ipanel()->SetVisible(GetVPanel(), state);
+	for (int i = 0; i < GetChildCount(); i++)
+	{
+		auto child = GetChild(i);
+		if (child)
+		{
+			CHECK_REQUIRED;
+			// Check from call below
+			child->SetKeyBoardInputEnabled(state);
+		}
+	}
 }
 
 //-----------------------------------------------------------------------------
@@ -322,12 +419,7 @@ void vgui2::Panel::SetVisible(bool state)
 //-----------------------------------------------------------------------------
 bool vgui2::Panel::IsVisible()
 {
-	if (vgui2::ipanel())
-	{
-		return vgui2::ipanel()->IsVisible(GetVPanel());
-	}
-
-	return false;
+	return vgui2::ipanel()->IsVisible(GetVPanel());
 }
 
 //-----------------------------------------------------------------------------
@@ -364,10 +456,8 @@ bool vgui2::Panel::IsPopup()
 //-----------------------------------------------------------------------------
 void vgui2::Panel::Repaint()
 {
-	if (vgui2::surface())
-	{
-		vgui2::surface()->Invalidate(GetVPanel());
-	}
+	_needsRepaint = true;
+	vgui2::surface()->Invalidate(GetVPanel());
 }
 
 vgui2::VPANEL vgui2::Panel::GetVPanel()
@@ -422,7 +512,7 @@ void vgui2::Panel::PaintTraverse(bool repaint, bool allowForce)
 	{
 		repaint = false;
 	}
-	else if (repaint || _paintBorderEnabled)
+	else if (repaint || _paintBorderEnabled || _paintBackgroundEnabled || _paintEnabled)
 	{
 		// draw the background with no inset
 		if (_paintBackgroundEnabled)
@@ -481,7 +571,7 @@ void vgui2::Panel::PaintTraverse(bool repaint, bool allowForce)
 		}
 
 	NOT_IMPLEMENTED;
-	/*	
+	
 	// IsBuildGroupEnabled recurses up all the parents and ends up being very expensive as it wanders all over memory
 		if (IsBuildGroupEnabled() && HasFocus())
 		{
@@ -494,14 +584,14 @@ void vgui2::Panel::PaintTraverse(bool repaint, bool allowForce)
 				for (int i = 0; i < controlGroup->Size(); ++i)
 				{
 					surface()->PushMakeCurrent(((*controlGroup)[i].Get())->GetVPanel(), false);
-					(*controlGroup[i].Get())->PaintBuildOverlay();
+					controlGroup[i].Base()->Get()->PaintBuildOverlay();
 					surface()->PopMakeCurrent(((*controlGroup)[i].Get())->GetVPanel());
 				}
 
 				_buildGroup->DrawRulers();
 			}
 		}
-		*/
+		
 		// All of our children have painted, etc, now allow painting in top of them
 		if (_postChildPaintEnabled)
 		{
@@ -525,8 +615,7 @@ void vgui2::Panel::PaintTraverse(bool repaint, bool allowForce)
 //-----------------------------------------------------------------------------
 void vgui2::Panel::PaintBorder()
 {
-	NOT_IMPLEMENTED;
-	//_border->Paint(GetVPanel());
+	_border->Paint(GetVPanel());
 }
 
 
@@ -829,7 +918,7 @@ bool vgui2::Panel::IsProportional()
 //-----------------------------------------------------------------------------
 void vgui2::Panel::SetScheme(const char *tag)
 {
-	if (strlen(tag) > 0 && scheme()->GetScheme(tag)) // check the scheme exists
+	if (*tag != '\0' > 0 && scheme()->GetScheme(tag)) // check the scheme exists
 	{
 		SetScheme(scheme()->GetScheme(tag));
 	}
@@ -1256,8 +1345,6 @@ void vgui2::Panel::OnMouseFocusTicked()
 
 bool vgui2::Panel::IsWithin(int x, int y)
 {
-	CHECK_REQUIRED;
-
 	// check against our clip rect
 	int clipRect[4];
 	ipanel()->GetClipRect(GetVPanel(), clipRect[0], clipRect[1], clipRect[2], clipRect[3]);
@@ -1290,9 +1377,6 @@ bool vgui2::Panel::IsWithin(int x, int y)
 //-----------------------------------------------------------------------------
 vgui2::VPANEL vgui2::Panel::IsWithinTraverse(int x, int y, bool traversePopups)
 {
-	NOT_IMPLEMENTED;
-
-	/*
 	// if this one is not visible, its children won't be either
 	// also if it doesn't want mouse input its children can't get it either
 	if (!IsVisible() || !IsMouseInputEnabled())
@@ -1302,15 +1386,14 @@ vgui2::VPANEL vgui2::Panel::IsWithinTraverse(int x, int y, bool traversePopups)
 	{
 		// check popups first
 		int i;
-		CUtlVector< VPANEL > &children = ipanel()->GetChildren(GetVPanel());
-		int childCount = children.Count();
+		int childCount = ipanel()->GetChildCount(GetVPanel());
 		for (i = childCount - 1; i >= 0; i--)
 		{
-			VPANEL panel = children[i];
+			VPANEL panel = ipanel()->GetChild(GetVPanel(), i);
 			if (ipanel()->IsPopup(panel))
 			{
 				panel = ipanel()->IsWithinTraverse(panel, x, y, true);
-				if (panel != null)
+				if (panel)
 				{
 					return panel;
 				}
@@ -1322,7 +1405,7 @@ vgui2::VPANEL vgui2::Panel::IsWithinTraverse(int x, int y, bool traversePopups)
 		// coincides to how it would be visibly displayed
 		for (i = childCount - 1; i >= 0; i--)
 		{
-			VPANEL panel = children[i];
+			VPANEL panel = ipanel()->GetChild(GetVPanel(), i);
 			// we've already checked popups so ignore
 			if (!ipanel()->IsPopup(panel))
 			{
@@ -1333,9 +1416,9 @@ vgui2::VPANEL vgui2::Panel::IsWithinTraverse(int x, int y, bool traversePopups)
 				}
 			}
 		}
-
+			
 		// check ourself
-		if (!IsMouseInputDisabledForThisPanel() && IsWithin(x, y))
+		if (IsMouseInputEnabled() && IsWithin(x, y))
 		{
 			return GetVPanel();
 		}
@@ -1348,11 +1431,10 @@ vgui2::VPANEL vgui2::Panel::IsWithinTraverse(int x, int y, bool traversePopups)
 			// check children recursive, if you find one, just return first one
 			// this checks in backwards order so the last child drawn for this panel is chosen which
 			// coincides to how it would be visibly displayed
-			CUtlVector< VPANEL > &children = ipanel()->GetChildren(GetVPanel());
-			int childCount = children.Count();
+			int childCount = ipanel()->GetChildCount(GetVPanel());
 			for (int i = childCount - 1; i >= 0; i--)
 			{
-				VPANEL panel = children[i];
+				VPANEL panel = ipanel()->GetChild(GetVPanel(), i);
 				// ignore popups
 				if (!ipanel()->IsPopup(panel))
 				{
@@ -1365,11 +1447,11 @@ vgui2::VPANEL vgui2::Panel::IsWithinTraverse(int x, int y, bool traversePopups)
 			}
 
 			// not a child, must be us
-			if (!IsMouseInputDisabledForThisPanel())
+			if (IsMouseInputEnabled())
 				return GetVPanel();
 		}
 	}
-	*/
+
 	return NULL;
 }
 
@@ -1486,12 +1568,7 @@ void vgui2::Panel::GetClipRect(int& x0, int& y0, int& x1, int& y1)
 //-----------------------------------------------------------------------------
 int vgui2::Panel::GetChildCount()
 {
-	if (ipanel())
-	{
-		return ipanel()->GetChildCount(GetVPanel());
-	}
-
-	return 0;
+	return ipanel()->GetChildCount(GetVPanel());
 }
 
 //-----------------------------------------------------------------------------
@@ -1850,15 +1927,15 @@ void vgui2::Panel::InvalidateLayout(bool layoutNow, bool reloadScheme)
 
 		for (int i = 0; i < GetChildCount(); i++)
 		{
-			auto childPanel =  vgui2::ipanel()->GetPanel((VPANEL)GetChild(i), GetControlsModuleName());
-			if (childPanel)
-			{
-				childPanel->InvalidateLayout(layoutNow, reloadScheme);
-			}
+			auto childPanel = GetChild(i);
+			childPanel->InvalidateLayout(layoutNow, true);
 		}
 
 		PerformApplySchemeSettings();
 	}
+	if (m_pTooltips)
+		m_pTooltips->InvalidateLayout();
+
 	if (layoutNow)
 	{
 		InternalPerformLayout();
@@ -2027,7 +2104,6 @@ void vgui2::Panel::PerformApplySchemeSettings()
 		IScheme *pScheme = scheme()->GetIScheme(GetScheme());
 		if (pScheme) // this should NEVER be null, but if it is bad things would happen in ApplySchemeSettings...
 		{
-			NOT_IMPLEMENTED;
 			ApplySchemeSettings(pScheme);
 		}
 	}
@@ -2688,8 +2764,8 @@ void PreparePanelMessageMap(vgui::PanelMessageMap *panelMap)
 //-----------------------------------------------------------------------------
 void vgui2::Panel::OnMessage(const KeyValues *params, VPANEL ifromPanel)
 {
-	NOT_IMPLEMENTED;
-	/*
+	CHECK_REQUIRED;
+
 	vgui::PanelMessageMap *panelMap = GetMessageMap();
 	bool bFound = false;
 	int iMessageName = params->GetNameSymbol();
@@ -2714,6 +2790,8 @@ void vgui2::Panel::OnMessage(const KeyValues *params, VPANEL ifromPanel)
 
 			if (iMessageName == pMap->nameSymbol)
 			{
+				NOT_IMPLEMENTED;
+				/*
 				bFound = true;
 
 				switch (pMap->numParams)
@@ -2736,32 +2814,38 @@ void vgui2::Panel::OnMessage(const KeyValues *params, VPANEL ifromPanel)
 					{
 					case DATATYPE_INT:
 						typedef void (vgui2::Panel::*MessageFunc_Int_t)(int);
-						(this->*((MessageFunc_Int_t)pMap->func))(param1->GetInt());
+						(this->*(MessageFunc_Int_t)pMap->func)(param1->GetInt());
+						bFound = true;
 						break;
 
 					case DATATYPE_UINT64:
 						typedef void (vgui2::Panel::*MessageFunc_Uin64_t)(uint64);
 						(this->*((MessageFunc_Uin64_t)pMap->func))(param1->GetUint64());
+						bFound = true;
 						break;
 
 					case DATATYPE_PTR:
 						typedef void (vgui2::Panel::*MessageFunc_Ptr_t)(void *);
 						(this->*((MessageFunc_Ptr_t)pMap->func))(param1->GetPtr());
+						bFound = true;
 						break;
 
 					case DATATYPE_FLOAT:
 						typedef void (vgui2::Panel::*MessageFunc_Float_t)(float);
 						(this->*((MessageFunc_Float_t)pMap->func))(param1->GetFloat());
+						bFound = true;
 						break;
 
 					case DATATYPE_CONSTCHARPTR:
 						typedef void (vgui2::Panel::*MessageFunc_CharPtr_t)(const char *);
 						(this->*((MessageFunc_CharPtr_t)pMap->func))(param1->GetString());
+						bFound = true;
 						break;
 
 					case DATATYPE_CONSTWCHARPTR:
 						typedef void (vgui2::Panel::*MessageFunc_WCharPtr_t)(const wchar_t *);
 						(this->*((MessageFunc_WCharPtr_t)pMap->func))(param1->GetWString());
+						bFound = true;
 						break;
 
 					case DATATYPE_KEYVALUES:
@@ -2800,12 +2884,12 @@ void vgui2::Panel::OnMessage(const KeyValues *params, VPANEL ifromPanel)
 					if ((DATATYPE_INT == pMap->firstParamType) && (DATATYPE_INT == pMap->secondParamType))
 					{
 						typedef void (vgui2::Panel::*MessageFunc_IntInt_t)(int, int);
-						(this->*((MessageFunc_IntInt_t)pMap->func))(param1->GetInt(), param2->GetInt());
+						(this->*((MessageFunc_IntInt_t)pMap->func))(param1->GetInt(nullptr, 0), param2->GetInt());
 					}
 					else if ((DATATYPE_PTR == pMap->firstParamType) && (DATATYPE_INT == pMap->secondParamType))
 					{
 						typedef void (vgui2::Panel::*MessageFunc_PtrInt_t)(void *, int);
-						(this->*((MessageFunc_PtrInt_t)pMap->func))(param1->GetPtr(), param2->GetInt());
+						(this->*((MessageFunc_PtrInt_t)pMap->func))(param1->GetPtr(nullptr, nullptr), param2->GetInt());
 					}
 					else if ((DATATYPE_CONSTCHARPTR == pMap->firstParamType) && (DATATYPE_INT == pMap->secondParamType))
 					{
@@ -2832,18 +2916,6 @@ void vgui2::Panel::OnMessage(const KeyValues *params, VPANEL ifromPanel)
 						typedef void (vgui2::Panel::*MessageFunc_PtrConstCharPtr_t)(void *, const wchar_t *);
 						(this->*((MessageFunc_PtrConstCharPtr_t)pMap->func))(param1->GetPtr(), param2->GetWString());
 					}
-					else if ((DATATYPE_HANDLE == pMap->firstParamType) && (DATATYPE_CONSTCHARPTR == pMap->secondParamType))
-					{
-						typedef void (vgui2::Panel::*MessageFunc_HandleConstCharPtr_t)(VPANEL, const char *);
-						VPANEL vp = ivgui()->HandleToPanel(param1->GetInt());
-						(this->*((MessageFunc_HandleConstCharPtr_t)pMap->func))(vp, param2->GetString());
-					}
-					else if ((DATATYPE_HANDLE == pMap->firstParamType) && (DATATYPE_CONSTWCHARPTR == pMap->secondParamType))
-					{
-						typedef void (vgui2::Panel::*MessageFunc_HandleConstCharPtr_t)(VPANEL, const wchar_t *);
-						VPANEL vp = ivgui()->HandleToPanel(param1->GetInt());
-						(this->*((MessageFunc_HandleConstCharPtr_t)pMap->func))(vp, param2->GetWString());
-					}
 					else
 					{
 						// the message isn't handled
@@ -2856,11 +2928,13 @@ void vgui2::Panel::OnMessage(const KeyValues *params, VPANEL ifromPanel)
 					Assert(!("Invalid number of parameters"));
 					break;
 				}
-
-				// break the loop
-				bFound = true;
+				*/
+					// break the loop
+					bFound = true;
 				break;
 			}
+
+
 		}
 	}
 
@@ -2868,7 +2942,6 @@ void vgui2::Panel::OnMessage(const KeyValues *params, VPANEL ifromPanel)
 	{
 		OnOldMessage(const_cast<KeyValues *>(params), ifromPanel);
 	}
-	*/
 }
 
 void vgui2::Panel::OnOldMessage(KeyValues *params, VPANEL ifromPanel)
@@ -3093,8 +3166,6 @@ void vgui2::Panel::PostMessageToChild(const char *childName, KeyValues *message)
 //-----------------------------------------------------------------------------
 bool vgui2::Panel::RequestInfo(KeyValues *outputData)
 {
-	CHECK_REQUIRED;
-
 	if (GetVParent())
 	{
 		return ipanel()->RequestInfo(GetVParent(), outputData);
@@ -3296,6 +3367,21 @@ void vgui2::Panel::SetTooltip(BaseTooltip *pToolTip, const char *pszText)
 	*/
 }
 
+const char * vgui2::Panel::GetPanelClassName()
+{
+	return "Panel";
+}
+
+void vgui2::Panel::ChainToMap(void)
+{
+	static bool chained = false;
+	if (chained)
+		return;
+
+	chained = true;
+	vgui::FindOrAddPanelMessageMap("Panel")->pfnClassName = vgui2::Panel::GetPanelClassName;
+}
+
 //-----------------------------------------------------------------------------
 // Purpose: sets the proportional flag on this panel and all it's children
 //-----------------------------------------------------------------------------
@@ -3441,7 +3527,6 @@ CPanelMessageMapDictionary& GetPanelMessageMapDictionary()
 }
 
 
-
 namespace vgui
 {
 	CPanelMessageMapDictionary& GetPanelMessageMapDictionary()
@@ -3457,6 +3542,7 @@ namespace vgui
 		return GetPanelMessageMapDictionary().FindOrAddPanelMessageMap(className);
 	}
 
+
 	//-----------------------------------------------------------------------------
 	// Purpose: Find but don't add mapping
 	//-----------------------------------------------------------------------------
@@ -3464,4 +3550,470 @@ namespace vgui
 	{
 		return GetPanelMessageMapDictionary().FindPanelMessageMap(className);
 	}
+}
+
+void vgui2::Panel::PanelMessageFunc_Repaint::InitVar(void)
+{
+	ADD_ONE_TIME;
+
+	vgui::MessageMapItem_t mmi;
+	memset(&mmi, 0, sizeof(mmi));
+
+	mmi.name = "Repaint";
+	mmi.func = NullFunction; // (void(*)(vgui2::Panel *))(buf + 1);
+
+	auto pPanelMessageMap = vgui::FindPanelMessageMap("Panel");
+
+	int elem = pPanelMessageMap->entries.Size();
+
+	pPanelMessageMap->entries.InsertBefore(elem, mmi);
+}
+
+void vgui2::Panel::PanelMessageFunc_OnCommand::InitVar(void)
+{
+	ADD_ONE_TIME;
+
+	vgui::MessageMapItem_t mmi;
+	memset(&mmi, 0, sizeof(mmi));
+
+	mmi.name = "Command";
+	mmi.func = NullFunction; // (void(*)(vgui2::Panel *))(elf_hash_bucket + 133);
+	mmi.numParams = 1;
+	mmi.firstParamType = vgui::DATATYPE_CONSTCHARPTR;
+	mmi.firstParamName = "command";
+
+	auto pPanelMessageMap = vgui::FindPanelMessageMap("Panel");
+
+	int elem = pPanelMessageMap->entries.Size();
+
+	pPanelMessageMap->entries.InsertBefore(elem, mmi);
+}
+
+void vgui2::Panel::PanelMessageFunc_OnMouseCaptureLost::InitVar(void)
+{
+	ADD_ONE_TIME;
+
+	vgui::MessageMapItem_t mmi;
+	memset(&mmi, 0, sizeof(mmi));
+
+	mmi.name = "MouseCaptureLost";
+	mmi.func = NullFunction; //(void(*)(vgui2::Panel *))(elf_hash_bucket + 137);
+
+	auto pPanelMessageMap = vgui::FindPanelMessageMap("Panel");
+
+	int elem = pPanelMessageMap->entries.Size();
+
+	pPanelMessageMap->entries.InsertBefore(elem, mmi);	
+}
+					
+void vgui2::Panel::PanelMessageFunc_OnSetFocus::InitVar(void)
+{
+	ADD_ONE_TIME;
+
+	vgui::MessageMapItem_t mmi;
+	memset(&mmi, 0, sizeof(mmi));
+
+	mmi.name = "SetFocus";
+	mmi.func = NullFunction; //(void(*)(vgui2::Panel *))(elf_hash_bucket + 141);
+
+	auto pPanelMessageMap = vgui::FindPanelMessageMap("Panel");
+
+	int elem = pPanelMessageMap->entries.Size();
+
+	pPanelMessageMap->entries.InsertBefore(elem, mmi);
+}
+
+void vgui2::Panel::PanelMessageFunc_OnKillFocus::InitVar(void)
+{
+	ADD_ONE_TIME;
+
+	vgui::MessageMapItem_t mmi;
+	memset(&mmi, 0, sizeof(mmi));
+
+	mmi.name = "KillFocus";
+	mmi.func = NullFunction; //(void(*)(vgui2::Panel *))(elf_hash_bucket + 145);
+
+	auto pPanelMessageMap = vgui::FindPanelMessageMap("Panel");
+
+	int elem = pPanelMessageMap->entries.Size();
+	
+	pPanelMessageMap->entries.InsertBefore(elem, mmi);
+}
+
+void vgui2::Panel::PanelMessageFunc_OnDelete::InitVar(void)
+{
+	ADD_ONE_TIME;
+
+	vgui::MessageMapItem_t mmi;
+	memset(&mmi, 0, sizeof(mmi));
+
+	mmi.name = "Delete";
+	mmi.func = NullFunction; //(void(*)(vgui2::Panel *))(elf_hash_bucket + 149);
+
+	auto pPanelMessageMap = vgui::FindPanelMessageMap("Panel");
+
+	int elem = pPanelMessageMap->entries.Size();
+
+	pPanelMessageMap->entries.InsertBefore(elem, mmi);
+}
+
+void vgui2::Panel::PanelMessageFunc_OnTick::InitVar(void)
+{
+	ADD_ONE_TIME;
+
+	vgui::MessageMapItem_t mmi;
+	memset(&mmi, 0, sizeof(mmi));
+
+	mmi.name = "Tick";
+	mmi.func = NullFunction; //(void(*)(vgui2::Panel *))(elf_hash_bucket + 153);
+
+	auto pPanelMessageMap = vgui::FindPanelMessageMap("Panel");
+
+	int elem = pPanelMessageMap->entries.Size();
+
+	pPanelMessageMap->entries.InsertBefore(elem, mmi);
+}
+
+void vgui2::Panel::PanelMessageFunc_OnCursorMoved::InitVar(void)
+{
+	ADD_ONE_TIME;
+
+	vgui::MessageMapItem_t mmi;
+	memset(&mmi, 0, sizeof(mmi));
+
+	mmi.name = "OnCursorMoved";
+	mmi.func = NullFunction; //(void(*)(vgui2::Panel *))(elf_hash_bucket + 157);
+	mmi.numParams = 2;
+	mmi.firstParamType = vgui::DATATYPE_INT;
+	mmi.firstParamName = "x";
+	mmi.secondParamType = vgui::DATATYPE_INT;
+	mmi.secondParamName = "y";
+
+	auto pPanelMessageMap = vgui::FindPanelMessageMap("Panel");
+
+	int elem = pPanelMessageMap->entries.Size();
+
+	pPanelMessageMap->entries.InsertBefore(elem, mmi);
+}
+
+void vgui2::Panel::PanelMessageFunc_OnMouseFocusTicked::InitVar(void)
+{
+	ADD_ONE_TIME;
+
+	vgui::MessageMapItem_t mmi;
+	memset(&mmi, 0, sizeof(mmi));
+
+	mmi.name = "OnMouseFocusTicked";
+	mmi.func = NullFunction; //(void(*)(vgui2::Panel *))(elf_hash_bucket + 205);
+
+	auto pPanelMessageMap = vgui::FindPanelMessageMap("Panel");
+
+	int elem = pPanelMessageMap->entries.Size();
+
+	pPanelMessageMap->entries.InsertBefore(elem, mmi);
+}
+
+void vgui2::Panel::PanelMessageFunc_OnRequestFocus::InitVar(void)
+{
+	ADD_ONE_TIME;
+
+	vgui::MessageMapItem_t mmi;
+	memset(&mmi, 0, sizeof(mmi));
+
+	mmi.name = "OnRequestFocus";
+	mmi.func = NullFunction; //(void(*)(vgui2::Panel *))(elf_hash_bucket + 257);
+	mmi.numParams = 2;
+	mmi.firstParamType = vgui::DATATYPE_INT;
+	mmi.firstParamName = "subFocus";
+	mmi.secondParamType = vgui::DATATYPE_INT;
+	mmi.secondParamName = "defaultPanel";
+
+	auto pPanelMessageMap = vgui::FindPanelMessageMap("Panel");
+
+	int elem = pPanelMessageMap->entries.Size();
+
+	pPanelMessageMap->entries.InsertBefore(elem, mmi);
+}
+
+void vgui2::Panel::PanelMessageFunc_InternalCursorMoved::InitVar(void)
+{
+	ADD_ONE_TIME;
+
+	vgui::MessageMapItem_t mmi;
+	memset(&mmi, 0, sizeof(mmi));
+
+	mmi.name = "CursorMoved";
+	mmi.func = NullFunction; //(void(*)(vgui2::Panel *))(elf_hash_bucket + 261);
+	mmi.numParams = 2;
+	mmi.firstParamType = vgui::DATATYPE_INT;
+	mmi.firstParamName = "xpos";
+	mmi.secondParamType = vgui::DATATYPE_INT;
+	mmi.secondParamName = "ypos";
+
+	auto pPanelMessageMap = vgui::FindPanelMessageMap("Panel");
+
+	int elem = pPanelMessageMap->entries.Size();
+
+	pPanelMessageMap->entries.InsertBefore(elem, mmi);
+}
+
+void vgui2::Panel::PanelMessageFunc_InternalCursorEntered::InitVar(void)
+{
+	ADD_ONE_TIME;
+
+	vgui::MessageMapItem_t mmi;
+	memset(&mmi, 0, sizeof(mmi));
+
+	mmi.name = "CursorEntered";
+	mmi.func = NullFunction; //(void(*)(vgui2::Panel *))(elf_hash_bucket + 265);
+
+	auto pPanelMessageMap = vgui::FindPanelMessageMap("Panel");
+
+	int elem = pPanelMessageMap->entries.Size();
+
+	pPanelMessageMap->entries.InsertBefore(elem, mmi);
+}
+
+void vgui2::Panel::PanelMessageFunc_InternalCursorExited::InitVar(void)
+{
+	ADD_ONE_TIME;
+
+	vgui::MessageMapItem_t mmi;
+	memset(&mmi, 0, sizeof(mmi));
+
+	mmi.name = "CursorExited";
+	mmi.func = NullFunction; //(void(*)(vgui2::Panel *))(elf_hash_bucket + 269);
+
+	auto pPanelMessageMap = vgui::FindPanelMessageMap("Panel");
+
+	int elem = pPanelMessageMap->entries.Size();
+
+	pPanelMessageMap->entries.InsertBefore(elem, mmi);
+}
+
+void vgui2::Panel::PanelMessageFunc_InternalMousePressed::InitVar(void)
+{
+	ADD_ONE_TIME;
+
+	vgui::MessageMapItem_t mmi;
+	memset(&mmi, 0, sizeof(mmi));
+
+	mmi.name = "MousePressed";
+	mmi.func = NullFunction; //(void(*)(vgui2::Panel *))(elf_hash_bucket + 273);
+	mmi.numParams = 1;
+	mmi.firstParamType = vgui::DATATYPE_INT;
+	mmi.firstParamName = "code";
+
+	auto pPanelMessageMap = vgui::FindPanelMessageMap("Panel");
+
+	int elem = pPanelMessageMap->entries.Size();
+
+	pPanelMessageMap->entries.InsertBefore(elem, mmi);
+}
+
+void vgui2::Panel::PanelMessageFunc_InternalMouseDoublePressed::InitVar(void)
+{
+	ADD_ONE_TIME;
+
+	vgui::MessageMapItem_t mmi;
+	memset(&mmi, 0, sizeof(mmi));
+
+	mmi.name = "MouseDoublePressed";
+	mmi.func = NullFunction; //(void(*)(vgui2::Panel *))(elf_hash_bucket + 277);
+	mmi.numParams = 1;
+	mmi.firstParamType = vgui::DATATYPE_INT;
+	mmi.firstParamName = "code";
+
+	auto pPanelMessageMap = vgui::FindPanelMessageMap("Panel");
+
+	int elem = pPanelMessageMap->entries.Size();
+
+	pPanelMessageMap->entries.InsertBefore(elem, mmi);
+}
+
+void vgui2::Panel::PanelMessageFunc_InternalMouseReleased::InitVar(void)
+{
+	ADD_ONE_TIME;
+
+	vgui::MessageMapItem_t mmi;
+	memset(&mmi, 0, sizeof(mmi));
+
+	mmi.func = NullFunction; //(void(*)(vgui2::Panel *))(elf_hash_bucket + 281);
+	mmi.numParams = 1;
+	mmi.firstParamType = vgui::DATATYPE_INT;
+	mmi.firstParamName = "code";
+
+	auto pPanelMessageMap = vgui::FindPanelMessageMap("Panel");
+
+	int elem = pPanelMessageMap->entries.Size();
+
+	pPanelMessageMap->entries.InsertBefore(elem, mmi);
+}
+
+void vgui2::Panel::PanelMessageFunc_InternalMouseWheeled::InitVar(void)
+{
+	ADD_ONE_TIME;
+
+	vgui::MessageMapItem_t mmi;
+	memset(&mmi, 0, sizeof(mmi));
+
+	mmi.name = "MouseWheeled";
+	mmi.func = NullFunction; //(void(*)(vgui2::Panel *))(elf_hash_bucket + 285);
+	mmi.numParams = 1;
+	mmi.firstParamType = vgui::DATATYPE_INT;
+	mmi.firstParamName = "delta";
+
+	auto pPanelMessageMap = vgui::FindPanelMessageMap("Panel");
+
+	int elem = pPanelMessageMap->entries.Size();
+
+	pPanelMessageMap->entries.InsertBefore(elem, mmi);
+}
+
+void vgui2::Panel::PanelMessageFunc_InternalKeyCodePressed::InitVar(void)
+{
+	ADD_ONE_TIME;
+
+	vgui::MessageMapItem_t mmi;
+	memset(&mmi, 0, sizeof(mmi));
+
+	mmi.name = "KeyCodePressed";
+	mmi.func = NullFunction; //(void(*)(vgui2::Panel *))(elf_hash_bucket + 289);
+	mmi.numParams = 1;
+	mmi.firstParamType = vgui::DATATYPE_INT;
+	mmi.firstParamName = "code";
+
+	auto pPanelMessageMap = vgui::FindPanelMessageMap("Panel");
+
+	int elem = pPanelMessageMap->entries.Size();
+
+	pPanelMessageMap->entries.InsertBefore(elem, mmi);
+}
+
+void vgui2::Panel::PanelMessageFunc_InternalKeyCodeTyped::InitVar(void)
+{
+	ADD_ONE_TIME;
+
+	vgui::MessageMapItem_t mmi;
+	memset(&mmi, 0, sizeof(mmi));
+
+	mmi.name = "KeyCodeTyped";
+	mmi.func = NullFunction; //(void(*)(vgui2::Panel *))(elf_hash_bucket + 293);
+	mmi.numParams = 1;
+	mmi.firstParamType = vgui::DATATYPE_INT;
+	mmi.firstParamName = "code";
+
+	auto pPanelMessageMap = vgui::FindPanelMessageMap("Panel");
+
+	int elem = pPanelMessageMap->entries.Size();
+
+	pPanelMessageMap->entries.InsertBefore(elem, mmi);
+}
+
+void vgui2::Panel::PanelMessageFunc_InternalKeyTyped::InitVar(void)
+{
+	ADD_ONE_TIME;
+
+	vgui::MessageMapItem_t mmi;
+	memset(&mmi, 0, sizeof(mmi));
+
+	mmi.name = "KeyTyped";
+	mmi.func = NullFunction; //(void(*)(vgui2::Panel *))(elf_hash_bucket + 297);
+	mmi.numParams = 1;
+	mmi.firstParamType = vgui::DATATYPE_INT;
+	mmi.firstParamName = "unichar";
+
+	auto pPanelMessageMap = vgui::FindPanelMessageMap("Panel");
+
+	int elem = pPanelMessageMap->entries.Size();
+
+	pPanelMessageMap->entries.InsertBefore(elem, mmi);
+}
+
+void vgui2::Panel::PanelMessageFunc_InternalKeyCodeReleased::InitVar(void)
+{
+	ADD_ONE_TIME;
+
+	vgui::MessageMapItem_t mmi;
+	memset(&mmi, 0, sizeof(mmi));
+
+	mmi.name = "KeyCodeReleased";
+	mmi.func = NullFunction; //(void(*)(vgui2::Panel *))(elf_hash_bucket + 301);
+	mmi.numParams = 1;
+	mmi.firstParamType = vgui::DATATYPE_INT;
+	mmi.firstParamName = "code";
+
+	auto pPanelMessageMap = vgui::FindPanelMessageMap("Panel");
+
+	int elem = pPanelMessageMap->entries.Size();
+
+	pPanelMessageMap->entries.InsertBefore(elem, mmi);
+}
+
+void vgui2::Panel::PanelMessageFunc_InternalKeyFocusTicked::InitVar(void)
+{
+	ADD_ONE_TIME;
+
+	vgui::MessageMapItem_t mmi;
+	memset(&mmi, 0, sizeof(mmi));
+
+	mmi.name = "KeyFocusTicked";
+	mmi.func = NullFunction; //(void(*)(vgui2::Panel *))(elf_hash_bucket + 305);
+
+	auto pPanelMessageMap = vgui::FindPanelMessageMap("Panel");
+
+	int elem = pPanelMessageMap->entries.Size();
+
+	pPanelMessageMap->entries.InsertBefore(elem, mmi);
+}
+
+void vgui2::Panel::PanelMessageFunc_InternalMouseFocusTicked::InitVar(void)
+{
+	ADD_ONE_TIME;
+
+	vgui::MessageMapItem_t mmi;
+	memset(&mmi, 0, sizeof(mmi));
+
+	mmi.name = "MouseFocusTicked";
+	mmi.func = NullFunction; //(void(*)(vgui2::Panel *))(elf_hash_bucket + 309);
+
+	auto pPanelMessageMap = vgui::FindPanelMessageMap("Panel");
+
+	int elem = pPanelMessageMap->entries.Size();
+
+	pPanelMessageMap->entries.InsertBefore(elem, mmi);
+}
+
+void vgui2::Panel::PanelMessageFunc_InternalInvalidateLayout::InitVar(void)
+{
+	ADD_ONE_TIME;
+
+	vgui::MessageMapItem_t mmi;
+	memset(&mmi, 0, sizeof(mmi));
+
+	mmi.name = "Invalidate";
+	mmi.func = NullFunction; //(void(*)(vgui2::Panel *))(elf_hash_bucket + 313);
+
+	auto pPanelMessageMap = vgui::FindPanelMessageMap("Panel");
+
+	int elem = pPanelMessageMap->entries.Size();
+
+	pPanelMessageMap->entries.InsertBefore(elem, mmi);
+}
+
+void vgui2::Panel::PanelMessageFunc_InternalMove::InitVar(void)
+{
+	ADD_ONE_TIME;
+
+	vgui::MessageMapItem_t mmi;
+	memset(&mmi, 0, sizeof(mmi));
+
+	mmi.name = "Move";
+	mmi.func = NullFunction; //(void(*)(vgui2::Panel *))(elf_hash_bucket + 317);
+
+	auto pPanelMessageMap = vgui::FindPanelMessageMap("Panel");
+
+	int elem = pPanelMessageMap->entries.Size();
+
+	pPanelMessageMap->entries.InsertBefore(elem, mmi);
 }

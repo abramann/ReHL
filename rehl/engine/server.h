@@ -265,6 +265,12 @@ typedef struct deltacallback_s
 	int offset;
 } deltacallback_t;
 
+#ifdef SHARED_GAME_DATA
+extern server_static_t& g_psvs;
+#else
+extern server_static_t g_psvs;
+#endif
+
 extern char *pr_strings;
 extern char *gNullString;
 extern qboolean scr_skipupdate;
@@ -275,7 +281,6 @@ extern int SV_UPDATE_BACKUP;
 extern int SV_UPDATE_MASK;
 
 extern globalvars_t gGlobalVariables;
-extern server_static_t g_psvs;
 extern server_t g_psv;
 
 extern rehlds_server_t g_rehlds_sv;

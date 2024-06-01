@@ -28,8 +28,12 @@
 
 #include "precompiled.h"
 
+#ifdef SHARED_GAME_DATA
+IEngine* eng = ADDRESS_OF_DATAPTR(IEngine*, 0xAC6C4);
+#else
 CEngine g_Engine;
 IEngine *eng = &g_Engine;
+#endif
 
 CEngine::CEngine()
 {
@@ -60,6 +64,7 @@ void CEngine::Unload()
 
 void ForceReloadProfile()
 {
+	return Call_Function<void>(0xAA9B0);
 	char szRate[32] = { 0 };
 
 	Cbuf_AddText("exec config.cfg\n");
@@ -77,7 +82,6 @@ void ForceReloadProfile()
 		const char* szRegRate = GetRateRegistrySetting(rate.string);
 		Q_strncpy(szRate, szRegRate, 32);
 		Cvar_DirectSet(&rate, szRate);
-		
 	}
 }
 
@@ -96,6 +100,8 @@ bool CEngine::Load(bool dedicated, const char *basedir, const char *cmdline)
 
 int CEngine::Frame()
 {
+	return Call_Method<int, CEngine>(0xAD2F0, this);
+
 #ifndef SWDS && defined(SOUND)
 	//(*(void(**)(void))(*(_DWORD *)cdaudio + 24))();
 #endif
@@ -166,7 +172,6 @@ double CEngine::GetCurTime()
 
 void CEngine::TrapKey_Event(int key, bool down)
 {
-
 	if (m_bTrapMode && (down = 0, down))
 	{
 		m_bTrapMode = 0;

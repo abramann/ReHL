@@ -38,15 +38,24 @@ typedef struct hunk_s hunk_t;
 typedef struct cache_user_s cache_user_t;
 typedef struct cache_system_s cache_system_t;
 
-extern cvar_t mem_dbgfile;
+#ifdef SHARED_GAME_DATA
+extern memzone_t*& mainzone;
+extern byte *&hunk_base;
+extern int& hunk_size;
+extern int& hunk_low_used;
+extern int& hunk_high_used;
+extern cache_system_t& cache_head;
+#else
 extern memzone_t *mainzone;
 extern byte *hunk_base;
 extern int hunk_size;
 extern int hunk_low_used;
 extern int hunk_high_used;
+extern cache_system_t cache_head;
+#endif
+extern cvar_t mem_dbgfile;
 extern qboolean hunk_tempactive;
 extern int hunk_tempmark;
-extern cache_system_t cache_head;
 
 void Z_ClearZone(memzone_t *zone, int size);
 void Z_Free(void *ptr);

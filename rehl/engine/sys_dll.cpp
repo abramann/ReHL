@@ -28,7 +28,6 @@
 
 #include "precompiled.h"
 
-void(*Launcher_ConsolePrintf)(char *, ...);
 char *(*Launcher_GetLocalizedString)(unsigned int);
 int(*Launcher_MP3subsys_Suspend_Audio)(void);
 void(*Launcher_MP3subsys_Resume_Audio)(void);
@@ -50,10 +49,26 @@ char gszDisconnectReason[MAX_DISCONNECT_REASON];
 char gszExtendedDisconnectReason[MAX_DISCONNECT_REASON];
 
 qboolean gfExtendedError;
-qboolean g_bIsDedicatedServer;
 
 int giSubState;
+#ifdef SHARED_GAME_DATA
+int* sp_giActive = ADDRESS_OF_DATA(int*,0xAA997);
+int& giActive = *sp_giActive;
+
+qboolean* sp_g_bIsDedicatedServer = ADDRESS_OF_DATA(qboolean*, 0xAC4AF);
+qboolean& g_bIsDedicatedServer = *sp_g_bIsDedicatedServer;
+
+modinfo_t* sp_gmodinfo = ADDRESS_OF_DATA(modinfo_t*, 0xAC4D3);
+modinfo_t& gmodinfo = *sp_gmodinfo;
+
+void(**sp_Launcher_ConsolePrintf)(char *, ...) = ADDRESS_OF_DATA(void(**)(char *, ...), 0xABF46);
+void(*&Launcher_ConsolePrintf)(char *, ...) = *sp_Launcher_ConsolePrintf;
+
+#else
 int giActive;
+modinfo_t gmodinfo;
+void(*Launcher_ConsolePrintf)(char *, ...);
+#endif
 int giStateInfo;
 DLL_FUNCTIONS gEntityInterface;
 NEW_DLL_FUNCTIONS gNewDLLFunctions;
@@ -61,7 +76,6 @@ NEW_DLL_FUNCTIONS gNewDLLFunctions;
 extensiondll_t g_rgextdll[MAX_EXTENSION_DLL];
 
 int g_iextdllMac;
-modinfo_t gmodinfo;
 qboolean gfBackground;
 //int starttime;
 //qboolean Win32AtLeastV4;
@@ -81,23 +95,54 @@ char g_szFindFirstFileName[MAX_PATH];
 #endif
 
 #ifdef _WIN32
-int g_PerfCounterInitialized;
-CRITICAL_SECTION g_PerfCounterMutex;
 
+#ifdef SHARED_GAME_DATA
+double* sp_curtime = ADDRESS_OF_DATA(double*, 0xAA907);
+double& curtime = *sp_curtime;
+
+double* sp_lastcurtime = ADDRESS_OF_DATA(double*, 0xAA91D);
+double& lastcurtime = *sp_lastcurtime;
+
+int* sp_g_PerfCounterShiftRightAmount = ADDRESS_OF_DATA(int*, 0xAA7C9);
+int& g_PerfCounterShiftRightAmount = *sp_g_PerfCounterShiftRightAmount;
+
+double* sp_g_PerfCounterSlice = ADDRESS_OF_DATA(double*, 0xAA83F);
+double& g_PerfCounterSlice = *sp_g_PerfCounterSlice;
+
+int* sp_g_PerfCounterInitialized = ADDRESS_OF_DATA(int*, 0xAA797);
+int& g_PerfCounterInitialized = *sp_g_PerfCounterInitialized;
+
+CRITICAL_SECTION* sp_g_PerfCounterMutex = ADDRESS_OF_DATA(CRITICAL_SECTION*, 0xAA7AE);
+CRITICAL_SECTION& g_PerfCounterMutex = *sp_g_PerfCounterMutex;
+
+int* sp_g_WinNTOrHigher = ADDRESS_OF_DATA(int*, 0xAA907);
+int& g_WinNTOrHigher = *sp_g_WinNTOrHigher;
+
+FileFindHandle_t * sp_g_hfind = ADDRESS_OF_DATA(FileFindHandle_t *, 0xAA257);
+FileFindHandle_t & g_hfind = *sp_g_hfind;
+#else
+double curtime;
 int g_PerfCounterShiftRightAmount;
 double g_PerfCounterSlice;
-double g_CurrentTime;
-double g_StartTime;
-
+double lastcurtime;
+int g_PerfCounterInitialized;
+CRITICAL_SECTION g_PerfCounterMutex;
 int g_WinNTOrHigher;
+
+static qboolean bInitialized_14534 = false;
+static float curtime = 0.0;
+static float lastcurtime = 0.0;
+
+FileFindHandle_t g_hfind = FILESYSTEM_INVALID_FIND_HANDLE;
+
+#endif
+
 #endif // _WIN32
 
 int g_FPUCW_Mask_Prec_64Bit = 0;
 int g_FPUCW_Mask_Prec_64Bit_2 = 0;
 int g_FPUCW_Mask_Round_Trunc = 0;
 int g_FPUCW_Mask_Round_Up = 0;
-
-FileFindHandle_t g_hfind = FILESYSTEM_INVALID_FIND_HANDLE;
 
 const char* file = "qconsole";
 
@@ -219,19 +264,16 @@ void Sys_InitFPUControlWords()
 
 void Sys_SetStartTime()
 {
-	int startTimeArg;
-
 	Sys_FloatTime();
-	startTimeArg = COM_CheckParm("-starttime");
-	if (startTimeArg)
-		g_CurrentTime = Q_atof(com_argv[startTimeArg + 1]);
+	int iParamStarttime = COM_CheckParm("-starttime");
+	if (iParamStarttime)
+		curtime = Q_atof(com_argv[iParamStarttime + 1]);
 	else
-		g_CurrentTime = 0;
-
-	g_StartTime = g_CurrentTime;
+		curtime = 0.0;
+	lastcurtime = curtime;
 }
 
-void __cdecl Sys_InitHardwareTimer()
+void Sys_InitHardwareTimer()
 {
 	unsigned int perfHighPart;
 	unsigned int perfLowPart;
@@ -245,7 +287,7 @@ void __cdecl Sys_InitHardwareTimer()
 	Sys_SetupFPUOptions();
 	Sys_InitFPUControlWords();
 
-	if (!CRehldsPlatformHolder::get()->QueryPerfFreq(&perfFreq))
+	if (!QueryPerformanceFrequency(&perfFreq))
 		Sys_Error("%s: No hardware timer available", __func__);
 
 	perfHighPart = perfFreq.HighPart;
@@ -314,11 +356,8 @@ const char *Sys_FindFirst(const char *path, char *basename)
 
 const char *Sys_FindFirstPathID(const char *path, char *pathid)
 {
-	//const char *psz;//unused?
 	if (g_hfind != -1)
-	{
 		Sys_Error("%s: called without close", __func__);
-	}
 
 	return FS_FindFirst(path, &g_hfind, pathid);
 }
@@ -557,7 +596,7 @@ double EXT_FUNC Sys_FloatTime(void)
 	EnterCriticalSection(&g_PerfCounterMutex);
 	Sys_FPUCW_Push_Prec64();
 
-	CRehldsPlatformHolder::get()->QueryPerfCounter(&PerformanceCount);
+	QueryPerformanceCounter(&PerformanceCount);
 	if (g_PerfCounterShiftRightAmount)
 		currentTime = (PerformanceCount.LowPart >> g_PerfCounterShiftRightAmount) | (PerformanceCount.HighPart << (32 - g_PerfCounterShiftRightAmount));
 	else
@@ -567,26 +606,23 @@ double EXT_FUNC Sys_FloatTime(void)
 	{
 		savedOldTime = s_oldTime;
 		if (currentTime <= s_oldTime && s_oldTime - currentTime < 0x10000000)
-		{
 			s_oldTime = currentTime;
-		}
 		else
 		{
 			s_oldTime = currentTime;
-			g_CurrentTime = g_CurrentTime + (double)(currentTime - savedOldTime) * g_PerfCounterSlice;
-			if (g_CurrentTime == g_StartTime)
+			curtime += (double)(currentTime - savedOldTime) * g_PerfCounterSlice;
+			if (curtime == lastcurtime)
 			{
-				if (s_timeNotChangedCounter >= 100000)
+				s_timeNotChangedCounter++;
+				if (s_timeNotChangedCounter <= 100000)
+					lastcurtime = curtime;
+				else
 				{
-					g_CurrentTime = g_CurrentTime + 1.0;
-					s_timeNotChangedCounter = 0;
+					curtime++;
 				}
 			}
-			else
-			{
-				s_timeNotChangedCounter = 0;
-			}
-			g_StartTime = g_CurrentTime;
+			s_timeNotChangedCounter = 0;
+			lastcurtime = curtime;
 		}
 	}
 	else
@@ -597,7 +633,7 @@ double EXT_FUNC Sys_FloatTime(void)
 
 	Sys_FPUCW_Pop_Prec64();
 	LeaveCriticalSection(&g_PerfCounterMutex);
-	return g_CurrentTime;
+	return curtime;
 }
 
 #else // not _WIN32

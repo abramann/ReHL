@@ -111,7 +111,7 @@ inline char *_strlwr(char *start)
 	#define Q_memcmp memcmp
 	#define Q_memmove memmove
 	#define Q_strlen strlen
-	#define Q_strcpy strcpy
+	#define Q_strcpy Q_strcpy
 	#define Q_strncpy strncpy
 	#define Q_strcat strcat
 	#define Q_strncat strncat
@@ -155,7 +155,7 @@ inline char *Q_strlcpy(char *dest, const char *src, size_t size) {
 	return dest;
 }
 
-// a safe variant of strcpy that truncates the result to fit in the destination buffer
+// a safe variant of Q_strcpy that truncates the result to fit in the destination buffer
 template <size_t size>
 char *Q_strlcpy(char (&dest)[size], const char *src) {
 	return Q_strlcpy(dest, src, size);
@@ -206,7 +206,7 @@ inline void Q_FixSlashes(char *pname, char separator = CORRECT_PATH_SEPARATOR)
 	}
 }
 
-// strcpy that works correctly with overlapping src and dst buffers
+// Q_strcpy that works correctly with overlapping src and dst buffers
 inline char *Q_strcpy_s(char *dst, char *src) {
 	int len = Q_strlen(src);
 	Q_memmove(dst, src, len + 1);

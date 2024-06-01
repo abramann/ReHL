@@ -95,6 +95,10 @@ void CL_StopPlayback(void);
 
 void CL_BeginDemoStartup(void);
 
+void CL_SetDemoViewInfo(ref_params_t *rp, vec_t *view, int viewmodel);
+
+void CL_GetDemoViewInfo(ref_params_t *rp, float *view, int *viewmodel);
+
 extern client_textmessage_t tm_demomessage;
 
 extern client_textmessage_t tm_demomessage;

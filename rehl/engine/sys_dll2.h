@@ -52,7 +52,6 @@ extern double g_flLastSteamProgressUpdateTime;
 extern char *szCommonPreloads;
 extern char *szReslistsBaseDir;
 extern char *szReslistsExt;
-extern SDL_Window* pmainwindow;
 
 class CDedicatedServerAPI: public IDedicatedServerAPI
 {
@@ -87,7 +86,7 @@ void Sys_CheckOSVersion();
 NOXREF void Sys_Init();
 NOXREF void Sys_Shutdown();
 void Sys_InitArgv(char *lpCmdLine);
-NOXREF void Sys_ShutdownArgv();
+void Sys_ShutdownArgv();
 void Sys_InitMemory();
 void Sys_ShutdownMemory();
 void Sys_InitLauncherInterface();

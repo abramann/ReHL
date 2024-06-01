@@ -127,7 +127,9 @@ qboolean CL_RequestMissingResources(void)
 	{
 		if ((p->ucFlags & 2) == 0)
 		{
-			CL_MoveToOnHandList(p);
+			NOT_IMPLEMENTED;
+
+			//CL_MoveToOnHandList(p);
 			return true;
 		}
 	}

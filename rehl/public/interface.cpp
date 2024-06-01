@@ -27,6 +27,7 @@
 */
 
 #include "interface.h"
+#include "hooker.h"
 
 #ifdef _WIN32
 	#define WIN32_LEAN_AND_MEAN
@@ -54,6 +55,8 @@ InterfaceReg::InterfaceReg(InstantiateInterfaceFn fn, const char *pName) : m_pNa
 // function for CreateInterface again getting the dll specific symbol we need.
 EXPORT_FUNCTION IBaseInterface *CreateInterface(const char *pName, int *pReturnCode)
 {
+	//return Call_Function<IBaseInterface*, const char*, int*>(0x5E8C0, pName, pReturnCode);
+
 	InterfaceReg *pCur;
 	for (pCur = InterfaceReg::s_pInterfaceRegs; pCur; pCur = pCur->m_pNext)
 	{

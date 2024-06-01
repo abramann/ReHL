@@ -52,7 +52,6 @@ lightstyle_t cl_lightstyle[MAX_LIGHTSTYLES] = {};
 // TODO: implement API and add here - Solokiller
 playermove_t g_clmove;
 
-extern cvar_t sys_timescale;
 int g_bRedirectedToProxy = 0;
 int g_iCurrentTiming = 0;
 startup_timing_t g_StartupTimings[32];
@@ -101,7 +100,12 @@ cvar_t fs_lazy_precache = { "fs_lazy_precache", "0" };
 cvar_t fs_precache_timings = { "fs_precache_timings", "0" };
 cvar_t fs_perf_warnings = { "fs_perf_warnings", "0" };
 cvar_t fs_startup_timings = { "fs_startup_timings", "0" };
+#ifdef SHARED_GAME_DATA
+cvar_t* sp_cl_mousegrab = ADDRESS_OF_DATA(cvar_t*, 0x1A036);
+cvar_t& cl_mousegrab = *sp_cl_mousegrab;
+#else
 cvar_t cl_mousegrab = { "cl_mousegrab", "1", FCVAR_ARCHIVE };
+#endif
 cvar_t m_rawinput = { "m_rawinput", "0", FCVAR_ARCHIVE };
 cvar_t cl_filterstuffcmd = { "cl_filterstuffcmd", "0", FCVAR_ARCHIVE | FCVAR_PRIVILEGED };
 

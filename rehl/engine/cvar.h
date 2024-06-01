@@ -35,8 +35,11 @@
 const int MAX_CVAR_VALUE     = 1024;
 const int MAX_CVARLIST_FILES = 100;
 
-extern cvar_t *cvar_vars;
-
+#ifdef SHARED_GAME_DATA
+extern cvar_t*& cvar_vars;
+#else
+extern cvar_t* cvar_vars;
+#endif
 void Cvar_Init(void);
 void Cvar_Shutdown(void);
 cvar_t *Cvar_FindVar(const char *var_name);
@@ -45,7 +48,7 @@ float Cvar_VariableValue(const char *var_name);
 NOXREF int Cvar_VariableInt(const char *var_name);
 char *Cvar_VariableString(const char *var_name);
 NOXREF const char *Cvar_CompleteVariable(const char *search, int forward);
-void Cvar_DirectSet(struct cvar_s *var, const char *value);
+void Cvar_DirectSet(cvar_t *var, const char *value);
 void Cvar_Set(const char *var_name, const char *value);
 void Cvar_SetValue(char *var_name, float value);
 void Cvar_RegisterVariable(cvar_t *variable);
@@ -58,3 +61,4 @@ void Cmd_CvarList_f(void);
 NOXREF int Cvar_CountServerVariables(void);
 void Cvar_UnlinkExternals(void);
 void Cvar_CmdInit(void);
+qboolean Cvar_CommandWithPrivilegeCheck(qboolean bIsPrivileged);

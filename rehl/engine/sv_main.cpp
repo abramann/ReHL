@@ -34,6 +34,12 @@ typedef struct full_packet_entities_s
 	entity_state_t entities[MAX_PACKET_ENTITIES];
 } full_packet_entities_t;
 
+#ifdef SHARED_GAME_DATA
+server_static_t* sp_g_psvs = ADDRESS_OF_DATA(server_static_t *, 0x59943);
+server_static_t & g_psvs = *sp_g_psvs;
+#else
+server_static_t g_psvs;
+#endif
 int sv_lastnum;
 
 extra_baselines_t g_sv_instance_baselines;
@@ -55,7 +61,6 @@ float scr_centertime_off;
 float g_LastScreenUpdateTime;
 
 globalvars_t gGlobalVariables;
-server_static_t g_psvs;
 server_t g_psv;
 
 rehlds_server_t g_rehlds_sv;
@@ -7660,6 +7665,11 @@ void SV_FailDownload(const char *filename)
 		MSG_WriteByte(&host_client->netchan.message, svc_filetxferfailed);
 		MSG_WriteString(&host_client->netchan.message, filename);
 	}
+}
+
+const char * Q_stristr(const char * pStr, const char * pSearch)
+{
+	return std::strstr(pStr, pSearch);
 }
 
 //-----------------------------------------------------------------------------

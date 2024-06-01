@@ -19,12 +19,12 @@ namespace vgui
 {
 	enum MouseCode
 	{
-		MOUSE_LEFT_0,
-		MOUSE_RIGHT_0,
-		MOUSE_MIDDLE_0,
+		MOUSE_LEFT,
+		MOUSE_RIGHT,
+		MOUSE_MIDDLE,
 		MOUSE_4,
 		MOUSE_5,
-		MOUSE_LAST_0,
+		MOUSE_LAST,
 	};
 }
 

@@ -28,6 +28,54 @@
 
 #include "precompiled.h"
 
+typedef struct bf_write_s
+{
+	// For enhanced and safe bits writing functions
+#if defined(REHLDS_FIXES)
+
+#pragma pack(push, 1)
+	union {
+		uint64 u64;
+		uint32 u32[2];
+		uint8 u8[8];
+	} pendingData;
+	uint64 sse_highbits;
+#pragma pack(pop)
+
+	int nCurOutputBit;
+	sizebuf_t *pbuf;
+
+#else // defined(REHLDS_FIXES)
+
+	int nCurOutputBit;
+	unsigned char *pOutByte;
+	sizebuf_t *pbuf;
+
+#endif // defined(REHLDS_FIXES)
+} bf_write_t;
+
+typedef struct bf_read_s
+{
+	int nMsgReadCount;	// was msg_readcount
+	sizebuf_t *pbuf;
+	int nBitFieldReadStartByte;
+	int nBytesRead;
+	int nCurInputBit;
+	unsigned char *pInByte;
+} bf_read_t;
+
+#ifdef SHARED_GAME_DATA
+bf_read_t * sp_bfread = ADDRESS_OF_DATA(bf_read_t *, 0x29E33);
+bf_read_t & bfread = *sp_bfread;
+
+bf_write_t * sp_bfwrite = ADDRESS_OF_DATA(bf_write_t *, 0x29E25);
+bf_write_t & bfwrite = *sp_bfwrite;
+#else
+bf_read_t bfread;
+bf_write_t bfwrite;
+#endif
+
+
 char serverinfo[MAX_INFO_STRING];
 
 char gpszVersionString[32];
@@ -151,13 +199,34 @@ NOXREF void COM_ExtendedExplainDisconnection(qboolean bPrint, char *fmt, ...)
 ============================================================================
 */
 
-qboolean bigendien;
+#ifdef SHARED_GAME_DATA
+short (**sp_BigShort)(short l) = ADDRESS_OF_DATA(short(**)(short), 0x2B46A);
+short(*&BigShort)(short l) = *sp_BigShort;
+
+short(**sp_LittleShort)(short l) = ADDRESS_OF_DATA(short(**)(short), 0x2B474);
+short(*&LittleShort)(short l) = *sp_LittleShort;
+
+int(**sp_BigLong)(int l) = ADDRESS_OF_DATA(int(**)(int), 0x2B4C4);
+int(*&BigLong)(int l) = *sp_BigLong;
+
+int(**sp_LittleLong)(int l) = ADDRESS_OF_DATA(int(**)(int), 0x2B4CE);
+int(*&LittleLong)(int l) = *sp_LittleLong;
+
+float(**sp_BigFloat)(float l) = ADDRESS_OF_DATA(float(**)(float), 0x2B492);
+float(*&BigFloat)(float l) = *sp_BigFloat;
+
+float(**sp_LittleFloat)(float l) = ADDRESS_OF_DATA(float(**)(float), 0x2B4E2);
+float(*&LittleFloat)(float l) = *sp_LittleFloat;
+#else
 short (*BigShort)(short l);
 short (*LittleShort)(short l);
 int (*BigLong)(int l);
 int (*LittleLong)(int l);
 float (*BigFloat)(float l);
 float (*LittleFloat)(float l);
+#endif
+
+qboolean bigendien; // no refersence
 
 int LongSwap(int l)
 {
@@ -329,47 +398,6 @@ void MSG_WriteUsercmd(sizebuf_t *buf, usercmd_t *to, usercmd_t *from)
 	DELTA_WriteDelta((byte *)from, (byte *)to, 1, *ppdesc, 0);
 	MSG_EndBitWriting(buf);
 }
-
-typedef struct bf_write_s
-{
-	// For enhanced and safe bits writing functions
-#if defined(REHLDS_FIXES)
-
-#pragma pack(push, 1)
-	union {
-		uint64 u64;
-		uint32 u32[2];
-		uint8 u8[8];
-	} pendingData;
-	uint64 sse_highbits;
-#pragma pack(pop)
-
-	int nCurOutputBit;
-	sizebuf_t *pbuf;
-
-#else // defined(REHLDS_FIXES)
-
-	int nCurOutputBit;
-	unsigned char *pOutByte;
-	sizebuf_t *pbuf;
-
-#endif // defined(REHLDS_FIXES)
-} bf_write_t;
-
-typedef struct bf_read_s
-{
-	int nMsgReadCount;	// was msg_readcount
-	sizebuf_t *pbuf;
-	int nBitFieldReadStartByte;
-	int nBytesRead;
-	int nCurInputBit;
-	unsigned char *pInByte;
-} bf_read_t;
-
-// Bit field reading/writing storage.
-bf_read_t bfread;
-ALIGN16 bf_write_t bfwrite;
-
 
 void COM_BitOpsInit(void)
 {
@@ -1285,16 +1313,40 @@ void SZ_Print(sizebuf_t *buf, const char *data)
 
 #ifndef COM_Functions_region
 
-int com_argc;
-char **com_argv;
+#ifdef SHARED_GAME_DATA
+int* sp_com_argc = ADDRESS_OF_DATA(int*, 0x2B326);
+int& com_argc = *sp_com_argc;
 
-char com_token[COM_TOKEN_LEN];
+char ***sp_com_argv = ADDRESS_OF_DATA(char***, 0x2B337);
+char**& com_argv = *sp_com_argv;
 
-qboolean com_ignorecolons;
-qboolean s_com_token_unget;
-char *com_last_in_quotes_data = NULL;
+//char** sp_com_clientfallback = ADDRESS_OF_DATA(char**, 0x2BCB1);
+char* com_clientfallback = ADDRESS_OF_DATA(char*, 0x2BCB1);
+
+//char** sp_com_gamedir = ADDRESS_OF_DATA(char**, 0x2BCB6);
+char* com_gamedir = ADDRESS_OF_DATA(char*, 0x2BCB6);
+
+qboolean* sp_com_ignorecolons = ADDRESS_OF_DATA(qboolean*, 0xAB638);
+qboolean& com_ignorecolons = *sp_com_ignorecolons;
+
+char* com_token = ADDRESS_OF_DATA(char*, 0x96FA4);
+
+qboolean* sp_s_com_token_unget = ADDRESS_OF_DATA(qboolean*, 0x2B0D4);
+qboolean& s_com_token_unget = *sp_s_com_token_unget;
+#else
+extern int com_argc;
+extern char **com_argv;
+
 char com_clientfallback[MAX_PATH];
 char com_gamedir[MAX_PATH];
+qboolean com_ignorecolons;
+char com_token[COM_TOKEN_LEN];
+qboolean s_com_token_unget;
+#endif
+
+
+
+char *com_last_in_quotes_data = NULL;
 char com_cmdline[COM_MAX_CMD_LINE];
 
 cache_user_t *loadcache;
@@ -1796,7 +1848,7 @@ void COM_Init(char *basedir)
 {
 	unsigned short swaptest = 1;
 
-	if (*(byte *)&swaptest == 1)
+	if (swaptest == 1)
 	{
 		bigendien = 0;
 		BigShort = ShortSwap;
@@ -2299,6 +2351,7 @@ void COM_ParseDirectoryFromCmd(const char *pCmdName, char *pDirName, const char 
 // TODO: finish me!
 qboolean COM_SetupDirectories(void)
 {
+	//return Call_Function<qboolean>(0x2BCA0);
 	char pDirName[512];
 
 	com_clientfallback[0] = 0;

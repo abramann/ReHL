@@ -37,6 +37,11 @@
 
 #define MAX_RANDOM_RANGE 0x7FFFFFFFUL
 
+#ifdef SHARED_GAME_DATA
+extern int& idum;
+#else
+extern int idum;
+#endif
 // Ambient sound flags
 enum
 {
@@ -56,7 +61,6 @@ extern int gMsgDest;
 extern int gMsgType;
 extern qboolean gMsgStarted;
 extern vec3_t gMsgOrigin;
-extern int32 idum;
 extern int g_groupop;
 extern int g_groupmask;
 extern unsigned char checkpvs[1024];

@@ -527,7 +527,7 @@ int CPlayingEngExtInterceptor::gethostname(char *name, int namelen) {
 	CGetHostNameCall* playEndCall = dynamic_cast<CGetHostNameCall*>(getNextCall(false, true, ECF_GET_HOST_NAME, false, __func__));
 
 	int res = playEndCall->m_Res;
-	strcpy(name, playEndCall->m_Name);
+	Q_strcpy(name, playEndCall->m_Name);
 
 	freeFuncCall(playCall); freeFuncCall(playEndCall);
 

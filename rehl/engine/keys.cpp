@@ -40,7 +40,11 @@ bool consolekeys[256]; // if true, can't be rebound while in console
 bool menubound[256];   // if true, can't be rebound while in menu
 int keyshift[256];	   // key to map to if shift held down in console
 int key_repeats[256];  // if > 1, it is autorepeating
-bool keydown[256];
+#ifdef SHARED_GAME_DATA
+qboolean* keydown = ADDRESS_OF_DATA(qboolean*, 0x61A82);
+#else
+qboolean keydown[256];
+#endif
 bool keyGameUIdown[256];
 bool g_fUseDInput = false;
 
@@ -932,6 +936,8 @@ Should NOT be called during an interrupt!
 */
 void Key_Event(int key, bool down)
 {
+	return Call_Function<void, int, bool>(0x616B0, key, down);
+
 	if (key > 255)
 		return;
 

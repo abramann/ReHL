@@ -34,9 +34,12 @@ private:
 	HKEY			m_hKey;
 };
 
+#ifdef SHARED_GAME_DATA
+IRegistry *registry = ADDRESS_OF_DATAPTR(IRegistry*, 0xAC6D4);
+#else
 static CRegistry g_Registry;
 IRegistry *registry = (IRegistry *)&g_Registry;
-
+#endif
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------

@@ -13,7 +13,7 @@ void CRehldsRuntimeConfig::parseFromCommandLine(const char* cmdLine) {
 	char localBuf[2048];
 	if (strlen(cmdLine) >= sizeof(localBuf)) rehlds_syserror("%s: too long cmdline", __func__);
 
-	strcpy(localBuf, cmdLine);
+	Q_strcpy(localBuf, cmdLine);
 	char* cpos = localBuf;
 
 	getNextToken(&cpos); //skip executable path

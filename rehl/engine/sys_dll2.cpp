@@ -28,6 +28,7 @@
 
 #include "precompiled.h"
 #include "sys_getmodes.h"
+#include "strtools.h"
 #include <glew.h>
 
 
@@ -43,10 +44,32 @@ char *szReslistsExt = ".lst";
 static HDC maindc;
 static HGLRC baseRC;
 
+#ifdef SHARED_GAME_DATA
+void(**sp_VID_FlipScreen)(void) = ADDRESS_OF_DATA(void(**)(void), 0xABF32);
+void (*&VID_FlipScreen)(void) = *sp_VID_FlipScreen;
+
+int(**sp_D_SurfaceCacheForRes)(int width, int height) = ADDRESS_OF_DATA(int(**)(int, int), 0xABF3C);
+int(*&D_SurfaceCacheForRes)(int width, int height) = *sp_D_SurfaceCacheForRes;
+
+qboolean* sp_gHasMMXTechnology = ADDRESS_OF_DATA(qboolean*, 0xAC32B);
+qboolean& gHasMMXTechnology = *sp_gHasMMXTechnology;
+
+#ifdef _WIN32
+HANDLE* sp_hGLLibrary = ADDRESS_OF_DATA(HANDLE*, 0xAC336);
+
+HANDLE& hGLLibrary = *sp_hGLLibrary;
+#endif
+#else
 void(*VID_FlipScreen)(void);
+int(*D_SurfaceCacheForRes)(int width, int height);
+qboolean gHasMMXTechnology = false;
+
+#ifdef _WIN32
+HANDLE hGLLibraryl
+#endif
+#endif
 
 int RunListenServer(void* instance, char* basedir, char* cmdline, char* postRestartCmdLineArgs, CreateInterfaceFn launcherFactory, CreateInterfaceFn filesystemFactory);
-void Sys_InitFloatTime();
 void Sys_ShutdownFloatTime();
 void Sys_VID_FlipScreen();
 
@@ -255,7 +278,11 @@ void Sys_Shutdown(void)
 
 void Sys_InitArgv(char *lpCmdLine)
 {
+#ifdef SHARED_GAME_DATA
+	char** argv = ADDRESS_OF_DATA(char**, 0xAC18C);
+#else
 	static char *argv[MAX_COMMAND_LINE_PARAMS];
+#endif
 	unsigned char c;
 #ifdef REHLDS_FIXES
 	bool inQuotes;
@@ -329,9 +356,9 @@ void Sys_InitArgv(char *lpCmdLine)
 	host_parms.argv = com_argv;
 }
 
-NOXREF void Sys_ShutdownArgv(void)
+void Sys_ShutdownArgv(void)
 {
-	NOXREFCHECK;
+	// Nothing
 }
 
 void Sys_InitMemory(void)
@@ -394,18 +421,31 @@ void Sys_ShutdownMemory(void)
 	host_parms.memsize = 0;
 }
 
+int Sys_GetSurfaceCacheSize(int width, int height)
+{
+	int indexParam = COM_CheckParm("-surfcachesize");
+	if (indexParam)
+		return Q_atoi(com_argv[indexParam + 1]) << 10;
+
+	if (2 * height * width > 64000)
+		return 6 * height * width + 2953728;
+	return 3145728;
+}
+
+qboolean CheckMMXTechnology()
+{
+	return true;
+}
+
 void Sys_InitLauncherInterface(void)
 {
+	gHasMMXTechnology = CheckMMXTechnology();
 #ifdef _WIN32
-	//TODO: client-side code
+	hGLLibrary = GetModuleHandleA("opengl32.dll");
+#endif
+	VID_FlipScreen = Sys_VID_FlipScreen;
+	D_SurfaceCacheForRes = Sys_GetSurfaceCacheSize;
 	Launcher_ConsolePrintf = Legacy_Sys_Printf;
-#else
-	#ifndef SWDS
-		gHasMMXTechnology = TRUE;
-	#endif
-
-	Sys_SetupLegacyAPIs();
-#endif // _WIN32
 }
 
 NOXREF void Sys_ShutdownLauncherInterface(void)
@@ -474,25 +514,23 @@ void Sys_ShowProgressTicks(char *specialProgressMsg)
 
 int Sys_InitGame(const char *lpOrgCmdLine, const char *pBaseDir, SDL_Window** ppWnd, qboolean bIsDedicated)
 {
+	//return Call_Function<int, const char*, const char*, SDL_Window**, qboolean>(0xAC480, lpOrgCmdLine, pBaseDir, ppWnd, bIsDedicated);
 #ifndef SWDS
 	if (!bIsDedicated)
 	{
-		pmainwindow = *ppWnd;
-#ifdef _WIN32
+		pmainwindow = ppWnd;
 		videomode->UpdateWindowPosition();
-#endif // _WIN32
 	}
 #endif // SWDS
 	g_bIsDedicatedServer = bIsDedicated;
-	Q_memset(&gmodinfo, 0, sizeof(modinfo_t));
+	if (COM_CheckParm("-dev"))
+		developer.value = 1.0;
+
+	//Q_memset(&gmodinfo, 0, sizeof(modinfo_t)); // Why clearing it twice!? - Wefaq
 	SV_ResetModInfo();
 	TraceInit("Sys_Init()", "Sys_Shutdown()", 0);
 
-#ifdef _WIN32
-	Sys_InitHardwareTimer();
-#endif // _WIN32
-
-	Sys_CheckCpuInstructionsSupport();
+	//Sys_CheckCpuInstructionsSupport(); 	// Not exist
 
 #ifndef SWDS
 	Sys_InitFloatTime();
@@ -504,10 +542,8 @@ int Sys_InitGame(const char *lpOrgCmdLine, const char *pBaseDir, SDL_Window** pp
 	TraceInit("Sys_InitLauncherInterface()", "Sys_ShutdownLauncherInterface()", 0);
 	Sys_InitLauncherInterface();
 
-	VID_FlipScreen = Sys_VID_FlipScreen;
 #ifndef SWDS
-
-	if (!GL_SetMode(pmainwindow, &maindc, &baseRC, "opengl32.dll", lpOrgCmdLine))
+	if (!GL_SetMode(*pmainwindow, &maindc, &baseRC, false ,"opengl32.dll", lpOrgCmdLine))
 		return 0;
 #endif // SWDS
 
@@ -547,6 +583,8 @@ int Sys_InitGame(const char *lpOrgCmdLine, const char *pBaseDir, SDL_Window** pp
 
 void Sys_ShutdownGame(void)
 {
+	return Call_Function<void>(0xAC5D0);
+
 	if (!g_bIsDedicatedServer)
 		ClientDLL_DeactivateMouse();
 
@@ -581,19 +619,16 @@ void ClearIOStates(void)
 #endif // SWDS
 }
 
-class CEngineAPI: public IEngineAPI
+
+EXT_FUNC int CEngineAPI::Run(void *instance, char *basedir, char *cmdline, char *postRestartCmdLineArgs, CreateInterfaceFn launcherFactory, CreateInterfaceFn filesystemFactory)
 {
-public:
-	EXT_FUNC int Run(void *instance, char *basedir, char *cmdline, char *postRestartCmdLineArgs, CreateInterfaceFn launcherFactory, CreateInterfaceFn filesystemFactory)
+	if (!strstr(cmdline, "-nobreakpad"))
 	{
-		if (!strstr(cmdline, "-nobreakpad"))
-		{
-			//SteamAPI_UseBreakpadCrashHandler(va("%d", build_number()), __DATE__, __TIME__, 0, 0, 0);
-		}
-		
-		return RunListenServer(instance, basedir, cmdline, postRestartCmdLineArgs, launcherFactory, filesystemFactory);
+		SteamAPI_UseBreakpadCrashHandler(va("%d", build_number()), __DATE__, __TIME__, 0, 0, 0);
 	}
-};
+
+	return RunListenServer(instance, basedir, cmdline, postRestartCmdLineArgs, launcherFactory, filesystemFactory);
+}
 
 EXPOSE_SINGLE_INTERFACE(CEngineAPI, IEngineAPI, VENGINE_LAUNCHER_API_VERSION);
 
@@ -744,20 +779,23 @@ void CDedicatedServerAPI::UpdateStatus(float *fps, int *nActive, int *nMaxPlayer
 EXPOSE_SINGLE_INTERFACE(CDedicatedServerAPI, IDedicatedServerAPI, VENGINE_HLDS_API_VERSION);
 int RunListenServer(void* instance, char* basedir, char* cmdline, char* postRestartCmdLineArgs, CreateInterfaceFn launcherFactory, CreateInterfaceFn filesystemFactory)
 {
-	auto hGameHW = GetModuleHandleA("GameHW.dll");
-	if (hGameHW)
-	{
-		int(__cdecl* GameRunListenServer)(void*, char*, char*, char*, CreateInterfaceFn, CreateInterfaceFn) = (int(__cdecl*)(void*, char*, char*, char*, CreateInterfaceFn, CreateInterfaceFn))(0xAC680 + (uintptr_t)hGameHW);
-		return GameRunListenServer(instance, basedir, cmdline, postRestartCmdLineArgs, launcherFactory, filesystemFactory);
-	}
-	
+#ifdef SHARED_GAME_DATA
+	// Patch original vftables to our vftables
+	CGame ourGame;
+	memcpy((void*)game, &ourGame, 4);
+
+	CEngine ourEng;
+	memcpy((void*)eng, &ourEng, 4);
+
+	char* OrigCmd = ADDRESS_OF_DATA(char*, 0xAC692);
+#else
 	static char OrigCmd[1024];
+#endif
 	g_pPostRestartCmdLineArgs = postRestartCmdLineArgs;
-	strcpy(OrigCmd, cmdline);
+	Q_strcpy(OrigCmd, cmdline);
 
 	TraceInit("Sys_InitArgv( OrigCmd )", "Sys_ShutdownArgv()", 0);
 	Sys_InitArgv(OrigCmd);
-
 	eng->SetQuitting(IEngine::QUIT_NOTQUITTING);
 	registry->Init();
 	Steam_InitClient();
@@ -773,65 +811,59 @@ int RunListenServer(void* instance, char* basedir, char* cmdline, char* postRest
 
 	TraceInit("FileSystem_Init(basedir, (void *)filesystemFactory)", "FileSystem_Shutdown()", 0);
 
-	if (FileSystem_Init(basedir, filesystemFactory))
+	if (!FileSystem_Init(basedir, filesystemFactory))
+		return 0;
+
+	VideoMode_Create();
+
+	result = ENGRUN_UNSUPPORTED_VIDEOMODE;
+	registry->WriteInt("CrashInitializingVideoMode", 1);
+
+	if (videomode->Init(instance))
 	{
-		VideoMode_Create();
+		result = ENGRUN_CHANGED_VIDEOMODE;
+		registry->WriteInt("CrashInitializingVideoMode", 0);
 
-		result = ENGRUN_UNSUPPORTED_VIDEOMODE;
-		registry->WriteInt("CrashInitializingVideoMode", 1);
-
-		if (videomode->Init(instance))
+		if (game->Init(instance))
 		{
-			result = ENGRUN_CHANGED_VIDEOMODE;
-			registry->WriteInt("CrashInitializingVideoMode", 0);
+			result = ENGRUN_UNSUPPORTED_VIDEOMODE;
 
-			if (game->Init(instance))
+			if (eng->Load(false, basedir, cmdline))
 			{
-				result = ENGRUN_UNSUPPORTED_VIDEOMODE;
-
-				if (eng->Load(false, basedir, cmdline))
+				while (true)
 				{
-					while (true)
-					{
-						game->SleepUntilInput(0);
+					game->SleepUntilInput(0);
 
-						if (eng->GetQuitting() != IEngine::QUIT_NOTQUITTING)
-							break;
+					if (eng->GetQuitting() != IEngine::QUIT_NOTQUITTING)
+						break;
 
-						eng->Frame();
-					}
-
-					result = eng->GetQuitting() != IEngine::QUIT_TODESKTOP ? ENGRUN_CHANGED_VIDEOMODE : ENGRUN_QUITTING;
-
-					eng->Unload();
+					eng->Frame();
 				}
 
-				game->Shutdown();
+				result = eng->GetQuitting() != IEngine::QUIT_TODESKTOP ? ENGRUN_CHANGED_VIDEOMODE : ENGRUN_QUITTING;
+
+				eng->Unload();
 			}
 
-			videomode->Shutdown();
+			game->Shutdown();
 		}
 
-		TraceShutdown("FileSystem_Shutdown()", 0);
-		FileSystem_Shutdown();
-
-		registry->Shutdown();
-
-		TraceShutdown("Sys_ShutdownArgv()", 0);
-		Sys_ShutdownArgv();
+		videomode->Shutdown();
 	}
+
+	TraceShutdown("FileSystem_Shutdown()", 0);
+	FileSystem_Shutdown();
+
+	registry->Shutdown();
+
+	TraceShutdown("Sys_ShutdownArgv()", 0);
+	Sys_ShutdownArgv();
 
 	return result;
 }
 
-static qboolean bInitialized_14534 = false;
-static float curtime = 0.0;
-static float lastcurtime = 0.0;
-
-void Sys_InitFloatTime()
+void SetStartTime()
 {
-	Sys_FloatTime();
-
 	int iParamStarttime = COM_CheckParm("-starttime");
 	if (iParamStarttime)
 	{
@@ -843,6 +875,14 @@ void Sys_InitFloatTime()
 	}
 }
 
+void Sys_InitFloatTime()
+{
+#ifdef _WIN32
+	Sys_InitHardwareTimer();
+#endif // _WIN32
+	//Sys_FloatTime(); Not exist
+}
+
 void Sys_ShutdownFloatTime()
 {
 	curtime = lastcurtime = 0;
@@ -851,5 +891,5 @@ void Sys_ShutdownFloatTime()
 void Sys_VID_FlipScreen()
 {
 	if (pmainwindow)
-		SDL_GL_SwapWindow(pmainwindow);
+		SDL_GL_SwapWindow(*pmainwindow);
 }

@@ -783,7 +783,7 @@ void Steam_SetCVar(const char *pchKey, const char *pchValue)
 {
 	if (Steam3Server())
 	{
-		CRehldsPlatformHolder::get()->SteamGameServer()->SetKeyValue(pchKey, pchValue);
+		SteamGameServer()->SetKeyValue(pchKey, pchValue);
 	}
 }
 
@@ -877,8 +877,16 @@ const char *Steam_GetGSUniverse()
 	}
 }
 
+#ifdef SHARED_GAME_DATA
+CSteam3Server **sp_s_Steam3Server = ADDRESS_OF_DATA(CSteam3Server**, 0xA5244);
+CSteam3Server*& s_Steam3Server = *sp_s_Steam3Server;
+
+CSteam3Client* sp_s_Steam3Client = ADDRESS_OF_DATA(CSteam3Client*, 0xA5631);
+CSteam3Client& s_Steam3Client = *sp_s_Steam3Client;
+#else
 CSteam3Server *s_Steam3Server;
 CSteam3Client s_Steam3Client;
+#endif
 
 CSteam3Server *Steam3Server()
 {

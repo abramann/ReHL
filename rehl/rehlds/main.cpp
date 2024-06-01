@@ -35,22 +35,16 @@ BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved)
 {
 	if (fdwReason == DLL_PROCESS_ATTACH)
 	{
-		if (MessageBoxA(NULL, "Use the built engine", "Notice", MB_OKCANCEL) == 2)
+		if (!LoadLibraryA("GameHW.dll"))
 		{
-			if (!LoadLibraryA("GameHW.dll"))
-			{
-				MessageBoxA(NULL, "Failed to load GameHW.dll", "ERROR", MB_OK);
-			}
+			MessageBoxA(NULL, "Failed to load GameHW.dll", "ERROR", MB_OK);
 		}
-		else
-		{
-			// chromhtml.dll is MSVC10 compiled and has CRT issue with MSVC14, so will fail if building with MTd - Wefaq
-#if defined(UNRESOLVED_ISSUE) && defined(_DEBUG)
-			LoadLibraryA("chromehtml.dll");
+#ifdef _DEBUG
+		MessageBoxA(NULL, "DebugBreak Messagebox ", "ReHL", MB_OK);
 #endif
-		}
 		g_RehldsRuntimeConfig.parseFromCommandLine(GetCommandLineA());
 #ifdef _WIN32
+		SetupHooks();
 		Module hlds_exe;
 		if (!FindModuleByName("hlds.exe", &hlds_exe))
 		{

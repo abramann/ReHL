@@ -100,3 +100,7 @@
 #include "IMixerControls.h"
 #include "IVoiceRecord.h"
 #include "r_studio.h"
+#include "sys_dll.h"
+#include "cdll_int.h"
+#include "server_static.h"
+#include "host.h"

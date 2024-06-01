@@ -193,7 +193,7 @@ void EngineSurface::pushMakeCurrent(int* insets, int* absExtents, int* clipRect,
 	{
 		if (VideoMode_IsWindowed())
 		{
-			SDL_GetWindowPosition(pmainwindow, &x, &y);
+			SDL_GetWindowPosition(*pmainwindow, &x, &y);
 		}
 	}
 
@@ -203,7 +203,7 @@ void EngineSurface::pushMakeCurrent(int* insets, int* absExtents, int* clipRect,
 
 	if (VideoMode_IsWindowed())
 	{
-		SDL_GetWindowSize(pmainwindow, &rect.right, &rect.bottom);
+		SDL_GetWindowSize(*pmainwindow, &rect.right, &rect.bottom);
 	}
 	else
 	{

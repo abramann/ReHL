@@ -97,8 +97,11 @@ extern TYPEDESCRIPTION gEntityTableDescription[5];
 extern TYPEDESCRIPTION gLightstyleDescription[2];
 extern cvar_t gHostMap;
 extern int g_iQuitCommandIssued;
-extern char *g_pPostRestartCmdLineArgs;
-
+#ifdef SHARE_GAME_DATA
+extern char* &g_pPostRestartCmdLineArgs;
+#else
+extern char* g_pPostRestartCmdLineArgs;
+#endif
 void SV_GetPlayerHulls(void);
 void Host_InitializeGameDLL(void);
 void Host_Motd_f(void);

@@ -397,7 +397,7 @@ void SpewActivate(char const* pGroupName, int level)
 			s_pSpewGroups = (SpewGroup_t*)malloc(s_GroupCount * sizeof(SpewGroup_t));
 
 		Assert(strlen(pGroupName) < MAX_GROUP_NAME_LENGTH);
-		strcpy(s_pSpewGroups[ind].m_GroupName, pGroupName);
+		Q_strcpy(s_pSpewGroups[ind].m_GroupName, pGroupName);
 	}
 	s_pSpewGroups[ind].m_Level = level;
 }

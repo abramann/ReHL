@@ -41,12 +41,22 @@ typedef struct vmode_s
 
 typedef byte pixel_t;	 // a pixel can be one, two, or four bytes
 
+enum VidTypes
+{
+	VT_None,
+	VT_Software,
+	VT_OpenGL,
+	VT_Direct3D,
+};
+
 typedef struct viddef_s
 {
 	pixel_t* buffer;			// invisible buffer
 	pixel_t* colormap;			// 256 * VID_GRADES size
 	unsigned short* colormap16; // 256 * VID_GRADES size
-	int fullbright;				// index of first fullbright color
+	int fullbright;	// index of first fullbright color
+	int bits; 
+	int is15bit;
 	unsigned rowbytes;			// may be > width if displayed in a window
 	unsigned width;
 	unsigned height;
@@ -60,6 +70,7 @@ typedef struct viddef_s
 	int maxwarpwidth;
 	int maxwarpheight;
 	pixel_t* direct; // direct drawing to framebuffer, if not NULL
+	VidTypes vidtype;
 } viddef_t;
 
 typedef struct _TargaHeader
@@ -71,4 +82,9 @@ typedef struct _TargaHeader
 	unsigned char pixel_size, attributes;
 } TargaHeader;
 
+#ifdef SHARED_GAME_DATA
+extern viddef_t* sp_vid;
+extern viddef_t& vid; // global video state
+#else
 extern viddef_t vid; // global video state
+#endif

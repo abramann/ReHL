@@ -2628,7 +2628,7 @@ void CGetHostNameCall::setResult(char* hostName, int res) {
 	if (m_NameLenOut > sizeof(m_Name))
 		rehlds_syserror("%s: too long host name", __func__);
 
-	strcpy(m_Name, hostName);
+	Q_strcpy(m_Name, hostName);
 	m_Res = res;
 }
 
@@ -2667,7 +2667,7 @@ CGetHostByNameCall::CGetHostByNameCall(const char* name)
 	if (m_NameLen > sizeof(m_Name))
 		rehlds_syserror("%s: too long name", __func__);
 
-	strcpy(m_Name, name);
+	Q_strcpy(m_Name, name);
 }
 
 std::string CGetHostByNameCall::toString()
@@ -2699,7 +2699,7 @@ void CGetHostByNameCall::setResult(const hostent* hostEnt) {
 		rehlds_syserror("%s: too long host name", __func__);
 	}
 
-	strcpy(m_HostentData.hostName, hostEnt->h_name);
+	Q_strcpy(m_HostentData.hostName, hostEnt->h_name);
 	int i = 0;
 	while (hostEnt->h_aliases[i]) {
 		if (i >= HOSTENT_DATA_MAX_ALIASES) {
@@ -2711,7 +2711,7 @@ void CGetHostByNameCall::setResult(const hostent* hostEnt) {
 			rehlds_syserror("%s: too long alias", __func__);
 		}
 
-		strcpy(m_HostentData.aliases[i], hostEnt->h_aliases[i]);
+		Q_strcpy(m_HostentData.aliases[i], hostEnt->h_aliases[i]);
 		i++;
 	}
 	m_HostentData.numAliases = i;

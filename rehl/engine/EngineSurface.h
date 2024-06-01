@@ -2,8 +2,6 @@
 
 #include "IBaseSystem.h"
 
-typedef unsigned char uchar;
-
 inline bool IsPowerOfTwo(int value)
 {
 	int i;

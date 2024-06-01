@@ -33,7 +33,6 @@ int nTexLumps;
 FILE* texfiles[128];
 int nTexFiles;
 
-unsigned char texgammatable[256];
 texture_t * r_notexture_mip;
 
 int nummiptex;

@@ -7,11 +7,19 @@ char g_szfullClientName[512];
 
 CSysModule* hClientDLL = nullptr;
 
-static bool fClientLoaded = false;
+#ifdef SHARED_GAME_DATA
+qboolean* sp_fClientLoaded = ADDRESS_OF_DATA(qboolean*, 0xBCE4);
+qboolean& fClientLoaded = *sp_fClientLoaded;
+
+cldll_func_t* sp_cl_funcs = ADDRESS_OF_DATA(cldll_func_t*, 0xBDEC);
+cldll_func_t& cl_funcs = *sp_cl_funcs;
+#else
+static qboolean fClientLoaded = false;
+cldll_func_t sp_cl_funcs = { 0 };
+#endif
 static cldll_func_dst_t g_cldstAddrs = k_cldstNull;
 static BlobFootprint_t g_blobfootprintClient = {};
 
-cldll_func_t cl_funcs = { 0 }; // Probably not used
 
 bool LoadSecureClient(const char* pszDllName);
 void LoadInsecureClient(const char* pszFullPathClientDLLName);
@@ -175,7 +183,7 @@ void ClientDLL_Init()
 	ClientDLL_Shutdown();
 
 	COM_FixSlashes(szDllName);
-	strcpy(g_szfullClientName, szDllName);
+	Q_strcpy(g_szfullClientName, szDllName);
 	COM_ExpandFilename(g_szfullClientName);
 	COM_FixSlashes(g_szfullClientName);
 
@@ -636,7 +644,7 @@ void hudGetMousePosition(int* mx, int* my)
 	if (!VideoMode_IsWindowed())
 	{
 		int wW, wT;
-		SDL_GetWindowSize(pmainwindow, &wW, &wT);
+		SDL_GetWindowSize(*pmainwindow, &wW, &wT);
 
 		int vW, vT;
 		VideoMode_GetCurrentVideoMode(&vW, &vT, nullptr);
@@ -866,7 +874,7 @@ int GetPlayerForTrackerID(int trackerID)
 
 void SDL_SetMousePos(int x, int y)
 {
-	SDL_WarpMouseInWindow(pmainwindow, x, y);
+	SDL_WarpMouseInWindow(*pmainwindow, x, y);
 }
 
 cvar_t* GetFirstCVarPtr()
@@ -997,7 +1005,7 @@ void SDL_GetMousePos(POINT* ppt)
 	if (!VideoMode_IsWindowed())
 	{
 		int wW, wT;
-		SDL_GetWindowSize(pmainwindow, &wW, &wT);
+		SDL_GetWindowSize(*pmainwindow, &wW, &wT);
 
 		int vW, vT;
 		VideoMode_GetCurrentVideoMode(&vW, &vT, nullptr);

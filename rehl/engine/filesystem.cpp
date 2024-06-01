@@ -30,10 +30,19 @@
 
 CUtlVector<char *> g_fallbackLocalizationFiles;
 char s_pBaseDir[512];
-bool bLowViolenceBuild;
+#ifdef SHARED_GAME_DATA
+CreateInterfaceFn* 	sp_g_FileSystemFactory = ADDRESS_OF_DATA(CreateInterfaceFn*, 0x3B98B);
+CreateInterfaceFn& g_FileSystemFactory = *sp_g_FileSystemFactory;
 
+CSysModule ** sp_g_pFileSystemModule = ADDRESS_OF_DATA(CSysModule**, 0x3B975);
+CSysModule*& g_pFileSystemModule = *sp_g_pFileSystemModule;
+
+bool& bLowViolenceBuild = *ADDRESS_OF_DATA(bool*, 0x3B1AE);
+#else
+CreateInterfaceFn*& g_FileSystemFactory;
 CSysModule *g_pFileSystemModule;
-CreateInterfaceFn g_FileSystemFactory;
+bool bLowViolenceBuild;
+#endif
 
 const char *GetBaseDirectory(void)
 {
@@ -47,25 +56,22 @@ void *GetFileSystemFactory(void)
 
 bool FileSystem_LoadDLL(CreateInterfaceFn filesystemFactory)
 {
-	if (!filesystemFactory)
-	{
-		g_pFileSystemModule = Sys_LoadModule(STDIO_FILESYSTEM_LIB);
-
-		if (g_pFileSystemModule)
-		{
-			filesystemFactory = Sys_GetFactory(g_pFileSystemModule);
-		}
-	}
-
 	if (filesystemFactory)
 	{
 		g_FileSystemFactory = filesystemFactory;
+	}
+	else
+	{
+		g_pFileSystemModule = Sys_LoadModule(STDIO_FILESYSTEM_LIB);
+		if (!g_pFileSystemModule)
+			return false;
 
-		g_pFileSystem = (IFileSystem *)filesystemFactory(FILESYSTEM_INTERFACE_VERSION, 0);
-		return g_pFileSystem != NULL;
+		g_FileSystemFactory = Sys_GetFactory(g_pFileSystemModule);
 	}
 
-	return false;
+	g_pFileSystem = (IFileSystem *)g_FileSystemFactory(FILESYSTEM_INTERFACE_VERSION, 0);
+
+	return g_pFileSystem != NULL;
 }
 
 void FileSystem_UnloadDLL(void)
@@ -149,7 +155,7 @@ void Host_SetGameDir_f(void)
 		}
 		else
 		{
-			strcpy(&g_pPostRestartCmdLineArgs[strlen(g_pPostRestartCmdLineArgs)], "-game");
+			Q_strcpy(&g_pPostRestartCmdLineArgs[strlen(g_pPostRestartCmdLineArgs)], "-game");
 			strcat(g_pPostRestartCmdLineArgs, gamedir);
 		}
 	}
@@ -530,6 +536,8 @@ int FileSystem_AddFallbackGameDir(const char *pGameDir)
 
 int FileSystem_Init(const char *basedir, void *voidfilesystemFactory)
 {
+	//return Call_Function<int, const char*, void*>(0x3B8F0, basedir, voidfilesystemFactory);
+
 #ifdef REHLDS_CHECKS
 	Q_strncpy(s_pBaseDir, basedir, ARRAYSIZE(s_pBaseDir));
 	s_pBaseDir[ARRAYSIZE(s_pBaseDir) - 1] = 0;

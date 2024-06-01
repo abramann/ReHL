@@ -25,7 +25,7 @@ void VGUI2_Draw_Init()
 
 void VGUI2_ResetCurrentTexture()
 {
-	NOT_IMPLEMENTED;
+	g_BaseUISurface.m_iCurrentTexture = 0;
 }
 
 unsigned int VGUI2_GetConsoleFont()
@@ -55,9 +55,12 @@ const wchar_t* VGUI2_Find_String(const char* str)
 	if (str && *str == '#')
 	{
 		auto pszLocalized = vgui2::localize()->Find(str);
-
-		return pszLocalized;
+		if (pszLocalized)
+			return pszLocalized;
 	}
+
+	vgui2::localize()->ConvertANSIToUnicode(str, tmpString,	4096);
+	return tmpString;
 }
 
 int VGUI2_GetFontWide(wchar_t ch, unsigned int font)
@@ -98,6 +101,7 @@ int VGUI2_DrawString(int x, int y, const char* str, unsigned int font)
 	vgui2::surface()->DrawSetTextFont(font);
 	vgui2::surface()->DrawSetTextPos(x, y);
 	vgui2::surface()->DrawSetTextColor(_col);
+
 
 	auto pszString = VGUI2_Find_String(str);
 

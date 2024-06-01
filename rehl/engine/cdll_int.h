@@ -159,7 +159,7 @@ extern void ClientDLL_ChatInputPosition( int *x, int *y );
 //#include "server.h" // server_static_t define for apiproxy
 #include "APIProxy.h"
 
-extern cldll_func_t cl_funcs;
+//extern cldll_func_t cl_funcs;
 extern cl_enginefunc_t cl_engsrcProxies;
 extern cl_enginefunc_dst_t g_engdstAddrs;
 extern module_t	g_module;
@@ -462,3 +462,8 @@ extern void NullDst(void);
 
 extern char g_szfullClientName[512];
 extern cl_enginefunc_t cl_enginefuncs;
+#ifdef SHARED_GAME_DATA
+extern cldll_func_t& cl_funcs;
+#else
+extern cldll_func_t cl_funcs;
+#endif

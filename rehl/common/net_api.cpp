@@ -189,6 +189,8 @@ int Net_CompareAdr(netadr_t* a, netadr_t* b)
 
 	if (b->type == NA_IP && a->ip == b->ip)
 		return b->port == a->port;
+
+	return false;
 }
 
 /*

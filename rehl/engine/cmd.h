@@ -61,23 +61,36 @@ not apropriate.
 
 */
 
+#ifdef SHARED_GAME_DATA
+extern sizebuf_t& cmd_text;
+extern sizebuf_t& filteredcmd_text;
+extern cmd_source_t& cmd_source;
+extern cmd_function_t*& cmd_functions;
+extern cmdalias_t*& cmd_alias;
+extern int& cmd_argc;
+extern char**& cmd_argv;
+extern char*& cmd_args;
+extern qboolean& cmd_wait;
+#else
+extern sizebuf_t cmd_text;
+extern sizebuf_t filteredcmd_text;
+extern cmd_source_t cmd_source;
+extern cmd_function_t *cmd_functions;
+extern cmdalias_t *cmd_alias;
 extern int cmd_argc;
 extern char *cmd_argv[80];
 extern char *cmd_args;
-
-extern sizebuf_t cmd_text;
-extern cmd_source_t cmd_source;
 extern qboolean cmd_wait;
-
-extern cmd_function_t *cmd_functions;
-extern cmdalias_t *cmd_alias;
+#endif
 
 void Cmd_Wait_f(void);
 void Cbuf_Init(void);
 void Cbuf_AddText(const char *text);
+void Cbuf_AddTextToBuffer(const char *text, sizebuf_t* buf);
 void Cbuf_InsertText(const char *text);
 void Cbuf_InsertTextLines(const char *text);
 void Cbuf_Execute(void);
+void Cbuf_ExecuteCommandsFromBuffer(sizebuf_t *buf, qboolean bIsPrivileged, int nCmdsToExecute);
 void Cmd_StuffCmds_f(void);
 void Cmd_Exec_f(void);
 void Cmd_Echo_f(void);
@@ -105,7 +118,9 @@ void Cmd_RemoveGameCmds(void);
 void Cmd_RemoveWrapperCmds(void);
 qboolean Cmd_Exists(const char *cmd_name);
 NOXREF const char *Cmd_CompleteCommand(const char *search, int forward);
+qboolean Cmd_CurrentCommandIsPrivileged();
 void Cmd_ExecuteString(char *text, cmd_source_t src);
+void Cmd_ExecuteStringWithPrivilegeCheck(const char* command, qboolean bPriviliged);
 qboolean Cmd_ForwardToServerInternal(sizebuf_t *pBuf);
 void Cmd_ForwardToServer(void);
 qboolean Cmd_ForwardToServerUnreliable(void);

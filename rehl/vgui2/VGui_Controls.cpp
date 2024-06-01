@@ -65,7 +65,7 @@ namespace vgui2
 
 	bool VGuiControls_Init(const char * moduleName, CreateInterfaceFn * factoryList, int numFactories)
 	{
-		strcpy(g_szControlsModuleName, moduleName);
+		Q_strcpy(g_szControlsModuleName, moduleName);
 		vgui2::g_szControlsModuleName[ARRAYSIZE(g_szControlsModuleName) - 1] = 0;
 
 #ifdef _WIN32

@@ -22,7 +22,7 @@ TEST(PrefixedKeysRemove, Info, 1000) {
 	for (int i = 0; i < ARRAYSIZE(testdata); i++) {
 		testdata_t* d = &testdata[i];
 		char localInfo[256];
-		strcpy(localInfo, d->inData);
+		Q_strcpy(localInfo, d->inData);
 		Info_RemovePrefixedKeys(localInfo, '_');
 		ZSTR_EQUAL("Invalid info string", d->outData, localInfo);
 	}
@@ -85,7 +85,7 @@ TEST(SetValueForStarKey, Info, 1000) {
 	for (int i = 0; i < ARRAYSIZE(testdata); i++) {
 		testdata_t* d = &testdata[i];
 		char localInfo[257];
-		strcpy(localInfo, d->initialInfo);
+		Q_strcpy(localInfo, d->initialInfo);
 		localInfo[256] = 0;
 		localInfo[255] = 0;
 		Info_SetValueForStarKey(localInfo, d->key, d->value, 256);
@@ -124,7 +124,7 @@ TEST(SetValueForStarKeyResult, Info, 1000) {
 	for (int i = 0; i < ARRAYSIZE(testdata); i++) {
 		testdata_t* d = &testdata[i];
 		char localInfo[256];
-		strcpy(localInfo, d->initialInfo);
+		Q_strcpy(localInfo, d->initialInfo);
 		localInfo[255] = 0;
 		bool result = Info_SetValueForStarKey(localInfo, d->key, d->value, 256) ? true : false;
 		CHECK("Invalid info string", d->success == result);
@@ -155,7 +155,7 @@ TEST(RemoveKeyValue, Info, 1000) {
 	for (int i = 0; i < ARRAYSIZE(testdata); i++) {
 		testdata_t* d = &testdata[i];
 		char localInfo[256];
-		strcpy(localInfo, d->initialInfo);
+		Q_strcpy(localInfo, d->initialInfo);
 		Info_RemoveKey(localInfo, d->key);
 		ZSTR_EQUAL("Invalid info string", d->finalInfo, localInfo);
 	}

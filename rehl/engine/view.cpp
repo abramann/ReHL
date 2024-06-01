@@ -2,16 +2,10 @@
 #include "cl_main.h"
 #include "chase.h"
 
+const int MAX_TEX_GAMMA = 256;
+const int MAX_LIGHT_GAMMA = 1024;
+
 screenshake_t gVShake;
-
-void BuildGammaTable(float g);
-void FilterLightParams();
-void V_SetRefParams(ref_params_t *pparams);
-void V_GetRefParams(ref_params_t *pparams);
-
-int lightgammatable[1024];
-int lineargammatable[1024];
-int screengammatable[1024];
 
 float oldgammavalue_25911;
 float oldlightgamma_25912;
@@ -21,14 +15,50 @@ float oldbrightness_25914;
 vec3_t r_soundOrigin;
 vec3_t r_playerViewportAngles;
 
-cvar_t v_dark = { "v_dark", "0" };
-cvar_t crosshair = { "crosshair", "0", FCVAR_ARCHIVE };
-cvar_t v_gamma = { "gamma", "2.5", FCVAR_ARCHIVE };
-cvar_t v_lightgamma = { "lightgamma", "2.5" };
+#ifdef SHARED_GAME_DATA
+cvar_t * sp_v_texgamma = ADDRESS_OF_DATA(cvar_t *, 0xC2819);
+cvar_t & v_texgamma = *sp_v_texgamma;
+
+cvar_t* sp_v_brightness = ADDRESS_OF_DATA(cvar_t*, 0xC164F);
+cvar_t& v_brightness = *sp_v_brightness;
+
+uchar* texgammatable = ADDRESS_OF_DATA(uchar*, 0xC1847);
+
+int * lineargammatable = ADDRESS_OF_DATA(int *, 0xC197A);
+int* screengammatable = ADDRESS_OF_DATA(int*, 0xC1999);
+int* lightgammatable = ADDRESS_OF_DATA(int*, 0xC1919);
+
+cvar_t * sp_v_gamma = ADDRESS_OF_DATA(cvar_t *, 0xC2805);
+cvar_t & v_gamma = *sp_v_gamma;
+
+cvar_t * sp_v_lightgamma = ADDRESS_OF_DATA(cvar_t *, 0xC160F);
+cvar_t & v_lightgamma = *sp_v_lightgamma;
+
+cvar_t * sp_v_dark = ADDRESS_OF_DATA(cvar_t *, 0xC27F1);
+cvar_t & v_dark = *sp_v_dark;
+
+cvar_t * sp_crosshair = ADDRESS_OF_DATA(cvar_t *, 0xC27FB);
+cvar_t & crosshair = *sp_crosshair;
+
+cvar_t * sp_v_lambert = ADDRESS_OF_DATA(cvar_t *, 0xC282D);
+cvar_t & v_lambert = *sp_v_lambert;
+
+cvar_t * sp_v_direct = ADDRESS_OF_DATA(cvar_t *, 0xC2837);
+cvar_t & v_direct = *sp_v_direct;
+#else
 cvar_t v_texgamma = { "texgamma", "2.0" };
 cvar_t v_brightness = { "brightness", "0.0", FCVAR_ARCHIVE };
+unsigned char texgammatable[256];
+int lineargammatable[1024]
+int screengammatable[1024];
+int lightgammatable[1024];
+cvar_t v_gamma = { "gamma", "2.5", FCVAR_ARCHIVE };
+cvar_t v_lightgamma = { "lightgamma", "2.5" };
+cvar_t v_dark = { "v_dark", "0" };
+cvar_t crosshair = { "crosshair", "0", FCVAR_ARCHIVE };
 cvar_t v_lambert = { "lambert", "1.5" };
 cvar_t v_direct = { "direct", "0.9" };
+#endif
 
 vec3_t forward;
 vec3_t right;
@@ -106,11 +136,10 @@ int V_ScreenFade(const char* pszName, int iSize, void* pbuf)
 
 void BuildGammaTable(float g)
 {
-	float g0;
-	if (g != 0.0)
-		g0 = 1.0 / g;
-	else
-		g0 = 0.40000001;
+	if (g == 0)
+		g = 2.5f;
+
+	float g0 = 1.0 / g;
 
 	float g1 = g0 * v_texgamma.value;
 	float g3 = 0.125f;
@@ -120,38 +149,40 @@ void BuildGammaTable(float g)
 	{
 		g3 = 0.05f;
 		if (brightness <= 1.0)
-			g3 = 0.125 - brightness * brightness * 0.075;
+			g3 = 0.125f - pow(brightness, 2) * 0.075f;
 	}
 
-	for (int i = 1; i < 256; i++)
+	for (int i = 0; i < MAX_TEX_GAMMA; i++)
 	{
-		float inf = pow(i / 255, g1) * 255;
-		texgammatable[i] = (inf <= -255) ? -1 : 0;
+		float gamma = pow(((double)i*1.0) / 255.0, g1) * 255.0;
+		if (gamma > 255)
+			gamma = -1;
+		else if (gamma < 0)
+			gamma = 0;
+		texgammatable[i] = gamma;
 	}
 
-	for (int j = 1; j < 1024; j++)
+	for (int j = 0; j < MAX_LIGHT_GAMMA; j++)
 	{
-		float f = pow(j / 1023.0f, v_lightgamma.value);
+		float f = pow(((double)j*1.0) / 1026.0, v_lightgamma.value);
 		float inf = (brightness > 1.0) ? f * brightness : f;
-		float lightgamma;
 
+		float lightgamma;
 		if (g3 >= inf)
-		{
-			lightgamma = pow(inf / g3 * 0.125, g0) * 1023.0f;
-		}
+			lightgamma = pow(inf / g3 * 0.125, g0) * (MAX_LIGHT_GAMMA - 1.0f);
 		else
 		{
 			float fa = (inf - g3) / (1.0f - g3) * 0.875f + 0.125f;
-			lightgamma = pow(fa, g0) * 1023.0f;
+			lightgamma = pow(fa, g0) *(MAX_LIGHT_GAMMA - 1.0f);
 		}
-		lightgammatable[j] = (lightgamma >= 0) ? lightgamma : 0;
+		lightgammatable[j] = (lightgamma < 0) ? 0 : lightgamma;
 	}
 
-	for (int k = 1; k < 1024; k++)
+	for (int k = 0; k < MAX_LIGHT_GAMMA; k++)
 	{
-		float x = k / 1023.0;
+		double x = (double)(k*1.0) / 1023.0;
 		lineargammatable[k] = pow(x, v_gamma.value) * 1023.0;
-		screengammatable[k] = pow(x, 1.0 / v_gamma.value) * 1023.0f;
+		screengammatable[k] = pow(x, 1.0 / v_gamma.value) * 1023.0;
 	}
 }
 

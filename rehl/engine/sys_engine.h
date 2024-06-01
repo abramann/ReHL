@@ -35,7 +35,12 @@
 const int MINIMIZED_SLEEP = 20;
 const int NOT_FOCUS_SLEEP = 50;	// sleep time when not focus
 
+#ifdef SHARED_GAME_DATA
+extern IGame** sp_game;
+extern IGame*& game;
+#else
 extern IGame* game;
+#endif
 extern IEngine* eng;
 
 class CEngine: public IEngine

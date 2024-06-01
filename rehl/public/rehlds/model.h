@@ -207,11 +207,18 @@ typedef struct hull_s
 
 typedef struct mspriteframe_t
 {
+#ifndef SWDS
+	int				width;
+	int				height;
+	float			up, down, left, right;
+	int gl_texturenum;
+#else
 	int				width;
 	int				height;
 	void			*pcachespot;
 	float			up, down, left, right;
 	byte			pixels[4];
+#endif
 } mspriteframe_s;
 
 typedef struct mspritegroup_s

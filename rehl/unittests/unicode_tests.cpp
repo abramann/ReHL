@@ -97,7 +97,7 @@ TEST(UnicodeValidateAndRepair, UNICODE_STRTOOLS, 1000)
 		testdata_t* d = &testData[i];
 
 		char localbuf[256];
-		strcpy(localbuf, (char*) d->indata);
+		Q_strcpy(localbuf, (char*) d->indata);
 
 		qboolean valid = Q_UnicodeValidate(localbuf);
 		CHECK("UnicodeValidate: invalid result", valid == d->valid);

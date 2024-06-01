@@ -46,11 +46,36 @@ typedef struct quakeparms_s
 	int memsize;
 } quakeparms_t;
 
+#ifdef SHARED_GAME_DATA
+extern quakeparms_t& host_parms;
+extern qboolean& host_initialized;
+extern cvar_t& developer;
+extern double& realtime;
+
+extern cvar_t& host_name;
+extern cvar_t& host_speeds;
+extern cvar_t& host_profile;
+extern cvar_t& host_limitlocal;
+extern cvar_t& skill;
+extern cvar_t& deathmatch;
+extern cvar_t& coop;
+extern cvar_t& sys_ticrate;
+extern cvar_t& sys_timescale;
+extern cvar_t& fps_max;
+extern cvar_t& host_killtime;
+extern cvar_t& sv_stats;
+extern cvar_t& fps_override;
+extern cvar_t& host_framerate;
+extern cvar_t& pausable;
+#else
+extern quakeparms_t host_parms;
+extern qboolean host_initialized;
+extern cvar_t developer;
+extern double realtime;
 
 extern cvar_t host_name;
 extern cvar_t host_speeds;
 extern cvar_t host_profile;
-extern cvar_t developer;
 extern cvar_t host_limitlocal;
 extern cvar_t skill;
 extern cvar_t deathmatch;
@@ -63,12 +88,10 @@ extern cvar_t sv_stats;
 extern cvar_t fps_override;
 extern cvar_t host_framerate;
 extern cvar_t pausable;
-extern cvar_t suitvolume;
+#endif
 
-extern double realtime;
+extern cvar_t suitvolume;
 extern double rolling_fps;
-extern quakeparms_t host_parms;
-extern qboolean host_initialized;
 extern qboolean con_initialized;
 extern double host_frametime;
 extern int host_framecount;

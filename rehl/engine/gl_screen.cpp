@@ -3,7 +3,11 @@
 
 
 #define SCR_CENTERSTRING_MAX 40
-
+#ifdef SHARED_GAME_DATA
+extern cvar_t& crosshair;
+#else
+extern cvar_t crosshair;
+#endif
 			  // TODO: check which ones are boolean - Solokiller
 int clearnotify = 0;
 int scr_center_lines = 0;
@@ -28,8 +32,8 @@ qboolean scr_skiponeupdate = false;
 
 int glx = 0;
 int gly = 0;
-GLsizei glwidth = 320;
-GLsizei glheight = 200;
+GLsizei glwidth;
+GLsizei glheight;
 int giHudLevel = 1;
 
 qpic_t* scr_paused = nullptr;
@@ -47,7 +51,6 @@ cvar_t scr_connectmsg = { "scr_connectmsg", "0" };
 cvar_t scr_connectmsg1 = { "scr_connectmsg1", "0" };
 cvar_t scr_connectmsg2 = { "scr_connectmsg2", "0" };
 
-extern cvar_t crosshair;
 extern cvar_t cl_showfps;
 extern double rolling_fps;
 

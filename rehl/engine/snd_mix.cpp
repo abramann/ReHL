@@ -10,6 +10,8 @@ char szsentences[] = "sound/sentences.txt";
 
 void VOX_Init()
 {
+	return Call_Function<void>(0x902C0);
+
 	Q_memset(rgrgvoxword, 0, 18432);
 	VOX_ReadSentenceFile();
 }
@@ -85,4 +87,16 @@ void VOX_ReadSentenceFile()
 
 	cszrawsentences = nSentenceCount;
 	Mem_Free(pBuf);
+}
+
+void Snd_ReleaseBuffer()
+{
+	return Call_Function<void>(0x91310);
+	NOT_IMPLEMENTED;
+}
+
+void Snd_AcquireBuffer()
+{
+	return Call_Function<void>(0x91340);
+	NOT_IMPLEMENTED;
 }

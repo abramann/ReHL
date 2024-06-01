@@ -58,9 +58,63 @@ typedef struct memzone_s
 	memblock_t *rover;
 } memzone_t;
 
+const int HUNK_NAME_LEN = 64;
+#define HUNK_SENTINEL 0x1df001ed
+
+typedef struct hunk_s
+{
+	int sentinel;
+	int size;
+	char name[HUNK_NAME_LEN];
+} hunk_t;
+
+// CACHE MEMORY
+const int CACHE_NAME_LEN = 64;
+
+typedef struct cache_system_s
+{
+	int size;
+	cache_user_t *user;
+	char name[CACHE_NAME_LEN];
+	cache_system_t *prev;
+	cache_system_t *next;
+	cache_system_t *lru_prev;
+	cache_system_t *lru_next;
+} cache_system_t;
+
+qboolean hunk_tempactive;
+int hunk_tempmark;
+
 cvar_t mem_dbgfile = { "mem_dbgfile", ".\\mem.txt", 0, 0.0f, NULL };
 
+#ifdef SHARED_GAME_DATA
+memzone_t** sp_mainzone = ADDRESS_OF_DATA(memzone_t**, 0xC7CF2);
+memzone_t*& mainzone = *sp_mainzone;
+
+byte ** sp_hunk_base = ADDRESS_OF_DATA(byte**, 0xC8980);
+byte*& hunk_base = *sp_hunk_base;
+
+int* sp_hunk_size = ADDRESS_OF_DATA(int *, 0xC8986);
+int& hunk_size = *sp_hunk_size;
+
+int* sp_hunk_low_used = ADDRESS_OF_DATA(int *, 0xC898C);
+int& hunk_low_used = *sp_hunk_low_used;
+
+int * sp_hunk_high_used = ADDRESS_OF_DATA(int *, 0xC8996);
+int & hunk_high_used = *sp_hunk_high_used;
+
+cache_system_t * sp_cache_head = ADDRESS_OF_DATA(cache_system_t *, 0xC8566);
+cache_system_t & cache_head = *sp_cache_head; 
+#else
 memzone_t *mainzone;
+
+byte* hunk_base;
+int hunk_size;
+int hunk_low_used;
+int hunk_high_used = *sp_hunk_high_used;
+cache_system_t cache_head;
+#endif
+
 
 void Z_ClearZone(memzone_t *zone, int size)
 {
@@ -262,25 +316,6 @@ void Z_CheckHeap()
 		}
 	}
 }
-
-const int HUNK_NAME_LEN = 64;
-#define HUNK_SENTINEL 0x1df001ed
-
-typedef struct hunk_s
-{
-	int sentinel;
-	int size;
-	char name[HUNK_NAME_LEN];
-} hunk_t;
-
-byte *hunk_base;
-int hunk_size;
-
-int hunk_low_used;
-int hunk_high_used;
-
-qboolean hunk_tempactive;
-int hunk_tempmark;
 
 // Run consistency and sentinel trashing checks
 void Hunk_Check()
@@ -501,22 +536,6 @@ void *Hunk_TempAlloc(int size)
 
 	return buf;
 }
-
-// CACHE MEMORY
-const int CACHE_NAME_LEN = 64;
-
-typedef struct cache_system_s
-{
-	int size;
-	cache_user_t *user;
-	char name[CACHE_NAME_LEN];
-	cache_system_t *prev;
-	cache_system_t *next;
-	cache_system_t *lru_prev;
-	cache_system_t *lru_next;
-} cache_system_t;
-
-cache_system_t cache_head;
 
 void Cache_Move(cache_system_t *c)
 {

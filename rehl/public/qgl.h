@@ -69,7 +69,7 @@ void GL_Config();
 
 void GL_Init();
 
-bool GL_SetMode(SDL_Window* mainwindow, HDC* pmaindc, HGLRC* pbaseRC, const char* pszDriver, const char* pszCmdLine);
+bool GL_SetMode(SDL_Window* mainwindow, HDC* pmaindc, HGLRC* pbaseRC, int fD3D, const char* pszDriver, const char* pszCmdLine);
 
 void GL_Shutdown(SDL_Window* mainwindow, HDC hdc, HGLRC hglrc);
 

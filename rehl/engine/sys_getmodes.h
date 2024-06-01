@@ -99,6 +99,7 @@ class CVideoMode_OpenGL final : public CVideoMode_Common
 {
 public:
 	CVideoMode_OpenGL(bool windowed);
+	virtual ~CVideoMode_OpenGL();
 
 	bool Init(void* pvInstance) override;
 
@@ -115,7 +116,15 @@ public:
 
 extern bool bNeedsFullScreenModeSwitch;
 
+#ifdef SHARED_GAME_DATA
+extern IVideoMode** sp_videomode;
+extern IVideoMode*& videomode;
+extern qboolean& g_bDisableMSAAFBO;
+#else
 extern IVideoMode* videomode;
+extern qboolean g_bDisableMSAAFBO;
+#endif
+
 
 extern bool BUsesSDLInput();
 
