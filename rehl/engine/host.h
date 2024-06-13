@@ -67,6 +67,7 @@ extern cvar_t& sv_stats;
 extern cvar_t& fps_override;
 extern cvar_t& host_framerate;
 extern cvar_t& pausable;
+extern qboolean& con_initialized;
 #else
 extern quakeparms_t host_parms;
 extern qboolean host_initialized;
@@ -88,11 +89,11 @@ extern cvar_t sv_stats;
 extern cvar_t fps_override;
 extern cvar_t host_framerate;
 extern cvar_t pausable;
+extern qboolean con_initialized;
 #endif
 
 extern cvar_t suitvolume;
 extern double rolling_fps;
-extern qboolean con_initialized;
 extern double host_frametime;
 extern int host_framecount;
 extern client_t *host_client;

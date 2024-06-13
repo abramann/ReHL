@@ -77,7 +77,7 @@ void Host_ClearSaveDirectory();
 #define MAX_MODELS 512 // these are sent over the net as bytes
 #define MAX_SOUNDS 512 // so they cannot be blindly increased
 #define MAX_USER_MSG_DATA 192
-#define MAX_EVENTS 1024
+#define MAX_EVENTS 256
 
 #define MAX_USERMSGS 128 // TODO: ???
 

@@ -600,6 +600,16 @@ void Sys_ShutdownGame(void)
 	Sys_ShutdownMemory();
 	TraceShutdown("Sys_Shutdown()", 0);
 	Sys_Shutdown();
+	Sys_ShutdownFloatTime();
+	Steam_ShutdownClient();
+#ifdef _WIN32
+	if (g_PerfCounterInitialized)
+	{
+		DeleteCriticalSection(&g_PerfCounterMutex);
+		g_PerfCounterInitialized = NULL;
+	}
+#endif
+	GL_Shutdown(*pmainwindow, maindc, baseRC);
 }
 
 void ClearIOStates(void)
@@ -776,9 +786,14 @@ void CDedicatedServerAPI::UpdateStatus(float *fps, int *nActive, int *nMaxPlayer
 	Host_GetHostInfo(fps, nActive, NULL, nMaxPlayers, pszMap);
 }
 
+extern bool run_without_hook;
+
 EXPOSE_SINGLE_INTERFACE(CDedicatedServerAPI, IDedicatedServerAPI, VENGINE_HLDS_API_VERSION);
 int RunListenServer(void* instance, char* basedir, char* cmdline, char* postRestartCmdLineArgs, CreateInterfaceFn launcherFactory, CreateInterfaceFn filesystemFactory)
 {
+	if (run_without_hook)
+		return Call_Function<int, void*, char*, char*, char*, CreateInterfaceFn, CreateInterfaceFn>(0xAC680, instance, basedir, cmdline, postRestartCmdLineArgs, launcherFactory, filesystemFactory);
+
 #ifdef SHARED_GAME_DATA
 	// Patch original vftables to our vftables
 	CGame ourGame;

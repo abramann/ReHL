@@ -49,7 +49,12 @@ typedef struct lumplist_s
 	lumplist_s *next;
 } lumplist_t;
 
+#ifdef SHARED_GAME_DATA
+extern cachewad_t*& decal_wad;
+#else
 extern cachewad_t *decal_wad;
+#endif
+
 extern cachewad_t *menu_wad;
 extern char szCustName[10];
 extern char decal_names[MAX_DECALS][16];

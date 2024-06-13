@@ -10,6 +10,11 @@ namespace vgui
 }
 
 class ICareerUI;
+#ifdef SHARED_GAME_DATA
+extern ICareerUI*& staticCareerUI;
+#else
+ICareerUI* staticCareerUI
+#endif
 
 extern CUtlVector<char> g_TempConsoleBuffer;
 
@@ -109,7 +114,7 @@ extern void VGuiWrap2_LoadingFinished(const char* resourceType, const char* reso
 
 extern void VGuiWrap2_NotifyOfServerConnect(const char* game, int IP, int port);
 
-int VGuiWrap2_IsInCareerMatch();
+CareerStateType VGuiWrap2_IsInCareerMatch();
 
 extern ICareerUI* VguiWrap2_GetCareerUI();
 

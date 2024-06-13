@@ -18,3 +18,9 @@ public:
 	virtual void DPrintf(const char *format, ...);
 	virtual void SetParent(int parent);
 };
+
+#ifdef SHARED_GAME_DATA
+extern IGameConsole*& staticGameConsole;
+#else
+extern IGameConsole* staticGameConsole;
+#endif

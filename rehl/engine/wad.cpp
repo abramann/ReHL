@@ -28,7 +28,11 @@
 
 #include "precompiled.h"
 
+#ifdef SHARED_GAME_DATA
+wadlist_t* wads = ADDRESS_OF_DATA(wadlist_t*, 0xC56CD);
+#else
 wadlist_t wads[NUM_WADS];
+#endif
 
 void W_CleanupName(char *in, char *out)
 {

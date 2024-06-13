@@ -288,7 +288,6 @@ bool GL_SetMode(SDL_Window* mainwindow, HDC* pmaindc, HGLRC* pbaseRC, int fD3D, 
 	// There's an if statement here in the Windows version to see if a global bool is false.
 	// It disables the second context creation.
 	// The boolean is only ever false, explaining why it's missing in the Linux version. - Solokiller
-
 	// Probably optimization by GCC. - Wefaq
 	if (!g_bDisableMSAAFBO)
 	{
@@ -527,6 +526,11 @@ bool GL_SetMode(SDL_Window* mainwindow, HDC* pmaindc, HGLRC* pbaseRC, int fD3D, 
 	}
 #endif
 	return true;
+}
+
+void GL_Shutdown(SDL_Window * mainwindow, HDC hdc, HGLRC hglrc)
+{
+	NOT_IMPLEMENTED;
 }
 
 bool VID_Init(unsigned short *palette)

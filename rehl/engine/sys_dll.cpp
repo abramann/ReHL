@@ -64,10 +64,23 @@ modinfo_t& gmodinfo = *sp_gmodinfo;
 void(**sp_Launcher_ConsolePrintf)(char *, ...) = ADDRESS_OF_DATA(void(**)(char *, ...), 0xABF46);
 void(*&Launcher_ConsolePrintf)(char *, ...) = *sp_Launcher_ConsolePrintf;
 
+qboolean * sp_con_debuglog = ADDRESS_OF_DATA(qboolean *, 0x2C92E);
+qboolean & con_debuglog = *sp_con_debuglog;
+
+char * g_szNotifyAreaString = ADDRESS_OF_DATA(char *, 0x2CC59);
+
+qboolean * sp_con_initialized = ADDRESS_OF_DATA(qboolean *, 0x2CA76);
+qboolean & con_initialized = *sp_con_initialized;
+
 #else
 int giActive;
 modinfo_t gmodinfo;
 void(*Launcher_ConsolePrintf)(char *, ...);
+qboolean con_debuglog;
+
+qboolean con_initialized = false;
+static char g_szNotifyAreaString[256] = { 0 };
+static float* con_times = nullptr;
 #endif
 int giStateInfo;
 DLL_FUNCTIONS gEntityInterface;
@@ -88,7 +101,6 @@ qboolean gHasMMXTechnology;
 #endif // _WIN32
 //volatile int sys_checksum;
 //char *argv[MAX_NUM_ARGVS];
-qboolean con_debuglog;
 
 #ifdef REHLDS_FIXES
 char g_szFindFirstFileName[MAX_PATH];
@@ -1328,8 +1340,6 @@ void Con_Debug_f(void)
 
 void Con_Init(void)
 {
-	void *v0; // eax
-
 	con_debuglog = COM_CheckParm("-condebug");
 	if (con_debuglog)
 		FS_RemoveFile(file, 0);
@@ -1344,8 +1354,8 @@ void Con_Init(void)
 
 	Con_CheckResize();
 	Con_DPrintf("Console initialized.\n");
-	Cvar_RegisterVariable(&con_fastmode);
 
+	Cvar_RegisterVariable(&con_fastmode);
 	Cvar_RegisterVariable(&con_notifytime);
 	Cvar_RegisterVariable(&con_color);
 	Cvar_RegisterVariable(&con_shifttoggleconsole);
@@ -1355,13 +1365,14 @@ void Con_Init(void)
 	Cmd_AddCommand("hideconsole", Con_HideConsole_f);
 	Cmd_AddCommand("messagemode", Con_MessageMode_f);
 	Cmd_AddCommand("messagemode2", Con_MessageMode2_f);
-	Cmd_AddCommand((char *)"clear", Con_Clear_f);
-	Cmd_AddCommand((char *)"condebug", Con_Debug_f);
+	Cmd_AddCommand("clear", Con_Clear_f);
+	Cmd_AddCommand("condebug", Con_Debug_f);
 	con_initialized = true;
 
-	con_debuglog = COM_CheckParm("-condebug");
-	Con_DPrintf("Console initialized.\n");
-	Cmd_AddCommand("condebug", Con_Debug_f);
+	//Not exist
+	//con_debuglog = COM_CheckParm("-condebug"); 
+	//Con_DPrintf("Console initialized.\n");
+	//Cmd_AddCommand("condebug", Con_Debug_f);
 }
 
 void Con_DebugLog(const char *file, const char *fmt, ...)
@@ -1402,11 +1413,6 @@ void Con_Printf(const char *fmt, ...)
 
 	g_RehldsHookchains.m_Con_Printf.callChain(Con_Printf_internal, Dest);
 }
-
-qboolean con_initialized = false;
-
-static char g_szNotifyAreaString[256] = { 0 };
-static float* con_times = nullptr;
 
 void EXT_FUNC Con_Printf_internal(const char *Dest)
 {

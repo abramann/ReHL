@@ -1263,9 +1263,9 @@ int Host_Init(quakeparms_t *parms)
 		Draw_Init();
 		SCR_Init();
 		R_Init();
-		//S_Init();
+		S_Init();
 		CDAudio_Init();
-		//Voice_Init("voice_speex", 1);
+		Voice_Init("voice_speex", 1);
 		DemoPlayer_Init();
 		CL_Init();
 	}

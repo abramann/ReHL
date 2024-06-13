@@ -28,10 +28,153 @@
 
 #include "precompiled.h"
 
+#ifdef SHARED_GAME_DATA
+cvar_t * sp_net_address = ADDRESS_OF_DATA(cvar_t *, 0x69249);
+cvar_t & net_address = *sp_net_address;
+
+cvar_t * sp_ipname = ADDRESS_OF_DATA(cvar_t *, 0x69253);
+cvar_t & ipname = *sp_ipname;
+
+cvar_t * sp_iphostport = ADDRESS_OF_DATA(cvar_t *, 0x6925D);
+cvar_t & iphostport = *sp_iphostport;
+
+cvar_t * sp_hostport = ADDRESS_OF_DATA(cvar_t *, 0x69267);
+cvar_t & hostport = *sp_hostport;
+
+cvar_t * sp_defport = ADDRESS_OF_DATA(cvar_t *, 0x69271);
+cvar_t & defport = *sp_defport;
+
+cvar_t * sp_ip_clientport = ADDRESS_OF_DATA(cvar_t *, 0x6927B);
+cvar_t & ip_clientport = *sp_ip_clientport;
+
+cvar_t * sp_clientport = ADDRESS_OF_DATA(cvar_t *, 0x69285);
+cvar_t & clientport = *sp_clientport;
+
+cvar_t * sp_clockwindow = ADDRESS_OF_DATA(cvar_t *, 0x6928F);
+cvar_t & clockwindow = *sp_clockwindow;
+
+cvar_t * sp_multicastport = ADDRESS_OF_DATA(cvar_t *, 0x69299);
+cvar_t & multicastport = *sp_multicastport;
+
+cvar_t * sp_ipx_hostport = ADDRESS_OF_DATA(cvar_t *, 0x692A3);
+cvar_t & ipx_hostport = *sp_ipx_hostport;
+
+cvar_t * sp_ipx_clientport = ADDRESS_OF_DATA(cvar_t *, 0x692AD);
+cvar_t & ipx_clientport = *sp_ipx_clientport;
+
+
+cvar_t * sp_fakelag = ADDRESS_OF_DATA(cvar_t *, 0x692B7);
+cvar_t & fakelag = *sp_fakelag;
+
+cvar_t * sp_fakeloss = ADDRESS_OF_DATA(cvar_t *, 0x692C1);
+cvar_t & fakeloss = *sp_fakeloss;
+
+cvar_t * sp_net_graph = ADDRESS_OF_DATA(cvar_t *, 0x692CB);
+cvar_t & net_graph = *sp_net_graph;
+
+cvar_t * sp_net_graphwidth = ADDRESS_OF_DATA(cvar_t *, 0x692D8);
+cvar_t & net_graphwidth = *sp_net_graphwidth;
+
+cvar_t * sp_net_scale = ADDRESS_OF_DATA(cvar_t *, 0x692E2);
+cvar_t & net_scale = *sp_net_scale;
+
+cvar_t * sp_net_graphpos = ADDRESS_OF_DATA(cvar_t *, 0x692EC);
+cvar_t & net_graphpos = *sp_net_graphpos;
+
+qboolean * sp_use_thread = ADDRESS_OF_DATA(qboolean *, 0x69308);
+qboolean & use_thread = *sp_use_thread;
+
+qboolean * sp_noip = ADDRESS_OF_DATA(qboolean *, 0x69359);
+qboolean & noip = *sp_noip;
+
+qboolean * sp_noipx = ADDRESS_OF_DATA(qboolean *, 0x6933E);
+qboolean & noipx = *sp_noipx;
+
+int * sp_net_sleepforever = ADDRESS_OF_DATA(int *, 0x69323);
+int & net_sleepforever = *sp_net_sleepforever;
+
+sizebuf_t * sp_net_message = ADDRESS_OF_DATA(sizebuf_t *, 0x122EA);
+sizebuf_t & net_message = *sp_net_message; 
+
+sizebuf_t * sp_in_message = ADDRESS_OF_DATA(sizebuf_t *, 0x67DAC);
+sizebuf_t & in_message = *sp_in_message; 
+
+uchar* net_message_buffer = ADDRESS_OF_DATA(uchar*, 0x693D6);
+uchar* in_message_buf = ADDRESS_OF_DATA(uchar*, 0x693FD);
+
+net_messages_t ** sp_normalqueue = ADDRESS_OF_DATA(net_messages_t **, 0x6862E);
+net_messages_t*& normalqueue = *sp_normalqueue;
+
+
+qboolean * sp_net_thread_initialized = ADDRESS_OF_DATA(qboolean *, 0x6839A);
+qboolean & net_thread_initialized = *sp_net_thread_initialized; 
+
+#ifdef _WIN32
+HANDLE * sp_hNetThread = ADDRESS_OF_DATA(HANDLE *, 0x683D2);
+HANDLE & hNetThread = *sp_hNetThread; 
+
+DWORD * sp_dwNetThreadId = ADDRESS_OF_DATA(DWORD *, 0x683B8);
+DWORD & dwNetThreadId = *sp_dwNetThreadId; 
+
+CRITICAL_SECTION * sp_net_cs = ADDRESS_OF_DATA(CRITICAL_SECTION *, 0x683A3);
+CRITICAL_SECTION & net_cs = *sp_net_cs; 
+#endif
+
+packetlag_t* g_pLagData = ADDRESS_OF_DATA(packetlag_t*, 0x69419);		// List of lag structures, if fakelag is set.
+#else
+cvar_t net_address = { "net_address", "", 0, 0.0f, NULL };
+cvar_t ipname = { "ip", "localhost", 0, 0.0f, NULL };
+cvar_t iphostport = { "ip_hostport", "0", NULL ,0.0f, NULL };
+cvar_t hostport = { "hostport", "0", NULL, 0.0f, NULL };
+cvar_t defport = { "port", "27015", 0, 0.0f, NULL };
+cvar_t ip_clientport = { "ip_clientport", "0", 0, 0.0f, NULL };
+cvar_t clientport = { "clientport", "27005", 0, 0.0f, NULL };
+cvar_t clockwindow = { "clockwindow", "0.5", 0, 0.0f, NULL };
+cvar_t multicastport = { "multicastport", "27025", 0, 0.0f, NULL };
+#ifdef _WIN32
+cvar_t ipx_hostport = { "ipx_hostport", "0", 0, 0.0f, NULL };
+cvar_t ipx_clientport = { "ipx_clientport", "0", 0, 0.0f, NULL };
+#endif
+cvar_t fakelag = { "fakelag", "0.0", 0, 0.0f, NULL };
+cvar_t fakeloss = { "fakeloss", "0.0", 0, 0.0f, NULL };
+cvar_t net_graph = { "net_graph", "0", FCVAR_ARCHIVE, 0.0f, NULL };
+cvar_t net_graphwidth = { "net_graphwidth", "150", 0, 0.0f, NULL };
+cvar_t net_scale = { "net_scale", "5", FCVAR_ARCHIVE, 0.0f, NULL };
+cvar_t net_graphpos = { "net_graphpos", "1", FCVAR_ARCHIVE, 0.0f, NULL };
+
+cvar_t fakelag = { "fakelag", "0.0", 0, 0.0f, NULL };
+cvar_t fakeloss = { "fakeloss", "0.0", 0, 0.0f, NULL };
+cvar_t net_graph = { "net_graph", "0", FCVAR_ARCHIVE, 0.0f, NULL };
+cvar_t net_graphwidth = { "net_graphwidth", "150", 0, 0.0f, NULL };
+cvar_t net_scale = { "net_scale", "5", FCVAR_ARCHIVE, 0.0f, NULL };
+cvar_t net_graphpos = { "net_graphpos", "1", FCVAR_ARCHIVE, 0.0f, NULL };
+
+qboolean noip;
+qboolean noipx;
+qboolean use_thread;
+int net_sleepforever = 1;
+
+sizebuf_t net_message;
+sizebuf_t in_message;
+
+unsigned char net_message_buffer[NET_MAX_PAYLOAD];
+unsigned char in_message_buf[NET_MAX_PAYLOAD];
+
+net_messages_t *normalqueue;
 qboolean net_thread_initialized;
 
-loopback_t loopbacks[2];
+#ifdef _WIN32
+HANDLE hNetThread;
+DWORD dwNetThreadId;
+CRITICAL_SECTION net_cs;
+#endif
+
 packetlag_t g_pLagData[NS_MAX];	// List of lag structures, if fakelag is set.
+
+#endif
+
+
+loopback_t loopbacks[2];
 float gFakeLag;
 int net_configured;
 #ifdef _WIN32
@@ -39,15 +182,8 @@ netadr_t net_local_ipx_adr;
 #endif
 netadr_t net_local_adr;
 netadr_t net_from;
-sizebuf_t net_message;
-qboolean noip;
-qboolean noipx;
-qboolean use_thread;
 char string_13466[1024];
 
-unsigned char net_message_buffer[NET_MAX_PAYLOAD];
-unsigned char in_message_buf[NET_MAX_PAYLOAD];
-sizebuf_t in_message;
 netadr_t in_from;
 
 #ifdef REHLDS_FIXES
@@ -66,38 +202,6 @@ SOCKET ipx_sockets[NS_MAX] = { INV_SOCK, INV_SOCK, INV_SOCK };
 
 LONGPACKET gNetSplit;
 net_messages_t *messages[NS_MAX];
-net_messages_t *normalqueue;
-
-#ifdef _WIN32
-HANDLE hNetThread;
-DWORD dwNetThreadId;
-CRITICAL_SECTION net_cs;
-#endif
-
-cvar_t net_address = { "net_address", "", 0, 0.0f, NULL };
-cvar_t ipname = { "ip", "localhost", 0, 0.0f, NULL };
-cvar_t defport = { "port", "27015", 0, 0.0f, NULL };
-cvar_t ip_clientport = { "ip_clientport", "0", 0, 0.0f, NULL };
-cvar_t clientport = { "clientport", "27005", 0, 0.0f, NULL };
-int net_sleepforever = 1;
-
-cvar_t clockwindow = { "clockwindow", "0.5", 0, 0.0f, NULL };
-
-cvar_t iphostport = { "ip_hostport", "0", 0, 0.0f, NULL };
-cvar_t hostport = { "hostport", "0", 0, 0.0f, NULL };
-cvar_t multicastport = { "multicastport", "27025", 0, 0.0f, NULL };
-
-#ifdef _WIN32
-cvar_t ipx_hostport = { "ipx_hostport", "0", 0, 0.0f, NULL };
-cvar_t ipx_clientport = { "ipx_clientport", "0", 0, 0.0f, NULL };
-#endif
-
-cvar_t fakelag = { "fakelag", "0.0", 0, 0.0f, NULL };
-cvar_t fakeloss = { "fakeloss", "0.0", 0, 0.0f, NULL };
-cvar_t net_graph = { "net_graph", "0", FCVAR_ARCHIVE, 0.0f, NULL };
-cvar_t net_graphwidth = { "net_graphwidth", "150", 0, 0.0f, NULL };
-cvar_t net_scale = { "net_scale", "5", FCVAR_ARCHIVE, 0.0f, NULL };
-cvar_t net_graphpos = { "net_graphpos", "1", FCVAR_ARCHIVE, 0.0f, NULL };
 
 void NET_ThreadLock()
 {
@@ -1094,6 +1198,9 @@ int NET_Sleep()
 
 DWORD WINAPI NET_ThreadMain(LPVOID lpThreadParameter)
 {
+	NOT_IMPLEMENTED; // Share the used variables and check from implement.
+	return Call_Function<DWORD, LPVOID>(0x682B0, lpThreadParameter);
+
 	while (true)
 	{
 		while (NET_Sleep())
@@ -1934,7 +2041,6 @@ void MaxPlayers_f()
 	{
 		Con_Printf("\"maxplayers\" is \"%u\"\n", g_psvs.maxclients);
 		return;
-
 	}
 
 	if (g_psv.active)
@@ -1942,7 +2048,6 @@ void MaxPlayers_f()
 		Con_Printf("maxplayers cannot be changed while a server is running.\n");
 		return;
 	}
-
 
 	int n = Q_atoi(Cmd_Argv(1));
 	if (n < 1)

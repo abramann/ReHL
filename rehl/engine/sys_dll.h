@@ -62,6 +62,7 @@ extern modinfo_t& gmodinfo;
 extern double& curtime;
 extern double& lastcurtime;
 extern qboolean& g_bIsDedicatedServer;
+extern char * g_szNotifyAreaString;
 #ifdef _WIN32
 extern int& g_PerfCounterInitialized;
 extern CRITICAL_SECTION& g_PerfCounterMutex;
@@ -72,6 +73,9 @@ extern int& g_WinNTOrHigher;
 extern void(*&Launcher_ConsolePrintf)(char *, ...);
 
 extern FileFindHandle_t& g_hfind;
+
+extern qboolean& con_debuglog;
+
 #endif
 #else
 extern int giActive;
@@ -89,6 +93,8 @@ extern double g_PerfCounterSlice;
 extern int g_WinNTOrHigher;
 extern void(*Launcher_ConsolePrintf)(char *, ...);
 extern FileFindHandle_t g_hfind;
+extern qboolean con_debuglog;
+extern char g_szNotifyAreaString[256];
 #endif
 #endif
 extern int g_iextdllMac;
@@ -99,7 +105,6 @@ extern qboolean gHasMMXTechnology;
 #endif
 extern qboolean g_bPrintingKeepAliveDots;
 
-extern qboolean con_debuglog;
 
 #ifdef _WIN32
 	extern int g_FPUCW_Mask_Prec_64Bit;

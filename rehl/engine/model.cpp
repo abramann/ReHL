@@ -28,6 +28,11 @@
 
 #include "precompiled.h"
 
+#ifdef SHARED_GAME_DATA
+extern uchar* mod_novis;
+#else
+extern byte mod_novis[1024];
+#endif
 model_t *loadmodel;
 char loadname[MAX_MODEL_NAME];
 model_t mod_known[MAX_KNOWN_MODELS];
@@ -42,7 +47,6 @@ int gSpriteTextureFormat;
 qboolean gSpriteMipMap = false;
 uchar *pspritepal;
 
-extern byte mod_novis[1024];
 
 // values for model_t's needload
 enum

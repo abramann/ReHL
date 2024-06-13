@@ -117,7 +117,7 @@ typedef struct server_s
 	char modelname[64];
 	struct model_s *worldmodel;
 	CRC32_t worldmapCRC;
-	unsigned char clientdllmd5[16];
+	uchar clientdllmd5[16];
 	resource_t resourcelist[MAX_RESOURCE_LIST];
 	int num_resources;
 	consistency_t consistency_list[MAX_CONSISTENCY_LIST];
@@ -267,8 +267,14 @@ typedef struct deltacallback_s
 
 #ifdef SHARED_GAME_DATA
 extern server_static_t& g_psvs;
+extern int& sv_decalnamecount;
+
+extern server_t& g_psv;
 #else
 extern server_static_t g_psvs;
+extern int sv_decalnamecount;
+
+extern server_t g_psv;
 #endif
 
 extern char *pr_strings;
@@ -281,7 +287,6 @@ extern int SV_UPDATE_BACKUP;
 extern int SV_UPDATE_MASK;
 
 extern globalvars_t gGlobalVariables;
-extern server_t g_psv;
 
 extern rehlds_server_t g_rehlds_sv;
 
@@ -310,13 +315,14 @@ extern cvar_t servercfgfile;
 extern cvar_t lservercfgfile;
 extern cvar_t logsdir;
 extern cvar_t bannedcfgfile;
+
+
 #ifdef REHLDS_FIXES
 extern cvar_t listipcfgfile;
 extern cvar_t syserror_logfile;
 #endif
 
 extern decalname_t sv_decalnames[MAX_BASE_DECALS];
-extern int sv_decalnamecount;
 
 extern UserMsg *sv_gpNewUserMsgs;
 extern UserMsg *sv_gpUserMsgs;

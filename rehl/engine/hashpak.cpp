@@ -28,7 +28,12 @@
 
 #include "precompiled.h"
 
+#ifdef SHARED_GAME_DATA
+hash_pack_queue_t** sp_gp_hpak_queue = ADDRESS_OF_DATA(hash_pack_queue_t**, 0x52EA1);
+hash_pack_queue_t*& gp_hpak_queue = *sp_gp_hpak_queue;
+#else
 hash_pack_queue_t *gp_hpak_queue = NULL;
+#endif
 hash_pack_directory_t hash_pack_dir = { 0, NULL };
 hash_pack_header_t hash_pack_header = { { 0, 0, 0, 0 }, 0, 0 };
 

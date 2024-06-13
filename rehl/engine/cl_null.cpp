@@ -72,7 +72,6 @@ void CL_AdjustClock(void)
 	NOT_IMPLEMENTED; 
 }
 
-void Con_Shutdown(void) { NOT_IMPLEMENTED; }
 int DispatchDirectUserMsg(const char *pszName, int iSize, void *pBuf) { NOT_IMPLEMENTED; return 0; }
 void EXT_FUNC Con_NPrintf(int idx, const char *fmt, ...) { NOT_IMPLEMENTED; }
 void Sequence_OnLevelLoad(const char* mapName) { NOT_IMPLEMENTED; }

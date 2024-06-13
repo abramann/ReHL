@@ -5,12 +5,18 @@
 
 void SetupHooks()
 {
-	DirectHook(0xAA790, Sys_FloatTime); // static vars
+	// One time call functions hook removed after implement caller function .
+	
+	DirectHook(0x27570, Cbuf_Execute); // TODO Cbuf_ExecuteCommandsFromBuffer
+
+	//Sys_InitGame
+	DirectHook(0xAA790, Sys_FloatTime);
 	DirectHook(0x96EB0, SV_ResetModInfo);
-	DirectHook(0xAC000, Sys_InitFloatTime);
-	DirectHook(0xAC1D0, Sys_InitMemory);
-	DirectHook(0x4DA10, GL_SetMode);	// static vars
-	DirectHook(0x27570, Cbuf_Execute); // TODO
+	//DirectHook(0xAC000, Sys_InitFloatTime);
+	//DirectHook(0xAC1D0, Sys_InitMemory);
+	//DirectHook(0x4DA10, GL_SetMode);
+
+	// Host_Init
 	DirectHook(0xC8970, Memory_Init);
 	DirectHook(0x2E960, Cvar_RegisterVariable);
 	DirectHook(0x2E530, Cvar_DirectSet);
@@ -19,6 +25,17 @@ void SetupHooks()
 	DirectHook(0xCDC0, Chase_Init);
 	DirectHook(0x2B450, COM_Init);
 	DirectHook(0x5C2A0, Host_ClearSaveDirectory);
+	DirectHook(0x52E60, HPAK_Init);
+	DirectHook(0xC56C0, W_LoadWadFile);
+	//DirectHook(0x61460, Key_Init);	// TODO
+	DirectHook(0x2C790, Con_CheckResize);	// Check implement
+	DirectHook(0x2C920, Con_Init);
+	//DirectHook(0x2FD70, Decal_Init); // Correct the wrong implement
+	DirectHook(0x2FB20, Decal_MergeInDecals);
+	DirectHook(0x2F360, Draw_CacheWadInitFromFile);
+	DirectHook(0x28A90, Mod_Init);
+	DirectHook(0x69230, NET_Init);
+	Host_Init;
 }
 
 uintptr_t AddBase(uintptr_t offset)
@@ -37,7 +54,7 @@ uintptr_t AddBase(uintptr_t offset)
 
 	uintptr_t thePtr = (uintptr_t)offset + (uintptr_t)theBase;
 	if (!thePtr)
-		MessageBoxA(NULL, "Wrong address calculate", "ReHL Warning", MB_OK);
+		MessageBoxA(NULL, "Wrong address calculate", "ReHL", MB_OK);
 
 	return (uintptr_t)offset + (uintptr_t)theBase;
 }
@@ -48,7 +65,7 @@ inline void DirectHook(uintptr_t offset, T directedFunction)
 	uintptr_t theAddr = AddBase(offset);
 	DWORD protect;
 	if (!VirtualProtect((LPVOID)theAddr, 6, PAGE_EXECUTE_READWRITE, &protect))
-		MessageBoxA(NULL, "Failed get writing access to a memory", "ReHL", MB_OK);
+		MessageBoxA(NULL, "Failed get writing access to memory", "ReHL", MB_OK);
 
 	const BYTE mov_eax = 0xB8;
 	const WORD jmp_eax = 0xE0FF;

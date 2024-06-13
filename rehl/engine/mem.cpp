@@ -30,32 +30,59 @@
 
 void *Mem_Malloc(size_t size)
 {
+#ifdef SHARED_GAME_DATA
+	return Call_Function<void*, size_t>(0x634A0, size);
+#else
 	return malloc(size);
+#endif
 }
 
 void *Mem_ZeroMalloc(size_t size)
 {
+#ifdef SHARED_GAME_DATA
+	return Call_Function<void*, size_t>(0x634C0, size);
+#else
 	void *p = malloc(size);
 	Q_memset(p, 0, size);
 	return p;
+#endif
 }
 
 void *Mem_Realloc(void *memblock, size_t size)
 {
+#ifdef SHARED_GAME_DATA
+	return Call_Function<void*, void*, size_t>(0x634F0, memblock, size);
+#else
 	return realloc(memblock, size);
+#endif
 }
 
 void* EXT_FUNC Mem_Calloc(int num, size_t size)
 {
+#ifdef SHARED_GAME_DATA
+	return Call_Function<void*, int, size_t>(0x63510, num, size);
+#else
 	return calloc(num, size);
+#endif
 }
 
 char *Mem_Strdup(const char *strSource)
 {
-	return _strdup(strSource);
+#ifdef SHARED_GAME_DATA
+	return Call_Function<char*, const char*>(0x63530, strSource);
+#else
+	if (strSource)
+		return _strdup(strSource);
+
+	return nullptr;
+#endif
 }
 
 void Mem_Free(void *p)
 {
+#ifdef SHARED_GAME_DATA
+	return Call_Function<void, void*>(0x63550, p);
+#else
 	free(p);
+#endif
 }

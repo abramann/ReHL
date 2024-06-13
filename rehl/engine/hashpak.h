@@ -44,7 +44,7 @@ typedef struct hash_pack_queue_s
 	resource_t resource;
 	int datasize;
 	void *data;
-	struct hash_pack_queue_s *next;
+	hash_pack_queue_s *next;
 } hash_pack_queue_t;
 
 typedef struct hash_pack_entry_s
@@ -67,8 +67,11 @@ typedef struct hash_pack_header_s
 	int nDirectoryOffset;
 } hash_pack_header_t;
 
+#ifdef SHARED_GAME_DATA
+extern hash_pack_queue_t*& gp_hpak_queue;
+#else
 extern hash_pack_queue_t *gp_hpak_queue;
-
+#endif
 // TODO: used only in hashpak
 extern hash_pack_directory_t hash_pack_dir;
 extern hash_pack_header_t hash_pack_header;

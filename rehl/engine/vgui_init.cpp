@@ -4,6 +4,7 @@
 #include "GameUI.h"
 #include "VClientVGUI.h"
 #include "FakeVGUI\SurfaceBase.h"
+#include "GameConsole.h"
 
 #define BMP_TYPE 0x4D42
 
@@ -477,13 +478,19 @@ void VGuiWrap2_HideGameUI()
 
 bool VGuiWrap2_IsConsoleVisible()
 {
-	NOT_IMPLEMENTED;
+	if (staticGameConsole)
+		return staticGameConsole->IsConsoleVisible();
+
 	return false;
 }
 
 void VGuiWrap2_ShowConsole()
 {
-	NOT_IMPLEMENTED;
+	if (staticUIFuncs)
+	{
+		staticUIFuncs->ActivateGameUI();
+		staticUIFuncs->ShowConsole();
+	}
 }
 
 void VGuiWrap2_ShowDemoPlayer()
@@ -493,7 +500,8 @@ void VGuiWrap2_ShowDemoPlayer()
 
 void VGuiWrap2_HideConsole()
 {
-	NOT_IMPLEMENTED;
+	if (staticUIFuncs)
+		staticUIFuncs->HideConsole();
 }
 
 void VGuiWrap2_LoadingStarted(const char * resourceType, const char * resourceName)
@@ -511,10 +519,12 @@ void VGuiWrap2_NotifyOfServerConnect(const char * game, int IP, int port)
 	NOT_IMPLEMENTED;
 }
 
-int VGuiWrap2_IsInCareerMatch()
+CareerStateType VGuiWrap2_IsInCareerMatch()
 {
-	NOT_IMPLEMENTED;
-	return 0;
+	if (staticCareerUI)
+		return g_careerState;
+
+	return CAREER_NONE;
 }
 
 void VGui_ViewportPaintBackground(int* extents)

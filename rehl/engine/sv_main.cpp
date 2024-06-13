@@ -37,8 +37,15 @@ typedef struct full_packet_entities_s
 #ifdef SHARED_GAME_DATA
 server_static_t* sp_g_psvs = ADDRESS_OF_DATA(server_static_t *, 0x59943);
 server_static_t & g_psvs = *sp_g_psvs;
+
+int* sp_sv_decalnamecount = ADDRESS_OF_DATA(int*, 0x2FE6A);
+int& sv_decalnamecount = *sp_sv_decalnamecount;
+
+server_t * sp_g_psv = ADDRESS_OF_DATA(server_t *, 0x6946F);
+server_t & g_psv = *sp_g_psv;
 #else
 server_static_t g_psvs;
+server_t g_psv;
 #endif
 int sv_lastnum;
 
@@ -61,12 +68,10 @@ float scr_centertime_off;
 float g_LastScreenUpdateTime;
 
 globalvars_t gGlobalVariables;
-server_t g_psv;
 
 rehlds_server_t g_rehlds_sv;
 
 decalname_t sv_decalnames[MAX_BASE_DECALS];
-int sv_decalnamecount;
 
 UserMsg *sv_gpNewUserMsgs;
 UserMsg *sv_gpUserMsgs;

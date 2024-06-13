@@ -28,7 +28,14 @@
 
 #include "precompiled.h"
 
+#ifdef SHARED_GAME_DATA
+cachewad_t** sp_decal_wad = ADDRESS_OF_DATA(cachewad_t**, 0x2FB50);
+cachewad_t*& decal_wad = *sp_decal_wad;
+
+#else
 cachewad_t *decal_wad;
+#endif
+
 cachewad_t *menu_wad;	// NOXREF, reference of client-side code
 
 char szCustName[10];
@@ -169,6 +176,8 @@ qboolean Draw_CustomCacheWadInit(int cacheMax, cachewad_t *wad, void *raw, int n
 
 void Draw_MiptexTexture(cachewad_t *wad, unsigned char *data)
 {
+	return Call_Function<void, cachewad_t*, uchar*>(0x1A8EB0, wad, data);
+
 	NOT_IMPLEMENTED;
 	
 	/*
@@ -473,8 +482,8 @@ void Decal_MergeInDecals(cachewad_t *pwad, const char *pathID)
 	lumplist = NULL;
 	if (!decal_wad)
 	{
-		pwad->numpaths = 1;
 		decal_wad = pwad;
+		pwad->numpaths = 1;
 
 		pwad->basedirs = (char **)Mem_Malloc(sizeof(char *));
 		*decal_wad->basedirs = Mem_Strdup(pathID);
@@ -533,6 +542,7 @@ void Decal_MergeInDecals(cachewad_t *pwad, const char *pathID)
 
 void Decal_Init(void)
 {
+	// A tiny different in implement makes this function cause error
 	int i;
 	int filesize;
 	FileHandle_t hfile;
@@ -561,7 +571,6 @@ void Decal_Init(void)
 #ifdef REHLDS_FIXES
 		found = true;
 #endif
-
 		filesize = FS_Size(hfile);
 		decal_wad_temp = (cachewad_t *)Mem_Malloc(sizeof(cachewad_t));
 		Q_memset(decal_wad_temp, 0, sizeof(cachewad_t));
@@ -572,15 +581,22 @@ void Decal_Init(void)
 		FS_Close(hfile);
 	}
 
-	sv_decalnamecount = Draw_DecalCount();
-	if (sv_decalnamecount > MAX_DECALS)
-		Sys_Error("%s: Too many decals: %d / %d\n", __func__, sv_decalnamecount, MAX_DECALS);
-
-	for (i = 0; i < sv_decalnamecount; i++)
+	if (decal_wad)
 	{
-		Q_memset(&sv_decalnames[i], 0, sizeof(decalname_t));
-		Q_strncpy(sv_decalnames[i].name, Draw_DecalName(i), sizeof sv_decalnames[i].name - 1);
-		sv_decalnames[i].name[sizeof sv_decalnames[i].name - 1] = 0;
+		sv_decalnamecount = Draw_DecalCount();
+		if (sv_decalnamecount > MAX_DECALS)
+			Sys_Error("%s: Too many decals: %d / %d\n", __func__, sv_decalnamecount, MAX_DECALS);
+
+		for (i = 0; i < sv_decalnamecount; i++)
+		{
+			Q_memset(&sv_decalnames[i], 0, sizeof(decalname_t));
+			Q_strncpy(sv_decalnames[i].name, Draw_DecalName(i), 15);
+			sv_decalnames[i].name[15] = 0;
+		}
+	}
+	else
+	{
+		sv_decalnamecount = 0;
 	}
 }
 

@@ -112,15 +112,95 @@ typedef struct SPLITPACKET_t
 
 const int NET_WS_MAX_FRAGMENTS = 5;
 
-extern qboolean net_thread_initialized;
+#ifdef SHARED_GAME_DATA
+extern cvar_t& net_address;
+extern cvar_t& ipname;
+extern cvar_t& ip_hostport;
+extern cvar_t& hostport;
+extern cvar_t& defport;
+extern cvar_t& ip_clientport;
+extern cvar_t& iphostport;
+extern cvar_t& clientport;
+extern cvar_t& clockwindow;
+extern cvar_t& multicastport;
+#ifdef _WIN32
+extern cvar_t& ipx_hostport;
+extern cvar_t& ipx_clientport;
+#endif
+extern cvar_t& fakelag;
+extern cvar_t& fakeloss;
+extern cvar_t& net_graph;
+extern cvar_t& net_graphwidth;
+extern cvar_t& net_scale;
+extern cvar_t& net_graphpos;
+extern cvar_t& fakelag;
+extern cvar_t& fakeloss;
+extern cvar_t& net_graph;
+extern cvar_t& net_graphwidth;
+extern cvar_t& net_scale;
+extern cvar_t& net_graphpos;
+
+extern qboolean& use_thread;
+extern int& net_sleepforever;
+extern qboolean& noip;
+extern qboolean& noipx;
+
+extern sizebuf_t& net_message;
+extern sizebuf_t& in_message;
+
+extern uchar* net_message_buffer;
+extern uchar* in_message_buf;
+
+extern qboolean& net_thread_initialized;
+extern net_messages_t*& normalqueue;
+
+extern packetlag_t* g_pLagData;
+#else
 extern cvar_t net_address;
 extern cvar_t ipname;
+extern cvar_t iphostport;
+extern cvar_t hostport;
 extern cvar_t defport;
 extern cvar_t ip_clientport;
 extern cvar_t clientport;
+extern cvar_t clockwindow;
+extern cvar_t multicastport;
+#ifdef _WIN32
+extern cvar_t ipx_hostport;
+extern cvar_t ipx_clientport;
+#endif
+extern cvar_t fakelag;
+extern cvar_t fakeloss;
+extern cvar_t net_graph;
+extern cvar_t net_graphwidth;
+extern cvar_t net_scale;
+extern cvar_t net_graphpos;
+extern cvar_t fakelag;
+extern cvar_t fakeloss;
+extern cvar_t net_graph;
+extern cvar_t net_graphwidth;
+extern cvar_t net_scale;
+extern cvar_t net_graphpos;
+
+extern qboolean use_thread;
 extern int net_sleepforever;
-extern loopback_t loopbacks[2];
+extern qboolean noip;
+extern qboolean noipx;
+extern cvar_t iphostport;
+
+extern sizebuf_t net_message;
+extern sizebuf_t in_message; 
+
+extern unsigned char net_message_buffer[NET_MAX_PAYLOAD];
+extern unsigned char in_message_buf[NET_MAX_PAYLOAD];
+
+
+extern qboolean net_thread_initialized;
+extern net_messages_t *normalqueue;
 extern packetlag_t g_pLagData[3];
+#endif
+
+extern loopback_t loopbacks[2];
 extern float gFakeLag;
 extern int net_configured;
 #ifdef _WIN32
@@ -128,29 +208,8 @@ extern netadr_t net_local_ipx_adr;
 #endif // _WIN32
 extern netadr_t net_local_adr;
 extern netadr_t net_from;
-extern qboolean noip;
 #ifdef _WIN32
-extern qboolean noipx;
 #endif // _WIN32
-extern sizebuf_t net_message;
-extern cvar_t clockwindow;
-extern qboolean use_thread;
-extern cvar_t iphostport;
-extern cvar_t hostport;
-#ifdef _WIN32
-extern cvar_t ipx_hostport;
-extern cvar_t ipx_clientport;
-#endif // _WIN32
-extern cvar_t multicastport;
-extern cvar_t fakelag;
-extern cvar_t fakeloss;
-extern cvar_t net_graph;
-extern cvar_t net_graphwidth;
-extern cvar_t net_scale;
-extern cvar_t net_graphpos;
-extern unsigned char net_message_buffer[NET_MAX_PAYLOAD];
-extern unsigned char in_message_buf[NET_MAX_PAYLOAD];
-extern sizebuf_t in_message;
 extern netadr_t in_from;
 extern SOCKET ip_sockets[3];
 #ifdef _WIN32
@@ -158,8 +217,6 @@ extern SOCKET ipx_sockets[3];
 #endif // _WIN32
 extern LONGPACKET gNetSplit;
 extern net_messages_t *messages[3];
-extern net_messages_t *normalqueue;
-
 
 void NET_ThreadLock();
 void NET_ThreadUnlock();
