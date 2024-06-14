@@ -15,6 +15,7 @@
 #pragma once
 
 #include "archtypes.h"     // DAL
+#include "client.h"
 
 #ifdef HLDEMO_BUILD
 #define INTERFACE_VERSION       001
@@ -278,7 +279,7 @@ typedef struct enginefuncs_s
 
 	unsigned int (*pfnGetApproxWavePlayLen)				(const char *filepath);
 	// MDC: Added for CZ career-mode
-	int			(*pfnIsCareerMatch)						( void );
+	CareerStateType		(*pfnIsCareerMatch)						( void );
 
 	// BGC: return the number of characters of the localized string referenced by using "label"
 	int			(*pfnGetLocalizedStringLength)			(const char *label);

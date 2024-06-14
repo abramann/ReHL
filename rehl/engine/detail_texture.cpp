@@ -4,10 +4,22 @@
 #include "gl_vidnt.h"
 
 
+
+#ifdef SHARED_GAME_DATA
+bool * sp_detTexSupported = ADDRESS_OF_DATA(bool *, 0x33057);
+bool & detTexSupported = *sp_detTexSupported;
+
+cvar_t * sp_r_detailtextures = ADDRESS_OF_DATA(cvar_t *, 0x32FD1);
+cvar_t & r_detailtextures = *sp_r_detailtextures;
+
+cvar_t * sp_r_detailtexturessupported = ADDRESS_OF_DATA(cvar_t *, 0x32FDB);
+cvar_t & r_detailtexturessupported = *sp_r_detailtexturessupported;
+#else
 bool detTexSupported = false;
 
 cvar_t r_detailtextures = { "r_detailtextures", "0", FCVAR_ARCHIVE };
 cvar_t r_detailtexturessupported = { "r_detailtexturessupported", "1", FCVAR_SPONLY };
+#endif
 
 void DT_Initialize()
 {

@@ -32,7 +32,12 @@
 cl_enginefunc_dst_t *pg_engdstAddrs;
 
 modfuncs_t g_modfuncs;
-module_t g_module;
+#ifdef SHARED_GAME_DATA
+module_t * sp_g_module = ADDRESS_OF_DATA(module_t *, 0x57EDE);
+module_t & g_module = *sp_g_module;
+#else
+module_t  g_module;
+#endif
 
 void NullDst(void)
 {

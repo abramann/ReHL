@@ -140,7 +140,11 @@ private:
 	IEngineWrapper *m_EngineWrapper;
 };
 
+#ifdef SHARED_GAME_DATA
+extern SystemWrapper& gSystemWrapper;
+#else
 extern SystemWrapper gSystemWrapper;
+#endif
 
 void SystemWrapper_Init();
 void SystemWrapper_ShutDown();

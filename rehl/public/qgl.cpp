@@ -89,7 +89,12 @@ void(APIENTRY* qglAlphaFunc)(GLenum func, GLclampf ref);
 GLboolean(APIENTRY* qglAreTexturesResident)(GLsizei n, const GLuint* textures, GLboolean* residences);
 void(APIENTRY* qglArrayElement)(GLint i);
 void(APIENTRY* qglBegin)(GLenum mode);
+#ifdef SHARED_GAME_DATA
+void(APIENTRY** sp_qglBindTexture)(GLenum target, GLuint texture) = ADDRESS_OF_DATA(void(APIENTRY**)(GLenum, GLuint), 0x4C9C8);
+void(APIENTRY*& qglBindTexture)(GLenum target, GLuint texture) = *sp_qglBindTexture;
+#else
 void(APIENTRY* qglBindTexture)(GLenum target, GLuint texture);
+#endif
 void(APIENTRY* qglBitmap)(GLsizei width, GLsizei height, GLfloat xorig, GLfloat yorig, GLfloat xmove, GLfloat ymove, const GLubyte* bitmap);
 void(APIENTRY* qglBlendFunc)(GLenum sfactor, GLenum dfactor);
 void(APIENTRY* qglCallList)(GLuint list);
@@ -443,9 +448,20 @@ void(APIENTRY* qglFramebufferRenderbufferEXT)(GLenum, GLenum, GLenum, GLuint);
 void(APIENTRY* qglBlitFramebufferEXT)(GLint, GLint, GLint, GLint, GLint, GLint, GLint, GLint, GLbitfield, GLenum);
 void(APIENTRY* qglRenderbufferStorageMultisampleEXT)(GLenum, GLsizei, GLenum, GLsizei, GLsizei);
 
-PFNGLCOLORTABLEEXTPROC qglColorTableEXT;
+#ifdef SHARED_GAME_DATA
+PFNGLCOLORTABLEEXTPROC * sp_qglColorTableEXT = ADDRESS_OF_DATA(PFNGLCOLORTABLEEXTPROC *, 0x4C982);
+PFNGLCOLORTABLEEXTPROC & qglColorTableEXT = *sp_qglColorTableEXT;
+
+PFNGLMULTITEXCOORD2FARBPROC * sp_qglMTexCoord2fSGIS = ADDRESS_OF_DATA(PFNGLMULTITEXCOORD2FARBPROC *, 0x4CB54);
+PFNGLMULTITEXCOORD2FARBPROC & qglMTexCoord2fSGIS = *sp_qglMTexCoord2fSGIS;
+
+PFNGLACTIVETEXTUREARBPROC * sp_qglSelectTextureSGIS = ADDRESS_OF_DATA(PFNGLACTIVETEXTUREARBPROC *, 0x4CB5E);
+PFNGLACTIVETEXTUREARBPROC & qglSelectTextureSGIS = *sp_qglSelectTextureSGIS;
+#else
+PFNGLCOLORTABLEEXTPROC  qglColorTableEXT;
 PFNGLMULTITEXCOORD2FARBPROC qglMTexCoord2fSGIS;
 PFNGLACTIVETEXTUREARBPROC qglSelectTextureSGIS;
+#endif
 
 static void(APIENTRY* dllAccum)(GLenum op, GLfloat value);
 static void(APIENTRY* dllAlphaFunc)(GLenum func, GLclampf ref);
@@ -3281,7 +3297,7 @@ bool QGL_Init(const char* pdllname, const char* pszCmdLine)
 	qglAreTexturesResident = dllAreTexturesResident = GPA(glAreTexturesResident);
 	qglArrayElement = dllArrayElement = GPA(glArrayElement);
 	qglBegin = dllBegin = GPA(glBegin);
-	qglBindTexture = dllBindTexture = GPA(glBindTexture);
+	qglBindTexture = dllBindTexture = (void(APIENTRY*)(GLenum, GLuint))SDL_GL_GetProcAddress("glBindTexture");
 	qglBitmap = dllBitmap = GPA(glBitmap);
 	qglBlendFunc = dllBlendFunc = GPA(glBlendFunc);
 	qglCallList = dllCallList = GPA(glCallList);

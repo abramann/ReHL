@@ -70,16 +70,19 @@ bf_read_t & bfread = *sp_bfread;
 
 bf_write_t * sp_bfwrite = ADDRESS_OF_DATA(bf_write_t *, 0x29E25);
 bf_write_t & bfwrite = *sp_bfwrite;
+
+char* gpszVersionString = ADDRESS_OF_DATA(char*, 0x57B23);
+char* gpszProductString = ADDRESS_OF_DATA(char*, 0x57B35);
 #else
 bf_read_t bfread;
 bf_write_t bfwrite;
+
+char gpszVersionString[32];
+char gpszProductString[32];
 #endif
 
 
 char serverinfo[MAX_INFO_STRING];
-
-char gpszVersionString[32];
-char gpszProductString[32];
 
 char *Info_Serverinfo(void)
 {

@@ -28,6 +28,18 @@ quake_mode_t modes[6] =
 	{"GL_LINEAR_MIPMAP_LINEAR",GL_LINEAR_MIPMAP_LINEAR , GL_LINEAR }
 };
 
+#ifdef SHARED_GAME_DATA
+GLenum * sp_oldtarget = ADDRESS_OF_DATA(GLenum *, 0x4CB82);
+GLenum & oldtarget = *sp_oldtarget;
+
+cvar_t * sp_gl_ansio = ADDRESS_OF_DATA(cvar_t *, 0x3C391);
+cvar_t & gl_ansio = *sp_gl_ansio;
+#else
+GLenum oldtarget = GL_ASYNC_READ_PIXELS_SGIX;
+
+cvar_t gl_ansio = { "gl_ansio", "16" };
+#endif
+
 unsigned int scaled_25071[524288] = { 0 }; //
 int g_currentpalette;
 int giTotalTextures = 0;
@@ -36,7 +48,6 @@ int gl_filter_max = GL_LINEAR;
 int gl_filter_min = GL_LINEAR_MIPMAP_LINEAR;
 static int texels = 0;
 
-cvar_t gl_ansio = { "gl_ansio", "16" };
 cvar_t gl_round_down = { "gl_round_down", "3" , FCVAR_ARCHIVE };
 cvar_t gl_picmip = { "gl_picmip", "0", FCVAR_ARCHIVE };
 cvar_t gl_palette_tex = { "gl_palette_tex", "1" };
@@ -316,8 +327,6 @@ GLuint GL_GenTexture()
 	qglGenTextures(1, &tex);
 	return tex;
 }
-
-GLenum oldtarget = TEXTURE0_SGIS;
 
 void GL_UnloadTexture(char* identifier)
 {

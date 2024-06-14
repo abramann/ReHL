@@ -186,9 +186,15 @@ extern void(APIENTRY* qglFramebufferRenderbufferEXT)(GLenum, GLenum, GLenum, GLu
 extern void(APIENTRY* qglBlitFramebufferEXT)(GLint, GLint, GLint, GLint, GLint, GLint, GLint, GLint, GLbitfield, GLenum);
 extern void(APIENTRY* qglRenderbufferStorageMultisampleEXT)(GLenum, GLsizei, GLenum, GLsizei, GLsizei);
 
+#ifdef SHARED_GAME_DATA
+extern PFNGLCOLORTABLEEXTPROC& qglColorTableEXT;
+extern PFNGLMULTITEXCOORD2FARBPROC& qglMTexCoord2fSGIS;
+extern PFNGLACTIVETEXTUREARBPROC& qglSelectTextureSGIS;
+#else
 extern PFNGLCOLORTABLEEXTPROC qglColorTableEXT;
 extern PFNGLMULTITEXCOORD2FARBPROC qglMTexCoord2fSGIS;
 extern PFNGLACTIVETEXTUREARBPROC qglSelectTextureSGIS;
+#endif
 //===========================================================================
 
 // non-windows systems will just redefine qgl* to gl*
@@ -209,7 +215,11 @@ extern void(APIENTRY* qglAlphaFunc)(GLenum func, GLclampf ref);
 extern GLboolean(APIENTRY* qglAreTexturesResident)(GLsizei n, const GLuint* textures, GLboolean* residences);
 extern void(APIENTRY* qglArrayElement)(GLint i);
 extern void(APIENTRY* qglBegin)(GLenum mode);
+#ifdef SHARED_GAME_DATA
+extern void(APIENTRY*& qglBindTexture)(GLenum target, GLuint texture);
+#else
 extern void(APIENTRY* qglBindTexture)(GLenum target, GLuint texture);
+#endif
 extern void(APIENTRY* qglBitmap)(GLsizei width, GLsizei height, GLfloat xorig, GLfloat yorig, GLfloat xmove, GLfloat ymove, const GLubyte* bitmap);
 extern void(APIENTRY* qglBlendFunc)(GLenum sfactor, GLenum dfactor);
 extern void(APIENTRY* qglCallList)(GLuint list);

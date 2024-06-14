@@ -31,6 +31,28 @@
 int net_drop;
 char gDownloadFile[256];
 
+#ifdef SHARED_GAME_DATA
+cvar_t * sp_net_log = ADDRESS_OF_DATA(cvar_t *, 0x66CF1);
+cvar_t & net_log = *sp_net_log; 
+
+cvar_t * sp_net_showpackets = ADDRESS_OF_DATA(cvar_t *, 0x66CFB);
+cvar_t & net_showpackets = *sp_net_showpackets; 
+
+cvar_t * sp_net_showdrop = ADDRESS_OF_DATA(cvar_t *, 0x66D05);
+cvar_t & net_showdrop = *sp_net_showdrop; 
+
+cvar_t * sp_net_chokeloopback = ADDRESS_OF_DATA(cvar_t *, 0x66D0F);
+cvar_t & net_chokeloopback = *sp_net_chokeloopback;
+
+cvar_t * sp_net_drawslider = ADDRESS_OF_DATA(cvar_t *, 0x66D19);
+cvar_t & net_drawslider = *sp_net_drawslider;
+
+cvar_t * sp_sv_filetransfercompression = ADDRESS_OF_DATA(cvar_t *, 0x66D23);
+cvar_t & sv_filetransfercompression = *sp_sv_filetransfercompression; 
+
+cvar_t * sp_sv_filetransfermaxsize = ADDRESS_OF_DATA(cvar_t *, 0x66D2D);
+cvar_t & sv_filetransfermaxsize = *sp_sv_filetransfermaxsize; 
+#else
 cvar_t net_log = { "net_log", "0", 0, 0.0f, nullptr};
 cvar_t net_showpackets = { "net_showpackets", "0", 0, 0.0f, nullptr};
 cvar_t net_showdrop = { "net_showdrop", "0", 0, 0.0f, nullptr};
@@ -38,6 +60,7 @@ cvar_t net_drawslider = { "net_drawslider", "0", 0, 0.0f, nullptr};
 cvar_t net_chokeloopback = { "net_chokeloop", "0", 0, 0.0f, nullptr};
 cvar_t sv_filetransfercompression = { "sv_filetransfercompression", "1", 0, 0.0f, nullptr};
 cvar_t sv_filetransfermaxsize = { "sv_filetransfermaxsize", "10485760", 0, 0.0f, nullptr};
+#endif
 
 void Netchan_UnlinkFragment(fragbuf_t *buf, fragbuf_t **list)
 {

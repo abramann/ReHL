@@ -94,6 +94,8 @@ cvar_t & skill = *sp_skill;
 cvar_t * sp_host_speeds = ADDRESS_OF_DATA(cvar_t *, 0x56096);
 cvar_t & host_speeds = *sp_host_speeds; 
 
+unsigned short** sp_host_basepal = ADDRESS_OF_DATA(unsigned short **, 0x57F2F);
+unsigned short*& host_basepal = *sp_host_basepal;
 #else
 double realtime;
 quakeparms_t host_parms;
@@ -112,16 +114,14 @@ cvar_t host_framerate = { "host_framerate", "0", 0, 0.0f, NULL };
 cvar_t host_speeds = { "host_speeds", "0", 0, 0.0f, NULL };
 cvar_t host_profile = { "host_profile", "0", 0, 0.0f, NULL };
 
-
-
-
-
-
 cvar_t sv_stats = { "sv_stats", "1", 0, 0.0f, NULL };
 cvar_t deathmatch = { "deathmatch", "0", FCVAR_SERVER, 0.0f, NULL };
 cvar_t coop = { "coop", "0", FCVAR_SERVER, 0.0f, NULL };
 cvar_t pausable = { "pausable", "1", FCVAR_SERVER, 0.0f, NULL };
 cvar_t skill = { "skill", "1", 0, 0.0f, NULL };
+
+unsigned short *host_basepal;
+
 #endif
 
 cvar_t suitvolume = { "suitvolume", "0.25", FCVAR_ARCHIVE, 0.0f, NULL };
@@ -136,7 +136,6 @@ double oldrealtime;
 int host_hunklevel;
 jmp_buf host_abortserver;
 jmp_buf host_enddemo;
-unsigned short *host_basepal;
 //unsigned char *host_colormap;
 //const char *g_InGameAdsAllowed[3];
 
@@ -1226,9 +1225,10 @@ int Host_Init(quakeparms_t *parms)
 	Q_snprintf(versionString, sizeof(versionString), "%s,%i,%i", gpszVersionString, PROTOCOL_VERSION, build_number());
 	Cvar_Set("sv_version", versionString);
 	Con_DPrintf("%4.1f Mb heap\n", (double)parms->memsize / (1024.0f * 1024.0f));
+	
 	R_InitTextures();
 	HPAK_CheckIntegrity("custom");
-	Q_memset(&g_module, 0, sizeof(g_module));
+	Q_memset(&g_module, 0, sizeof(module_t));
 	if (g_pcls.state != ca_dedicated)
 	{
 		color24 *disk_basepal = (color24 *)COM_LoadHunkFile("gfx/palette.lmp");

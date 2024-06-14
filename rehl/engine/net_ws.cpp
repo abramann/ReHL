@@ -2113,12 +2113,13 @@ void NET_Init()
 		Cvar_SetValue("clockwindow", Q_atof(com_argv[clockwindow_ + 1]));
 
 	net_message.data = (byte *)&net_message_buffer;
-	net_message.maxsize = sizeof(net_message_buffer);
+	in_message.data = (byte *)&in_message_buf;
+
+	net_message.maxsize = 65536; //sizeof(net_message_buffer);
 	net_message.flags = 0;
 	net_message.buffername = "net_message";
 
-	in_message.data = (byte *)&in_message_buf;
-	in_message.maxsize = sizeof(in_message_buf);
+	in_message.maxsize = 65536; //sizeof(in_message_buf);
 	in_message.flags = 0;
 	in_message.buffername = "in_message";
 

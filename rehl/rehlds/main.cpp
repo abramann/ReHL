@@ -30,21 +30,24 @@
 
 #ifdef _WIN32
 
+bool run_without_hook = false;
+
 // DLL entry point
 BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved)
 {
 	if (fdwReason == DLL_PROCESS_ATTACH)
 	{
-		if (!LoadLibraryA("GameHW.dll"))
-		{
-			MessageBoxA(NULL, "Failed to load GameHW.dll", "ERROR", MB_OK);
-		}
-#ifdef _DEBUG
-		MessageBoxA(NULL, "DebugBreak Messagebox ", "ReHL", MB_OK);
-#endif
 		g_RehldsRuntimeConfig.parseFromCommandLine(GetCommandLineA());
 #ifdef _WIN32
-		SetupHooks();
+
+		if (!LoadLibraryA("GameHW.dll"))
+			MessageBoxA(NULL, "Failed to load GameHW.dll", "ReHL", MB_OK);
+
+		if(MessageBoxA(NULL, "Disable hook", "ReHL", MB_YESNO) == 6)
+			run_without_hook = true;
+		else
+			SetupHooks();
+
 		Module hlds_exe;
 		if (!FindModuleByName("hlds.exe", &hlds_exe))
 		{

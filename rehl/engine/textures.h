@@ -41,15 +41,16 @@ typedef struct texlumpinfo_s
 
 #ifdef SHARED_GAME_DATA
 extern uchar* texgammatable;
+extern texture_t *& r_notexture_mip;
 #else
 extern unsigned char texgammatable[256];
+extern texture_t * r_notexture_mip;
 #endif
 extern texlumpinfo_t* lumpinfo;
 extern int nTexLumps;
 extern FILE* texfiles[128];
 extern int nTexFiles;
 
-extern texture_t * r_notexture_mip;
 
 extern int nummiptex;
 extern char miptex[512][64];

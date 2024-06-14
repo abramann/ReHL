@@ -51,9 +51,6 @@
 
 extern char serverinfo[MAX_INFO_STRING];
 
-extern char gpszVersionString[32];
-extern char gpszProductString[32];
-
 typedef struct bf_read_s bf_read_t;
 typedef struct bf_write_s bf_write_t;
 
@@ -90,6 +87,9 @@ extern int(*&BigLong)(int l);
 extern int(*&LittleLong)(int l);
 extern float(*&BigFloat)(float l);
 extern float(*&LittleFloat)(float l);
+
+extern char* gpszVersionString;
+extern char* gpszProductString;
 #else
 extern int com_argc;
 extern char **com_argv;
@@ -108,6 +108,9 @@ extern int(*BigLong)(int l);
 extern int(*LittleLong)(int l);
 extern float(*BigFloat)(float l);
 extern float(*LittleFloat)(float l);
+
+extern char gpszVersionString[32];
+extern char gpszProductString[32];
 #endif
 
 extern char com_cmdline[COM_MAX_CMD_LINE];

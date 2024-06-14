@@ -90,6 +90,7 @@ extern cvar_t fps_override;
 extern cvar_t host_framerate;
 extern cvar_t pausable;
 extern qboolean con_initialized;
+extern unsigned short *host_basepal;
 #endif
 
 extern cvar_t suitvolume;
@@ -102,7 +103,6 @@ extern double oldrealtime;
 extern int host_hunklevel;
 extern jmp_buf host_abortserver;
 extern jmp_buf host_enddemo;
-extern unsigned short *host_basepal;
 
 NOXREF void Host_EndGame(const char *message, ...);
 void NORETURN Host_Error(const char *error, ...);

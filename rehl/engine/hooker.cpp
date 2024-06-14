@@ -5,10 +5,10 @@
 
 void SetupHooks()
 {
-	// One time call functions hook removed after implement caller function .
+	// One time call functions hook removed after implement caller function.
 	
 	DirectHook(0x27570, Cbuf_Execute); // TODO Cbuf_ExecuteCommandsFromBuffer
-
+	
 	//Sys_InitGame
 	DirectHook(0xAA790, Sys_FloatTime);
 	DirectHook(0x96EB0, SV_ResetModInfo);
@@ -35,6 +35,18 @@ void SetupHooks()
 	DirectHook(0x2F360, Draw_CacheWadInitFromFile);
 	DirectHook(0x28A90, Mod_Init);
 	DirectHook(0x69230, NET_Init);
+	DirectHook(0x325E0, DELTA_Init);
+	//DirectHook(0x9E450, SV_Init); // Share variables
+	DirectHook(0xB1230, SystemWrapper_Init);
+	DirectHook(0x8EF0, build_number);
+	DirectHook(0x57B10, Host_Version);
+	DirectHook(0x465E0, R_InitTextures);
+	DirectHook(0x53440, HPAK_CheckIntegrity);
+	DirectHook(0x51280, HPAK_FlushHostQueue);
+	DirectHook(0x512E0, HPAK_AddLump);	// Check implement
+	DirectHook(0x4CFF0, GL_Init);	// Game crashed one time during testing after added this function
+	DirectHook(0x3C100, GL_SelectTexture);
+
 	Host_Init;
 }
 

@@ -57,9 +57,7 @@ typedef struct delta_registry_s
 	delta_t *pdesc;
 } delta_registry_t;
 
-delta_definition_list_t *g_defs;
 delta_encoder_t *g_encoders;
-delta_registry_t *g_deltaregistry;
 
 #endif // Defines_and_Variables_region
 
@@ -67,6 +65,17 @@ delta_registry_t *g_deltaregistry;
 
 #define DELTA_D_DEF(member) #member, offsetof(delta_description_s, member)
 #define DELTA_DEF(structname, member) { #member, offsetof(structname, member) }
+
+#ifdef SHARED_GAME_DATA
+delta_definition_list_t** sp_g_defs = ADDRESS_OF_DATA(delta_definition_list_t **, 0x31F76);
+delta_definition_list_t*& g_defs = *sp_g_defs;
+
+delta_registry_t ** sp_g_deltaregistry = ADDRESS_OF_DATA(delta_registry_t* *, 0x325BD);
+delta_registry_t*& g_deltaregistry = *sp_g_deltaregistry; 
+#else
+delta_registry_t *g_deltaregistry;
+delta_definition_list_t *g_defs;
+#endif
 
 static delta_definition_t g_DeltaDataDefinition[] =
 {
@@ -96,6 +105,13 @@ delta_t g_MetaDelta[] =
 	{ 0, ARRAYSIZE(g_MetaDescription), "", NULL, g_MetaDescription },
 };
 
+#ifdef SHARED_GAME_DATA
+delta_definition_t* g_EventDataDefinition = ADDRESS_OF_DATA(delta_definition_t*, 0x3266A);
+delta_definition_t* g_ClientDataDefinition = ADDRESS_OF_DATA(delta_definition_t*, 0x32601);
+delta_definition_t* g_WeaponDataDefinition = ADDRESS_OF_DATA(delta_definition_t*, 0x32612);
+delta_definition_t* g_UsercmdDataDefinition = ADDRESS_OF_DATA(delta_definition_t*, 0x32623);
+delta_definition_t* g_EntityDataDefinition = ADDRESS_OF_DATA(delta_definition_t*, 0x32634);
+#else
 static delta_definition_t g_EventDataDefinition[] =
 {
 	DELTA_DEF(event_args_s, entindex),
@@ -310,7 +326,7 @@ static delta_definition_t g_ClientDataDefinition[] =
 	DELTA_DEF(clientdata_s, vuser4[1]),
 	DELTA_DEF(clientdata_s, vuser4[2]),
 };
-
+#endif
 #endif // Delta_definitions_region
 
 delta_description_t *DELTA_FindField(delta_t *pFields, const char *pszField)
@@ -1612,13 +1628,13 @@ void DELTA_Init(void)
 	Cmd_AddCommand("delta_stats", DELTA_DumpStats_f);
 	Cmd_AddCommand("delta_clear", DELTA_ClearStats_f);
 
-	DELTA_AddDefinition("clientdata_t", g_ClientDataDefinition, ARRAYSIZE(g_ClientDataDefinition));
-	DELTA_AddDefinition("weapon_data_t", g_WeaponDataDefinition, ARRAYSIZE(g_WeaponDataDefinition));
-	DELTA_AddDefinition("usercmd_t", g_UsercmdDataDefinition, ARRAYSIZE(g_UsercmdDataDefinition));
-	DELTA_AddDefinition("entity_state_t", g_EntityDataDefinition, ARRAYSIZE(g_EntityDataDefinition));
-	DELTA_AddDefinition("entity_state_player_t", g_EntityDataDefinition, ARRAYSIZE(g_EntityDataDefinition));
-	DELTA_AddDefinition("custom_entity_state_t", g_EntityDataDefinition, ARRAYSIZE(g_EntityDataDefinition));
-	DELTA_AddDefinition("event_t", g_EventDataDefinition, ARRAYSIZE(g_EventDataDefinition));
+	DELTA_AddDefinition("clientdata_t", g_ClientDataDefinition, 56); // ARRAYSIZE(g_ClientDataDefinition));
+	DELTA_AddDefinition("weapon_data_t", g_WeaponDataDefinition, 22); // ARRAYSIZE(g_WeaponDataDefinition));
+	DELTA_AddDefinition("usercmd_t", g_UsercmdDataDefinition, 16); // ARRAYSIZE(g_UsercmdDataDefinition));
+	DELTA_AddDefinition("entity_state_t", g_EntityDataDefinition, 87); // ARRAYSIZE(g_EntityDataDefinition));
+	DELTA_AddDefinition("entity_state_player_t", g_EntityDataDefinition, 87); // ARRAYSIZE(g_EntityDataDefinition));
+	DELTA_AddDefinition("custom_entity_state_t", g_EntityDataDefinition, 87); // ARRAYSIZE(g_EntityDataDefinition));
+	DELTA_AddDefinition("event_t", g_EventDataDefinition, 14); // ARRAYSIZE(g_EventDataDefinition));
 }
 
 void DELTA_Shutdown(void)

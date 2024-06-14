@@ -32,9 +32,15 @@
 #include "cvar.h"
 #include "net.h"
 
-extern char gDownloadFile[256];
-
-extern int net_drop;
+#ifdef SHARED_GAME_DATA
+extern cvar_t& net_log;
+extern cvar_t& net_showpackets;
+extern cvar_t& net_showdrop;
+extern cvar_t& net_drawslider;
+extern cvar_t& net_chokeloopback;
+extern cvar_t& sv_filetransfercompression;
+extern cvar_t& sv_filetransfermaxsize;
+#else
 extern cvar_t net_log;
 extern cvar_t net_showpackets;
 extern cvar_t net_showdrop;
@@ -42,6 +48,10 @@ extern cvar_t net_drawslider;
 extern cvar_t net_chokeloopback;
 extern cvar_t sv_filetransfercompression;
 extern cvar_t sv_filetransfermaxsize;
+#endif
+extern char gDownloadFile[256];
+
+extern int net_drop;
 
 void Netchan_UnlinkFragment(fragbuf_t *buf, fragbuf_t **list);
 void Netchan_OutOfBand(netsrc_t sock, netadr_t adr, int length, byte *data);

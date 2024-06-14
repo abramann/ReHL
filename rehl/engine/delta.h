@@ -116,9 +116,15 @@ typedef struct delta_info_s
 	delta_t *delta;
 } delta_info_t;
 
-extern delta_definition_list_t *g_defs;
-extern delta_encoder_t *g_encoders;
+#ifdef SHARED_GAME_DATA
+extern delta_registry_t*& g_deltaregistry;
+extern delta_definition_list_t*& g_defs;
+#else
 extern delta_registry_t *g_deltaregistry;
+extern delta_definition_list_t *g_defs;
+#endif
+
+extern delta_encoder_t *g_encoders;
 extern delta_t g_MetaDelta[];
 
 delta_description_t *DELTA_FindField(delta_t *pFields, const char *pszField);

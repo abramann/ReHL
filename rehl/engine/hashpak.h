@@ -69,12 +69,13 @@ typedef struct hash_pack_header_s
 
 #ifdef SHARED_GAME_DATA
 extern hash_pack_queue_t*& gp_hpak_queue;
+extern hash_pack_header_t& hash_pack_header;
 #else
 extern hash_pack_queue_t *gp_hpak_queue;
+extern hash_pack_header_t hash_pack_header;
 #endif
 // TODO: used only in hashpak
 extern hash_pack_directory_t hash_pack_dir;
-extern hash_pack_header_t hash_pack_header;
 
 qboolean HPAK_GetDataPointer(char *pakname, struct resource_s *pResource, unsigned char **pbuffer, int *bufsize);
 qboolean HPAK_FindResource(hash_pack_directory_t *pDir, unsigned char *hash, struct resource_s *pResourceEntry);

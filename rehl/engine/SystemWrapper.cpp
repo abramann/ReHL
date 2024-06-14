@@ -28,7 +28,12 @@
 
 #include "precompiled.h"
 
+#ifdef SHARED_GAME_DATA
+SystemWrapper * sp_gSystemWrapper = ADDRESS_OF_DATA(SystemWrapper *, 0xB1238);
+SystemWrapper & gSystemWrapper = *sp_gSystemWrapper;
+#else
 SystemWrapper gSystemWrapper;
+#endif
 
 void SystemWrapper_Init()
 {

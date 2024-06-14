@@ -28,12 +28,18 @@
 
 #include "precompiled.h"
 
+#ifdef SHARED_GAME_DATA
+texture_t ** sp_r_notexture_mip = ADDRESS_OF_DATA(texture_t **, 0x4660F);
+texture_t * & r_notexture_mip = *sp_r_notexture_mip;
+#else
+texture_t * r_notexture_mip;
+#endif
+
 texlumpinfo_t* lumpinfo;
 int nTexLumps;
 FILE* texfiles[128];
 int nTexFiles;
 
-texture_t * r_notexture_mip;
 
 int nummiptex;
 char miptex[512][64];

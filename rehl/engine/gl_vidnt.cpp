@@ -48,9 +48,39 @@ extern int(*&D_SurfaceCacheForRes)(int width, int height);
 
 const char** sp_gl_extensions = ADDRESS_OF_DATA(const char**, 0x4DBF9);
 const char*& gl_extensions = *sp_gl_extensions;
+
 qboolean* sp_s_bSupportsBlitTexturing = ADDRESS_OF_DATA(qboolean*, 0x4DC1E);
 qboolean& s_bSupportsBlitTexturing = *sp_s_bSupportsBlitTexturing;
 
+qboolean * sp_g_bSupportsNPOTTextures = ADDRESS_OF_DATA(qboolean *, 0x4D1B7);
+qboolean & g_bSupportsNPOTTextures = *sp_g_bSupportsNPOTTextures;
+
+int * sp_gl_mtexable = ADDRESS_OF_DATA(int *, 0x4CB88);
+int & gl_mtexable = *sp_gl_mtexable;
+
+int * sp_TEXTURE0_SGIS = ADDRESS_OF_DATA(int *, 0x4CB69);
+int & TEXTURE0_SGIS = *sp_TEXTURE0_SGIS; 
+
+int * sp_TEXTURE1_SGIS = ADDRESS_OF_DATA(int *, 0x4CB6F);
+int & TEXTURE1_SGIS = *sp_TEXTURE1_SGIS; 
+
+int * sp_TEXTURE2_SGIS = ADDRESS_OF_DATA(int *, 0x4CB79);
+int & TEXTURE2_SGIS = *sp_TEXTURE2_SGIS; 
+
+const char** sp_gl_vendor = ADDRESS_OF_DATA(const char**, 0x4D005);
+const char*& gl_vendor = *sp_gl_vendor;
+
+const char** sp_gl_renderer = ADDRESS_OF_DATA(const char**, 0x4D03F);
+const char*& gl_renderer = *sp_gl_vendor;
+
+const char** sp_gl_version = ADDRESS_OF_DATA(const char**, 0x4D05D);
+const char*& gl_version = *sp_gl_vendor;
+
+qboolean * sp_atismoothing = ADDRESS_OF_DATA(qboolean *, 0x4CBB2);
+qboolean & atismoothing = *sp_atismoothing; 
+
+int * sp_gGLHardwareType = ADDRESS_OF_DATA(int *, 0x4CC21);
+int & gGLHardwareType = *sp_gGLHardwareType;
 #else
 SDL_Window** pmainwindow = nullptr;
 static qboolean gfMiniDriver = false;
@@ -67,11 +97,24 @@ static FBO_Container_t s_MSAAFBO;
 static FBO_Container_t s_BackBufferFBO;
 const char* gl_extensions = nullptr;
 static qboolean s_bSupportsBlitTexturing = false;
+
+qboolean g_bSupportsNPOTTextures = false;
+int gl_mtexable = 0;
+
+int TEXTURE0_SGIS = GL_ASYNC_READ_PIXELS_SGIX;
+int TEXTURE1_SGIS = GL_MAX_ASYNC_TEX_IMAGE_SGIX;
+int TEXTURE2_SGIS = GL_MAX_ASYNC_DRAW_PIXELS_SGIX;
+
+const char* gl_vendor = nullptr;
+const char* gl_renderer = nullptr;
+const char* gl_version = nullptr;
+
+bool atismoothing = false;
+
+int gGLHardwareType = 0;
+
 #endif
 
-void CheckTextureExtensions();
-void CheckMultiTextureExtensions();
-void CheckATINPatchExtensions();
 void GLimp_LogNewFrame();
 
 cvar_t gl_ztrick = { "gl_ztrick", "0" };
@@ -79,25 +122,9 @@ cvar_t gl_vsync = { "gl_vsync", "1", FCVAR_ARCHIVE };
 
 extern cvar_t  gl_clear;
 
-
-int gGLHardwareType = 0;
-
-int TEXTURE0_SGIS = GL_ASYNC_READ_PIXELS_SGIX;
-int TEXTURE1_SGIS = GL_MAX_ASYNC_TEX_IMAGE_SGIX;
-int TEXTURE2_SGIS = GL_MAX_ASYNC_DRAW_PIXELS_SGIX;
-
-int gl_mtexable = 0;
-
 qboolean vsync = false;
 
 static int gl_filter_min = GL_LINEAR;
-
-const char* gl_vendor = nullptr;
-const char* gl_renderer = nullptr;
-const char* gl_version = nullptr;
-
-bool g_bSupportsNPOTTextures = false;
-bool atismoothing = false;
 
 static float s_fXMouseAspectAdjustment = 1.0;
 static float s_fYMouseAspectAdjustment = 1.0;
@@ -120,9 +147,19 @@ float GetYMouseAspectRatioAdjustment()
 void GL_Init()
 {	
 	gl_vendor = reinterpret_cast<const char*>(qglGetString(GL_VENDOR));
+	if (!gl_vendor)
+		Sys_Error("Failed to query gl vendor string"); 
+	Con_DPrintf("GL_VENDOR: %s", gl_vendor);
+
 	gl_renderer = reinterpret_cast<const char*>(qglGetString(GL_RENDERER));
+	Con_DPrintf("GL_RENDERER: %s", gl_renderer);
+
 	gl_version = reinterpret_cast<const char*>(qglGetString(GL_VERSION));
+	Con_DPrintf("GL_VERSION: %s", gl_version);
+	
 	gl_extensions = (char*)qglGetString(GL_EXTENSIONS);
+	Con_DPrintf("GL_EXTENSION: %s", gl_extensions);
+
 	g_bSupportsNPOTTextures = 0;
 
 	int r;
@@ -161,6 +198,8 @@ void GL_Init()
 		Con_DPrintf("Failed to get GL DEPTH size (%s)\n", SDL_GetError());
 	}
 
+	Con_DPrintf("GL_SIZES:  r:%d g:%d b:%d a:%d depth:%d", r, g, b, a);
+
 	CheckTextureExtensions();
 	CheckMultiTextureExtensions();
 	CheckATINPatchExtensions();
@@ -172,19 +211,25 @@ void GL_Init()
 	qglCullFace(GL_FRONT);
 	qglEnable(GL_TEXTURE_2D);
 	qglEnable(GL_ALPHA_TEST);
-	qglAlphaFunc(GL_NOTEQUAL, 0.0);
+	qglAlphaFunc(GL_NOTEQUAL, 0);
 	qglPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 	qglShadeModel(GL_FLAT);
-	qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+		//qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		//qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		//qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+		//qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, 9728.0f);
+	qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, 9728.0f);
+	qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, 10497.0f);
+	qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, 10497.0f);
 
 	qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, gl_ansio.value);
 	qglBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	qglTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
 
-
+		//qglTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
+	qglTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, 7681.0f);
+	
 	GL_Config();
 }
 
@@ -815,7 +860,7 @@ void CheckTextureExtensions()
 		(Q_strstr(gl_extensions, "GL_EXT_paletted_texture") &&
 			Q_strstr(gl_extensions, "GL_EXT_shared_texture_palette")))
 	{
-		qglColorTableEXT = reinterpret_cast<decltype(qglColorTableEXT)>(SDL_GL_GetProcAddress("glColorTableEXT"));
+		qglColorTableEXT = (PFNGLCOLORTABLEEXTPROC)SDL_GL_GetProcAddress("glColorTableEXT");
 		Con_DPrintf("Found paletted texture extension.\n");
 	}
 	else
@@ -825,7 +870,7 @@ void CheckTextureExtensions()
 
 	if (gl_extensions && Q_strstr(gl_extensions, "GL_EXT_texture_object "))
 	{
-		qglBindTexture = reinterpret_cast<decltype(qglBindTexture)>(SDL_GL_GetProcAddress("glBindTextureEXT"));
+		qglBindTexture = (void(APIENTRY*)(GLenum, GLuint))SDL_GL_GetProcAddress("glBindTextureEXT");
 		if (!qglBindTexture)
 			Sys_Error("GetProcAddress for BindTextureEXT failed");
 	}
@@ -837,12 +882,12 @@ void CheckMultiTextureExtensions()
 	{
 		Con_DPrintf("ARB Multitexture extensions found.\n");
 
-		qglMTexCoord2fSGIS = reinterpret_cast<decltype(qglMTexCoord2fSGIS)>(SDL_GL_GetProcAddress("glMultiTexCoord2fARB"));
-		qglSelectTextureSGIS = reinterpret_cast<decltype(qglSelectTextureSGIS)>(SDL_GL_GetProcAddress("glActiveTextureARB"));
-
+		qglMTexCoord2fSGIS = (PFNGLMULTITEXCOORD2FARBPROC)SDL_GL_GetProcAddress("glMultiTexCoord2fARB");
+		qglSelectTextureSGIS = (PFNGLACTIVETEXTUREARBPROC)SDL_GL_GetProcAddress("glActiveTextureARB");
+		
 		TEXTURE0_SGIS = GL_TEXTURE0;
 		TEXTURE1_SGIS = GL_TEXTURE1;
-		TEXTURE2_SGIS = GL_TEXTURE2;
+		TEXTURE2_SGIS = GL_TEXTURE1;
 
 		oldtarget = TEXTURE0_SGIS;
 		gl_mtexable = 2;
@@ -866,16 +911,16 @@ void CheckMultiTextureExtensions()
 	{
 		Con_DPrintf("Multitexture extensions found.\n");
 
-		qglMTexCoord2fSGIS = reinterpret_cast<decltype(qglMTexCoord2fSGIS)>(SDL_GL_GetProcAddress("glMTexCoord2fSGIS"));
-		qglSelectTextureSGIS = reinterpret_cast<decltype(qglSelectTextureSGIS)>(SDL_GL_GetProcAddress("glSelectTextureSGIS"));
+		qglMTexCoord2fSGIS = (PFNGLMULTITEXCOORD2FARBPROC)SDL_GL_GetProcAddress("glMTexCoord2fSGIS");
+		qglSelectTextureSGIS = (PFNGLACTIVETEXTUREARBPROC)SDL_GL_GetProcAddress("glSelectTextureSGIS");
 
-		TEXTURE0_SGIS = QGL_TEXTURE0_SGIS;
-		TEXTURE1_SGIS = QGL_TEXTURE1_SGIS;
-		TEXTURE2_SGIS = QGL_TEXTURE2_SGIS;
+		TEXTURE0_SGIS = GL_ASYNC_READ_PIXELS_SGIX;
+		TEXTURE1_SGIS = GL_MAX_ASYNC_TEX_IMAGE_SGIX;
+		TEXTURE2_SGIS = GL_MAX_ASYNC_DRAW_PIXELS_SGIX;
 
 		oldtarget = TEXTURE0_SGIS;
-		gl_mtexable = 2;
 		GL_SelectTexture(TEXTURE0_SGIS);
+		gl_mtexable = 2;
 	}
 	else
 	{
