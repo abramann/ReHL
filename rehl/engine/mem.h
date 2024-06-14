@@ -28,9 +28,35 @@
 
 #pragma once
 
+#include "hooker.h"
+
 void *Mem_Malloc(size_t size);
 void *Mem_ZeroMalloc(size_t size);
 void *Mem_Realloc(void *memblock, size_t size);
 void *Mem_Calloc(int num, size_t size);
 char *Mem_Strdup(const char *strSource);
 void Mem_Free(void *p);
+
+// To avoid CRT issues
+#ifdef SHARED_GAME_DATA
+inline void* operator new(size_t size)
+{
+	return Call_Function<void*, size_t>(0x10714E, size);
+}
+
+inline void  operator delete(void* ptr)
+{
+	Call_Function<void, void*>(0x106982, ptr);
+}
+
+/*void* operator new[](size_t size)
+{
+
+}
+
+void  operator delete[](void* ptr)
+{
+
+}
+*/
+#endif
