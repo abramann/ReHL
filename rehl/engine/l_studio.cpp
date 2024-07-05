@@ -55,7 +55,7 @@ void EXT_FUNC Mod_LoadStudioModel_internal(model_t * mod, void * buffer)
 	pout = (uint8 *)mod->cache.data;
 	if (pout)
 	{
-		if (phdr->textureindex)
+		if (phdr->textureindex && phdr->numtextures > 0)
 		{
 			Q_memcpy(pout, buffer, phdr->texturedataindex);
 			poutdata = pout + phdr->texturedataindex;
@@ -85,6 +85,52 @@ void EXT_FUNC Mod_LoadStudioModel_internal(model_t * mod, void * buffer)
 	}
 }
 
-void Mod_LoadStudioModel(model_t * mod, void * buffer) {
-	g_RehldsHookchains.m_Mod_LoadStudioModel.callChain(&Mod_LoadStudioModel_internal, mod, buffer);
+void Mod_LoadStudioModel(model_t * mod, void * buffer)
+{
+	//return Call_Function<void, model_t*, void*>(0x61AD0, mod, buffer);
+	uint8 *poutdata;
+	uint8 *pindata;
+	mstudiotexture_t *ptexture;
+	int size;
+	int i;
+	uint8 *pout;
+
+	studiohdr_t * phdr = (studiohdr_t *)buffer;
+	i = LittleLong(phdr->version);
+	if (i != STUDIO_VERSION)
+	{
+		Q_memset(phdr, 0, 244u);
+		Q_strcpy(phdr->name, "bogus");
+		phdr->length = 244;
+		phdr->texturedataindex = 244;
+	}
+
+	mod->type = mod_studio;
+	mod->flags = phdr->flags;
+	int total = (phdr->textureindex) ? phdr->texturedataindex : phdr->length;
+	Cache_Alloc(&mod->cache, total, mod->name);
+	pout = (uint8 *)mod->cache.data;
+	if (!pout)
+		return;
+
+	if (phdr->textureindex)
+	{
+		ptexture = (mstudiotexture_t *)((byte*)phdr + (int)phdr->textureindex);
+		for (i = 0; i < phdr->numtextures; i++)//, ptexture++)
+		{
+			int width = ptexture[i].width;
+			int height = ptexture[i].height;
+			int flags = ptexture[i].flags;
+			int size = width*height;
+
+			char name[256];
+			Q_snprintf(name, 256, "%s%s", mod->name, ptexture[i].name);
+
+			uchar* pPal = (uchar*)phdr + ptexture[i].index + size;
+			uchar* data = (uchar*)phdr + ptexture[i].index;
+
+			ptexture[i].index = GL_LoadTexture(name, GLT_STUDIO, width, height, data, flags & 8, flags & 64, pPal);
+		}
+	}
+	Q_memcpy(pout, buffer, total);
 }

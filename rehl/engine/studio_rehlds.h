@@ -42,27 +42,47 @@ typedef mplane_t studio_planes_t[STUDIO_NUM_PLANES];
 typedef r_studiocache_t rgStudioCache_t[STUDIO_CACHE_SIZE];
 typedef float bonetransform_t[STUDIO_NUM_HULLS][3][4];
 
-extern studiohdr_t *pstudiohdr;
+#ifdef SHARED_GAME_DATA
+extern studio_hull_t& studio_hull;
+extern studio_clipnodes_t& studio_clipnodes;
+extern studio_planes_t& studio_planes;
+extern cvar_t& r_cachestudio;
+extern studio_planes_t& cache_planes;
+extern studio_hull_hitgroup_t& cache_hull_hitgroup;
+extern studio_hull_t& cache_hull;
+extern studio_hull_hitgroup_t& studio_hull_hitgroup;
 
-extern studio_hull_hitgroup_t cache_hull_hitgroup;
-extern studio_hull_t cache_hull;
-extern studio_planes_t cache_planes;
+extern int& r_cachecurrent;
+extern rgStudioCache_t& rgStudioCache;
 
-extern int r_cachecurrent;
+extern studiohdr_t*& pstudiohdr;
+extern sv_blending_interface_t& svBlending;
+extern int& nCurrentHull;
+extern int& nCurrentPlane;
+extern bonetransform_t& bonetransform;
+
+#else
 extern int nCurrentHull;
 extern int nCurrentPlane;
-
+extern studiohdr_t *pstudiohdr;
 extern studio_hull_t studio_hull;
-extern studio_hull_hitgroup_t studio_hull_hitgroup;
 extern studio_clipnodes_t studio_clipnodes;
 extern studio_planes_t studio_planes;
-extern rgStudioCache_t rgStudioCache;
-
-extern bonetransform_t bonetransform;
-extern sv_blending_interface_t *g_pSvBlendingAPI;
-extern sv_blending_interface_t svBlending;
-extern server_studio_api_t server_studio_api;
 extern cvar_t r_cachestudio;
+extern studio_planes_t cache_planes;
+extern studio_hull_hitgroup_t cache_hull_hitgroup;
+extern studio_hull_t cache_hull;
+extern int r_cachecurrent;
+extern rgStudioCache_t rgStudioCache;
+extern studio_hull_hitgroup_t studio_hull_hitgroup;
+extern sv_blending_interface_t svBlending;
+extern bonetransform_t bonetransform;
+#endif
+
+
+
+extern sv_blending_interface_t *g_pSvBlendingAPI;
+extern server_studio_api_t server_studio_api;
 extern float rotationmatrix[3][4];
 
 void SV_InitStudioHull();

@@ -849,6 +849,7 @@ void* EXT_FUNC Cache_Check(cache_user_t *c)
 
 void *Cache_Alloc(cache_user_t *c, int size, char *name)
 {
+	//return Call_Function<void*, cache_user_t*, int, char*>(0xC88D0, c, size, name);
 	cache_system_t *cs;
 
 	if (c->data)

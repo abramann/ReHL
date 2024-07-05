@@ -2421,6 +2421,7 @@ const int NTAB = 32;
 
 int32 ran1(void)
 {
+	//return Call_Function<int32>(0x70750);
 	int j;
 	long k;
 	static long iy = 0;

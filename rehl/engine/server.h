@@ -266,15 +266,144 @@ typedef struct deltacallback_s
 } deltacallback_t;
 
 #ifdef SHARED_GAME_DATA
+
 extern server_static_t& g_psvs;
 extern int& sv_decalnamecount;
 
 extern server_t& g_psv;
+
+extern rcon_failure_t(&g_rgRconFailures)[32];
+
+extern cvar_t& rcon_password;
+extern cvar_t& sv_enableoldqueries;
+extern cvar_t& sv_instancedbaseline;
+extern cvar_t& sv_contact;
+extern cvar_t& sv_maxupdaterate;
+extern cvar_t& sv_minupdaterate;
+extern cvar_t& sv_filterban;
+extern cvar_t& sv_logrelay;
+extern cvar_t& sv_lan;
+extern cvar_t& sv_clienttrace;
+extern cvar_t& sv_lan_rate;
+extern cvar_t& sv_aim;
+extern cvar_t& sv_skycolor_r;
+extern cvar_t& sv_skycolor_g;
+extern cvar_t& sv_skycolor_b;
+extern cvar_t& sv_skyvec_x;
+extern cvar_t& sv_skyvec_y;
+extern cvar_t& sv_skyvec_z;
+extern cvar_t& sv_skyname;
+extern cvar_t& sv_minrate;
+extern cvar_t& sv_maxrate;
+extern cvar_t& violence_hblood;
+extern cvar_t& violence_ablood;
+extern cvar_t& violence_hgibs;
+extern cvar_t& violence_agibs;
+extern cvar_t& sv_newunit;
+extern cvar_t& sv_timeout;
+extern cvar_t& sv_cheats;
+extern cvar_t& sv_password;
+extern cvar_t& sv_proxies;
+extern cvar_t& sv_outofdatetime;
+extern cvar_t& mapchangecfgfile;
+extern cvar_t& sv_logbans;
+extern cvar_t& sv_allow_upload;
+extern cvar_t& sv_max_upload;
+extern cvar_t& hpk_maxsize;
+extern cvar_t& sv_visiblemaxplayers;
+extern cvar_t& sv_downloadurl;
+extern cvar_t& sv_allow_dlfile;
+extern cvar_t& sv_version;
+extern cvar_t& sv_allow_download;
+extern cvar_t& sv_send_logos;
+extern cvar_t& sv_send_resources;
+extern cvar_t& sv_spectatormaxspeed;
+extern cvar_t& sv_airaccelerate;
+extern cvar_t& sv_wateraccelerate;
+extern cvar_t& sv_waterfriction;
+extern cvar_t& sv_zmax;
+extern cvar_t& sv_wateramp;
+extern cvar_t& mapcyclefile;
+extern cvar_t& motdfile;
+extern cvar_t& servercfgfile;
+extern cvar_t& lservercfgfile;
+extern cvar_t& logsdir;
+extern cvar_t& bannedcfgfile;
+extern cvar_t& sv_rcon_minfailures;
+extern cvar_t& sv_rcon_maxfailures;
+extern cvar_t& sv_rcon_minfailuretime;
+extern cvar_t& sv_rcon_banpenalty;
+
+extern char (&localmodels)[MAX_MODELS][5];
+
 #else
 extern server_static_t g_psvs;
 extern int sv_decalnamecount;
-
 extern server_t g_psv;
+extern rcon_failure_t g_rgRconFailures[32];
+extern cvar_t rcon_password;
+extern cvar_t sv_enableoldqueries;
+extern cvar_t sv_instancedbaseline;
+extern cvar_t sv_contact;
+extern cvar_t sv_maxupdaterate;
+extern cvar_t sv_minupdaterate;
+extern cvar_t sv_filterban;
+extern cvar_t sv_logrelay;
+extern cvar_t sv_clienttrace;
+extern cvar_t sv_lan;
+extern cvar_t sv_clienttrace;
+extern cvar_t sv_lan_rate;
+extern cvar_t sv_aim;
+extern cvar_t sv_skycolor_r;
+extern cvar_t sv_skycolor_g;
+extern cvar_t sv_skycolor_b;
+extern cvar_t sv_skyvec_x;
+extern cvar_t sv_skyvec_y;
+extern cvar_t sv_skyvec_z;
+extern cvar_t sv_skyname;
+extern cvar_t sv_minrate;
+extern cvar_t sv_maxrate;
+extern cvar_t violence_hblood;
+extern cvar_t violence_ablood;
+extern cvar_t violence_hgibs;
+extern cvar_t violence_agibs;
+extern cvar_t sv_newunit;
+extern cvar_t sv_timeout;
+extern cvar_t sv_cheats;
+extern cvar_t sv_password;
+extern cvar_t sv_proxies;
+extern cvar_t sv_outofdatetime;
+extern cvar_t mapchangecfgfile;
+extern cvar_t sv_logbans;
+extern cvar_t sv_allow_upload;
+extern cvar_t sv_max_upload;
+extern cvar_t hpk_maxsize;
+extern cvar_t sv_visiblemaxplayers;
+extern cvar_t sv_downloadurl;
+extern cvar_t sv_allow_dlfile;
+extern cvar_t sv_version;
+extern cvar_t sv_allow_download;
+extern cvar_t sv_send_logos;
+extern cvar_t sv_send_resources;
+extern cvar_t sv_spectatormaxspeed;
+extern cvar_t sv_airaccelerate;
+extern cvar_t sv_wateraccelerate;
+extern cvar_t sv_waterfriction;
+extern cvar_t sv_zmax;
+extern cvar_t sv_wateramp;
+extern cvar_t mapcyclefile;
+extern cvar_t motdfile;
+extern cvar_t servercfgfile;
+extern cvar_t lservercfgfile;
+extern cvar_t logsdir;
+extern cvar_t bannedcfgfile;
+extern cvar_t sv_rcon_minfailures;
+extern cvar_t sv_rcon_maxfailures;
+extern cvar_t sv_rcon_minfailuretime;
+extern cvar_t sv_rcon_banpenalty;
+
+extern char localmodels[MAX_MODELS][5];
+
 #endif
 
 extern char *pr_strings;
@@ -289,37 +418,16 @@ extern int SV_UPDATE_MASK;
 extern globalvars_t gGlobalVariables;
 
 extern rehlds_server_t g_rehlds_sv;
-
-extern cvar_t sv_lan;
-extern cvar_t sv_lan_rate;
-extern cvar_t sv_aim;
 extern cvar_t sv_allow_autoaim;
 
-extern cvar_t sv_skycolor_r;
-extern cvar_t sv_skycolor_g;
-extern cvar_t sv_skycolor_b;
-extern cvar_t sv_skyvec_x;
-extern cvar_t sv_skyvec_y;
-extern cvar_t sv_skyvec_z;
-extern cvar_t sv_skyname;
+extern cvar_t& sv_failuretime;
 
-extern cvar_t sv_spectatormaxspeed;
-extern cvar_t sv_airaccelerate;
-extern cvar_t sv_wateraccelerate;
-extern cvar_t sv_waterfriction;
-extern cvar_t sv_zmax;
-extern cvar_t sv_wateramp;
-extern cvar_t mapcyclefile;
-extern cvar_t motdfile;
-extern cvar_t servercfgfile;
-extern cvar_t lservercfgfile;
-extern cvar_t logsdir;
-extern cvar_t bannedcfgfile;
-
+extern redirect_t& sv_redirected;
 
 #ifdef REHLDS_FIXES
 extern cvar_t listipcfgfile;
 extern cvar_t syserror_logfile;
+extern cvar_t sv_failuretime;
 #endif
 
 extern decalname_t sv_decalnames[MAX_BASE_DECALS];
@@ -336,48 +444,16 @@ extern int g_userid;
 extern delta_info_t *g_sv_delta;
 extern delta_t *g_peventdelta;
 
-extern cvar_t rcon_password;
-extern cvar_t sv_enableoldqueries;
-extern cvar_t sv_instancedbaseline;
-extern cvar_t sv_contact;
-extern cvar_t sv_maxupdaterate;
-extern cvar_t sv_minupdaterate;
-extern cvar_t sv_filterban;
-extern cvar_t sv_minrate;
-extern cvar_t sv_maxrate;
-extern cvar_t sv_logrelay;
-extern cvar_t violence_hblood;
-extern cvar_t violence_ablood;
-extern cvar_t violence_hgibs;
-extern cvar_t violence_agibs;
-extern cvar_t sv_newunit;
-extern cvar_t sv_clienttrace;
-extern cvar_t sv_timeout;
-extern cvar_t sv_failuretime;
-
-extern cvar_t sv_cheats;
-extern cvar_t sv_password;
-extern cvar_t sv_proxies;
-extern cvar_t sv_outofdatetime;
-extern cvar_t mapchangecfgfile;
 
 extern cvar_t mp_logecho;
 extern cvar_t mp_logfile;
-extern cvar_t sv_allow_download;
-extern cvar_t sv_send_logos;
-extern cvar_t sv_send_resources;
 extern cvar_t sv_log_singleplayer;
 extern cvar_t sv_logsecret;
 extern cvar_t sv_log_onefile;
-extern cvar_t sv_logbans;
-extern cvar_t sv_allow_upload;
-extern cvar_t sv_max_upload;
-extern cvar_t hpk_maxsize;
-extern cvar_t sv_visiblemaxplayers;
-extern cvar_t sv_downloadurl;
-extern cvar_t sv_allow_dlfile;
-extern cvar_t sv_version;
+
 extern cvar_t sv_tags;
+
+extern char(&outputbuf)[MAX_ROUTEABLE_PACKET];
 #ifdef REHLDS_FIXES
 extern cvar_t sv_echo_unknown_cmd;
 extern cvar_t sv_auto_precache_sounds_in_models;
@@ -390,17 +466,13 @@ extern cvar_t sv_rehlds_attachedentities_playeranimationspeed_fix;
 extern cvar_t sv_rehlds_local_gametime;
 extern cvar_t sv_rehlds_send_mapcycle;
 extern cvar_t sv_usercmd_custom_random_seed;
+extern redirect_t sv_redirected;
+extern char outputbuf[MAX_ROUTEABLE_PACKET];
+extern GameType_e g_eGameType;
 #endif
 extern int sv_playermodel;
 
-extern char outputbuf[MAX_ROUTEABLE_PACKET];
-extern redirect_t sv_redirected;
 extern netadr_t sv_redirectto;
-
-extern cvar_t sv_rcon_minfailures;
-extern cvar_t sv_rcon_maxfailures;
-extern cvar_t sv_rcon_minfailuretime;
-extern cvar_t sv_rcon_banpenalty;
 
 extern cvar_t scr_downloading;
 
@@ -415,7 +487,6 @@ enum GameType_e
 	GT_CStrike
 };
 
-extern GameType_e g_eGameType;
 
 extern int giNextUserMsg;
 extern int hashstrings_collisions;
@@ -432,7 +503,6 @@ extern delta_t *g_pusercmddelta;
 extern int gPacketSuppressed;
 
 extern char localinfo[MAX_LOCALINFO];
-extern char localmodels[MAX_MODELS][5];
 
 extern ipfilter_t ipfilters[MAX_IPFILTERS];
 extern int numipfilters;
@@ -441,7 +511,6 @@ extern int numuserfilters;
 
 extern challenge_t g_rg_sv_challenges[MAX_CHALLENGES];
 
-extern rcon_failure_t g_rgRconFailures[32];
 extern deltacallback_t g_svdeltacallback;
 
 delta_t *SV_LookupDelta(char *name);

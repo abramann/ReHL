@@ -171,6 +171,7 @@ void Log_Open(void)
 
 void SV_SetLogAddress_f(void)
 {
+	NOT_TESTED;
 	const char *s;
 	int nPort;
 	char szAdr[MAX_PATH];
@@ -213,6 +214,7 @@ void SV_SetLogAddress_f(void)
 
 void SV_AddLogAddress_f(void)
 {
+	NOT_TESTED;
 	const char *s;
 	int nPort;
 	char szAdr[MAX_PATH];
@@ -304,6 +306,7 @@ void SV_AddLogAddress_f(void)
 
 void SV_DelLogAddress_f(void)
 {
+	NOT_TESTED;
 	const char *s;
 	int nPort;
 	char szAdr[MAX_PATH];
@@ -377,6 +380,7 @@ void SV_DelLogAddress_f(void)
 
 void SV_ServerLog_f(void)
 {
+	NOT_TESTED;
 	if (Cmd_Argc() != 2)
 	{
 		Con_Printf("usage:  log < on | off >\n");

@@ -43,30 +43,80 @@ typedef struct r_studiocache_s
 	int numhulls;
 } r_studiocache_t;
 
-studiohdr_t *pstudiohdr;
 
 //auxvert_t auxverts[2048];
 //vec_t lightvalues[2048][3];
+
+#ifdef SHARED_GAME_DATA
+
+int * sp_nCurrentHull = ADDRESS_OF_DATA(int *, 0x80120);
+int & nCurrentHull = *sp_nCurrentHull;
+
+int * sp_nCurrentPlane = ADDRESS_OF_DATA(int *, 0x80126);
+int & nCurrentPlane = *sp_nCurrentPlane;
+
+studiohdr_t ** sp_pstudiohdr = ADDRESS_OF_DATA(studiohdr_t **, 0x8119D);
+studiohdr_t *& pstudiohdr = *sp_pstudiohdr;
+
+cvar_t * sp_r_cachestudio = ADDRESS_OF_DATA(cvar_t *, 0x46BD4);
+cvar_t & r_cachestudio = *sp_r_cachestudio;
+
+rgStudioCache_t * sp_rgStudioCache = ADDRESS_OF_DATA(rgStudioCache_t *, 0x81718);
+rgStudioCache_t & rgStudioCache = *sp_rgStudioCache;
+
+int * sp_r_cachecurrent = ADDRESS_OF_DATA(int *, 0x7FFBC);
+int & r_cachecurrent = *sp_r_cachecurrent;
+
+studio_hull_t * sp_studio_hull = ADDRESS_OF_DATA(studio_hull_t *, 0x81151);
+studio_hull_t & studio_hull = *sp_studio_hull;
+
+studio_planes_t * sp_studio_planes = ADDRESS_OF_DATA(studio_planes_t *, 0x80161);
+studio_planes_t & studio_planes = *sp_studio_planes;
+
+studio_clipnodes_t * sp_studio_clipnodes = ADDRESS_OF_DATA(studio_clipnodes_t *, 0x7FF3B);
+studio_clipnodes_t & studio_clipnodes = *sp_studio_clipnodes;
+
+studio_planes_t * sp_cache_planes = ADDRESS_OF_DATA(studio_planes_t *, 0x80168);
+studio_planes_t & cache_planes = *sp_cache_planes; 
+
+studio_hull_t * sp_cache_hull = ADDRESS_OF_DATA(studio_hull_t *, 0x80144);
+studio_hull_t & cache_hull = *sp_cache_hull;
+
+studio_hull_hitgroup_t * sp_cache_hull_hitgroup = ADDRESS_OF_DATA(studio_hull_hitgroup_t *, 0x80188);
+studio_hull_hitgroup_t & cache_hull_hitgroup = *sp_cache_hull_hitgroup;
+
+studio_hull_hitgroup_t * sp_studio_hull_hitgroup = ADDRESS_OF_DATA(studio_hull_hitgroup_t *, 0x80181);
+studio_hull_hitgroup_t & studio_hull_hitgroup = *sp_studio_hull_hitgroup;
+
+sv_blending_interface_t * sp_svBlending = ADDRESS_OF_DATA(sv_blending_interface_t *, 0x885E6);
+sv_blending_interface_t & svBlending = *sp_svBlending;
+
+bonetransform_t * sp_bonetransform = ADDRESS_OF_DATA(bonetransform_t *, 0x880B1);
+bonetransform_t & bonetransform = *sp_bonetransform;
+#else
+studiohdr_t *pstudiohdr;
+studio_hull_t  studio_hull;
+studio_clipnodes_t studio_clipnodes;
+studio_planes_t studio_planes;
+cvar_t r_cachestudio = { "r_cachestudio", "1", 0, 0.0f, nullptr };
+int r_cachecurrent;
+rgStudioCache_t rgStudioCache;
 studio_hull_hitgroup_t cache_hull_hitgroup;
 studio_hull_t cache_hull;
 studio_planes_t cache_planes;
-rgStudioCache_t rgStudioCache;
-
+studio_hull_hitgroup_t studio_hull_hitgroup;
+sv_blending_interface_t svBlending = { 1, SV_StudioSetupBones };
 int nCurrentHull;
 int nCurrentPlane;
-int r_cachecurrent;
-
-studio_hull_t studio_hull;
-studio_hull_hitgroup_t studio_hull_hitgroup;
-studio_clipnodes_t studio_clipnodes;
-studio_planes_t studio_planes;
-
 bonetransform_t bonetransform;
+
+#endif
+
+
 float rotationmatrix[3][4];
 
-cvar_t r_cachestudio = { "r_cachestudio", "1", 0, 0.0f, nullptr };
-sv_blending_interface_t svBlending = { 1, SV_StudioSetupBones };
 sv_blending_interface_t *g_pSvBlendingAPI = &svBlending;
+
 server_studio_api_t server_studio_api = { Mem_Calloc, Cache_Check, COM_LoadCacheFile, Mod_Extradata };
 
 void SV_InitStudioHull()
@@ -593,6 +643,7 @@ void EXT_FUNC SV_StudioSetupBones(model_t *pModel, float frame, int sequence, co
 
 void SV_SetStudioHullPlane(mplane_t *pplane, int iBone, int k, float dist)
 {
+	return Call_Function<void, mplane_t *, int , int , float >(0x81050, pplane, iBone, k, dist);
 	pplane->type = 5;
 
 	pplane->normal[0] = bonetransform[iBone][0][k];
@@ -608,7 +659,6 @@ void SV_SetStudioHullPlane(mplane_t *pplane, int iBone, int k, float dist)
 hull_t *R_StudioHull(model_t *pModel, float frame, int sequence, const vec_t *angles, const vec_t *origin, const vec_t *size, const unsigned char *pcontroller, const unsigned char *pblending, int *pNumHulls, const edict_t *pEdict, int bSkipShield)
 {
 	SV_InitStudioHull();
-
 	if (r_cachestudio.value != 0)
 	{
 		r_studiocache_t *pCached = R_CheckStudioCache(pModel, frame, sequence, angles, origin, size, pcontroller, pblending);
@@ -616,17 +666,18 @@ hull_t *R_StudioHull(model_t *pModel, float frame, int sequence, const vec_t *an
 		if (pCached)
 		{
 			Q_memcpy(studio_planes, &cache_planes[pCached->nStartPlane], pCached->numhulls * sizeof(mplane_t) * 6);
-			Q_memcpy(studio_hull_hitgroup, &cache_hull_hitgroup[pCached->nStartHull], pCached->numhulls * sizeof(int));
 			Q_memcpy(studio_hull, &cache_hull[pCached->nStartHull], pCached->numhulls * sizeof(hull_t));
+			Q_memcpy(studio_hull_hitgroup, &cache_hull_hitgroup[pCached->nStartHull], pCached->numhulls * sizeof(int));
 
 			*pNumHulls = pCached->numhulls;
 			return studio_hull;
 		}
 	}
 
-	pstudiohdr = (studiohdr_t *)Mod_Extradata(pModel);
+	pstudiohdr = (studiohdr_t *)Mod_Extradata(pModel); // implement
 
 	vec_t angles2[3] = { -angles[0], angles[1], angles[2] };
+
 	g_pSvBlendingAPI->SV_StudioSetupBones(pModel, frame, sequence, angles2, origin, pcontroller, pblending, -1, pEdict);
 
 #ifdef REHLDS_FIXES
@@ -661,7 +712,7 @@ hull_t *R_StudioHull(model_t *pModel, float frame, int sequence, const vec_t *an
 		R_AddToStudioCache(frame, sequence, angles, origin, size, pcontroller, pblending, pModel, studio_hull, *pNumHulls);
 	}
 
-	return &studio_hull[0];
+	return studio_hull;
 }
 
 int SV_HitgroupForStudioHull(int index)
@@ -761,7 +812,7 @@ hull_t *SV_HullForStudioModel(const edict_t *pEdict, const vec_t *mins, const ve
 			}
 		}
 	}
-	if (pEdict->v.gamestate == 1 && (g_eGameType == GT_TerrorStrike || g_eGameType == GT_CStrike || g_eGameType == GT_CZero))
+	if (pEdict->v.gamestate == 1 && (g_bIsTerrorStrike || g_bIsCStrike || g_bIsCZero))
 		bSkipShield = 1;
 
 	if ((g_psv.models[pEdict->v.modelindex]->flags & FL_ONGROUND) || useComplexHull == TRUE)

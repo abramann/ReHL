@@ -226,7 +226,7 @@ void GL_Init()
 
 	qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, gl_ansio.value);
 	qglBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
+	
 		//qglTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
 	qglTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, 7681.0f);
 	
@@ -856,6 +856,8 @@ void GL_Config()
 
 void CheckTextureExtensions()
 {
+	//return Call_Function<void>(0x4C940);
+
 	if (gl_extensions &&
 		(Q_strstr(gl_extensions, "GL_EXT_paletted_texture") &&
 			Q_strstr(gl_extensions, "GL_EXT_shared_texture_palette")))
@@ -878,6 +880,8 @@ void CheckTextureExtensions()
 
 void CheckMultiTextureExtensions()
 {
+	//return Call_Function<void>(0x4CA30);
+
 	if (gl_extensions && Q_strstr(gl_extensions, "GL_ARB_multitexture "))
 	{
 		Con_DPrintf("ARB Multitexture extensions found.\n");

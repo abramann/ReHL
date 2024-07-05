@@ -56,23 +56,37 @@ typedef struct clc_func_s
 	void(*pfnParse)(client_t *);
 } clc_func_t;
 
-extern edict_t *sv_player;
-extern sv_adjusted_positions_t truepositions[MAX_CLIENTS];
-extern qboolean g_balreadymoved;
-
-extern float s_LastFullUpdate[33];
-extern cvar_t sv_edgefriction;
-extern cvar_t sv_maxspeed;
-extern cvar_t sv_accelerate;
-extern cvar_t sv_footsteps;
-extern cvar_t sv_rollspeed;
-extern cvar_t sv_rollangle;
+#ifdef SHARED_GAME_DATA
+extern cvar_t& sv_unlag;
+extern cvar_t& sv_maxunlag;
+extern cvar_t& sv_unlagpush;
+extern cvar_t& sv_unlagsamples;
+extern cvar_t& mp_consistency;
+extern cvar_t& sv_voiceenable;
+extern cvar_t& sv_maxspeed;
+extern cvar_t& sv_edgefriction;
+extern cvar_t& sv_accelerate;
+extern cvar_t& sv_footsteps;
+#else
 extern cvar_t sv_unlag;
 extern cvar_t sv_maxunlag;
 extern cvar_t sv_unlagpush;
 extern cvar_t sv_unlagsamples;
 extern cvar_t mp_consistency;
 extern cvar_t sv_voiceenable;
+extern cvar_t sv_maxspeed;
+extern cvar_t sv_edgefriction;
+extern cvar_t sv_accelerate;
+extern cvar_t sv_footsteps;
+#endif
+
+extern edict_t *sv_player;
+extern sv_adjusted_positions_t truepositions[MAX_CLIENTS];
+extern qboolean g_balreadymoved;
+
+extern float s_LastFullUpdate[33];
+extern cvar_t sv_rollspeed;
+extern cvar_t sv_rollangle;
 
 extern qboolean nofind;
 

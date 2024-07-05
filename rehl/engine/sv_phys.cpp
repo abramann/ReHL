@@ -42,15 +42,44 @@
 //
 // solid_edge items only clip against bsp models.
 
-vec3_t *g_moved_from;
-edict_t **g_moved_edict;
 
-cvar_t sv_maxvelocity = { "sv_maxvelocity", "2000", 0, 0.0f, NULL };
+
+#ifdef SHARED_GAME_DATA
+cvar_t * sp_sv_gravity = ADDRESS_OF_DATA(cvar_t *, 0x9E707);
+cvar_t & sv_gravity = *sp_sv_gravity;
+
+cvar_t * sp_sv_friction = ADDRESS_OF_DATA(cvar_t *, 0x9E711);
+cvar_t & sv_friction = *sp_sv_friction;
+
+cvar_t * sp_sv_stopspeed = ADDRESS_OF_DATA(cvar_t *, 0x9E725);
+cvar_t & sv_stopspeed = *sp_sv_stopspeed; 
+
+cvar_t * sp_sv_maxspeed = ADDRESS_OF_DATA(cvar_t *, 0x9E72F);
+cvar_t & sv_maxspeed = *sp_sv_maxspeed;
+
+cvar_t * sp_sv_stepsize = ADDRESS_OF_DATA(cvar_t *, 0x9E750);
+cvar_t & sv_stepsize = *sp_sv_stepsize;
+
+cvar_t * sp_sv_bounce = ADDRESS_OF_DATA(cvar_t *, 0x9E75A);
+cvar_t & sv_bounce = *sp_sv_bounce;
+
+cvar_t * sp_sv_maxvelocity = ADDRESS_OF_DATA(cvar_t *, 0x9E7F3);
+cvar_t & sv_maxvelocity = *sp_sv_maxvelocity;
+
+#else
 cvar_t sv_gravity = { "sv_gravity", "800", FCVAR_SERVER, 0.0f, NULL };
-cvar_t sv_bounce = { "sv_bounce", "1", FCVAR_SERVER, 0.0f, NULL };
-cvar_t sv_stepsize = { "sv_stepsize", "18", FCVAR_SERVER, 0.0f, NULL };
 cvar_t sv_friction = { "sv_friction", "4", FCVAR_SERVER, 0.0f, NULL };
 cvar_t sv_stopspeed = { "sv_stopspeed", "100", FCVAR_SERVER, 0.0f, NULL };
+cvar_t sv_maxspeed = { "sv_maxspeed", "320", FCVAR_SERVER, 0.0f, NULL };
+cvar_t sv_stepsize = { "sv_stepsize", "18", FCVAR_SERVER, 0.0f, NULL };
+cvar_t sv_bounce = { "sv_bounce", "1", FCVAR_SERVER, 0.0f, NULL };
+cvar_t sv_maxvelocity = { "sv_maxvelocity", "2000", 0, 0.0f, NULL };
+
+#endif
+
+
+vec3_t *g_moved_from;
+edict_t **g_moved_edict;
 
 NOXREF void SV_CheckAllEnts()
 {

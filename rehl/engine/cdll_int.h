@@ -104,12 +104,6 @@ typedef struct module_s
 
 const int CLDLL_INTERFACE_VERSION = 7;
 
-#ifdef SHARED_GAME_DATA
-extern module_t& g_module;
-#else
-extern module_t	g_module;
-#endif
-
 extern void LoadSecurityModuleFromDisk(char * pszDllName);
 extern void LoadSecurityModuleFromMemory( unsigned char * pCode, int nSize );
 extern void CloseSecurityModule();
@@ -167,7 +161,6 @@ extern void ClientDLL_ChatInputPosition( int *x, int *y );
 
 //extern cldll_func_t cl_funcs;
 extern cl_enginefunc_t cl_engsrcProxies;
-extern cl_enginefunc_dst_t g_engdstAddrs;
 extern CSysModule* hClientDLL;
 
 // Module exports
@@ -468,7 +461,11 @@ extern void NullDst(void);
 extern char g_szfullClientName[512];
 extern cl_enginefunc_t cl_enginefuncs;
 #ifdef SHARED_GAME_DATA
+extern module_t& g_module;
 extern cldll_func_t& cl_funcs;
+extern cl_enginefunc_dst_t& g_engdstAddrs;
 #else
 extern cldll_func_t cl_funcs;
+extern module_t	g_module;
+extern cl_enginefunc_dst_t g_engdstAddrs; 
 #endif

@@ -80,7 +80,6 @@ CDummyApp theApp;
 
 void AllowFog(int allowed);
 
-CUtlVector<char> g_TempConsoleBuffer;
 
 static vgui::Panel* staticPanel = nullptr;
 #ifdef SHARED_GAME_DATA
@@ -89,9 +88,14 @@ IBaseUI*& staticUIFuncs = *sp_staticUIFuncs;
 
 EngineSurfaceWrap** sp_staticEngineSurface = ADDRESS_OF_DATA(EngineSurfaceWrap**, 0xC1341);
 static EngineSurfaceWrap*& staticEngineSurface = *sp_staticEngineSurface;
+
+CUtlVector<char> * sp_g_TempConsoleBuffer = ADDRESS_OF_DATA(CUtlVector<char> *, 0x7520);
+CUtlVector<char> & g_TempConsoleBuffer = *sp_g_TempConsoleBuffer; 
+
 #else
 static IBaseUI* staticUIFuncs = nullptr;
 static EngineSurfaceWrap* staticEngineSurface = nullptr;
+CUtlVector<char> g_TempConsoleBuffer;
 #endif
 extern bool scr_drawloading;
 

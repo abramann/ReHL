@@ -43,9 +43,49 @@ int& sv_decalnamecount = *sp_sv_decalnamecount;
 
 server_t * sp_g_psv = ADDRESS_OF_DATA(server_t *, 0x6946F);
 server_t & g_psv = *sp_g_psv;
+
+char(*sp_localmodels)[MAX_MODELS][5] = ADDRESS_OF_DATA(char(*)[MAX_MODELS][5], 0x9E971);
+char(&localmodels)[MAX_MODELS][5] = *sp_localmodels;
+
+redirect_t * sp_sv_redirected = ADDRESS_OF_DATA(redirect_t *, 0x97F77);
+redirect_t & sv_redirected = *sp_sv_redirected;
+
+char(*sp_outputbuf)[MAX_ROUTEABLE_PACKET] = ADDRESS_OF_DATA(char(*)[MAX_ROUTEABLE_PACKET], 0x97F87);
+char(&outputbuf)[MAX_ROUTEABLE_PACKET] = *sp_outputbuf;
+
+qboolean* sp_g_bCS_CZ_Flags_Initialized = ADDRESS_OF_DATA(qboolean*, 0x9B711);
+qboolean& g_bCS_CZ_Flags_Initialized = *sp_g_bCS_CZ_Flags_Initialized;
+
+qboolean * sp_g_bIsCStrike = ADDRESS_OF_DATA(qboolean *, 0x9B80E);
+qboolean & g_bIsCStrike = *sp_g_bIsCStrike;
+
+qboolean * sp_g_bIsCZero = ADDRESS_OF_DATA(qboolean *, 0x9B7DF);
+qboolean & g_bIsCZero = *sp_g_bIsCZero;
+
+qboolean * sp_g_bIsCZeroRitual = ADDRESS_OF_DATA(qboolean *, 0x9B793);
+qboolean & g_bIsCZeroRitual = *sp_g_bIsCZeroRitual;
+
+qboolean * sp_g_bIsTerrorStrike = ADDRESS_OF_DATA(qboolean *, 0x9B7B7);
+qboolean & g_bIsTerrorStrike = *sp_g_bIsTerrorStrike;
+
+qboolean * sp_g_bIsTFC = ADDRESS_OF_DATA(qboolean *, 0x9B7DB);
+qboolean & g_bIsTFC = *sp_g_bIsTFC;
+
+qboolean * sp_g_bIsHL1 = ADDRESS_OF_DATA(qboolean *, 0x9B7FF);
+qboolean & g_bIsHL1 = *sp_g_bIsHL1; 
 #else
 server_static_t g_psvs;
 server_t g_psv;
+char localmodels[MAX_MODELS][5];
+redirect_t sv_redirected;
+char outputbuf[MAX_ROUTEABLE_PACKET];
+qboolean g_bIsCSZero = false;
+qboolean g_bIsCStrike = false;
+qboolean g_bIsCZero = false;
+qboolean g_bIsCZeroRitual = false;
+qboolean g_bIsTerrorStrike = false;
+qboolean g_bIsTFC = false;
+qboolean g_bIsHL1 = false;
 #endif
 int sv_lastnum;
 
@@ -89,7 +129,6 @@ delta_t *g_peventdelta;
 int gPacketSuppressed;
 
 char localinfo[MAX_LOCALINFO];
-char localmodels[MAX_MODELS][5];
 
 ipfilter_t ipfilters[MAX_IPFILTERS];
 int numipfilters;
@@ -104,12 +143,9 @@ int numuserfilters;
 int sv_playermodel;
 
 //int player_datacounts[32];
-char outputbuf[MAX_ROUTEABLE_PACKET];
 
-redirect_t sv_redirected;
 netadr_t sv_redirectto;
 
-GameType_e g_eGameType = GT_Unitialized;
 
 char *gNullString = "";
 int SV_UPDATE_BACKUP = SINGLEPLAYER_BACKUP;
@@ -121,95 +157,280 @@ int giNextUserMsg = svc_startofusermessages;
 int giNextUserMsg = 64;
 #endif // REHLDS_FIXES
 
+#ifdef SHARED_GAME_DATA
+cvar_t * sp_sv_failuretime = ADDRESS_OF_DATA(cvar_t *, 0x9E5D1);
+cvar_t & sv_failuretime = *sp_sv_failuretime;
+
+cvar_t * sp_rcon_password = ADDRESS_OF_DATA(cvar_t *, 0x9E5E5);
+cvar_t & rcon_password = *sp_rcon_password;
+
+cvar_t * sp_sv_enableoldqueries = ADDRESS_OF_DATA(cvar_t *, 0x9E5EF);
+cvar_t & sv_enableoldqueries = *sp_sv_enableoldqueries;
+
+cvar_t * sp_sv_instancedbaseline = ADDRESS_OF_DATA(cvar_t *, 0x9E603);
+cvar_t & sv_instancedbaseline = *sp_sv_instancedbaseline;
+
+cvar_t *sp_sv_contact = ADDRESS_OF_DATA(cvar_t *, 0x9E60D);
+cvar_t &sv_contact = *sp_sv_contact;
+
+cvar_t * sp_sv_filterban = ADDRESS_OF_DATA(cvar_t *, 0x9E63F);
+cvar_t & sv_filterban = *sp_sv_filterban;
+
+cvar_t * sp_sv_maxupdaterate = ADDRESS_OF_DATA(cvar_t *, 0x9E649);
+cvar_t & sv_maxupdaterate = *sp_sv_maxupdaterate;
+
+cvar_t * sp_sv_minupdaterate = ADDRESS_OF_DATA(cvar_t *, 0x9E653);
+cvar_t & sv_minupdaterate = *sp_sv_minupdaterate;
+
+cvar_t * sp_sv_logrelay = ADDRESS_OF_DATA(cvar_t *, 0x9E660);
+cvar_t & sv_logrelay = *sp_sv_logrelay;
+
+cvar_t * sp_sv_lan = ADDRESS_OF_DATA(cvar_t *, 0x9E66A);
+cvar_t & sv_lan = *sp_sv_lan;
+
+cvar_t * sp_sv_lan_rate = ADDRESS_OF_DATA(cvar_t *, 0x9E699);
+cvar_t & sv_lan_rate = *sp_sv_lan_rate;
+
+cvar_t * sp_sv_proxies = ADDRESS_OF_DATA(cvar_t *, 0x9E6A3);
+cvar_t & sv_proxies = *sp_sv_proxies;
+
+cvar_t * sp_sv_outofdatetime = ADDRESS_OF_DATA(cvar_t *, 0x9E6AD);
+cvar_t & sv_outofdatetime = *sp_sv_outofdatetime;
+
+cvar_t * sp_sv_visiblemaxplayers = ADDRESS_OF_DATA(cvar_t *, 0x9E6B7);
+cvar_t & sv_visiblemaxplayers = *sp_sv_visiblemaxplayers;
+
+cvar_t * sp_sv_password = ADDRESS_OF_DATA(cvar_t *, 0x9E6C1);
+cvar_t & sv_password = *sp_sv_password;
+
+cvar_t * sp_sv_aim = ADDRESS_OF_DATA(cvar_t *, 0x9E6CB);
+cvar_t & sv_aim = *sp_sv_aim;
+
+cvar_t * sp_violence_hblood = ADDRESS_OF_DATA(cvar_t *, 0x9E6D5);
+cvar_t & violence_hblood = *sp_violence_hblood;
+
+cvar_t * sp_violence_ablood = ADDRESS_OF_DATA(cvar_t *, 0x9E6DF);
+cvar_t & violence_ablood = *sp_violence_ablood;
+
+cvar_t * sp_violence_hgibs = ADDRESS_OF_DATA(cvar_t *, 0x9E6E9);
+cvar_t & violence_hgibs = *sp_violence_hgibs; 
+
+cvar_t * sp_violence_agibs = ADDRESS_OF_DATA(cvar_t *, 0x9E6F3);
+cvar_t & violence_agibs = *sp_violence_agibs;
+
+cvar_t * sp_sv_newunit = ADDRESS_OF_DATA(cvar_t *, 0x9E6FD);
+cvar_t & sv_newunit = *sp_sv_newunit;
+
+cvar_t * sp_sv_airaccelerate = ADDRESS_OF_DATA(cvar_t *, 0x9E764);
+cvar_t & sv_airaccelerate = *sp_sv_airaccelerate;
+
+cvar_t * sp_sv_wateraccelerate = ADDRESS_OF_DATA(cvar_t *, 0x9E76E);
+cvar_t & sv_wateraccelerate = *sp_sv_wateraccelerate; 
+
+cvar_t * sp_sv_waterfriction = ADDRESS_OF_DATA(cvar_t *, 0x9E778);
+cvar_t & sv_waterfriction = *sp_sv_waterfriction;
+
+cvar_t * sp_sv_skycolor_r = ADDRESS_OF_DATA(cvar_t *, 0x9E782);
+cvar_t & sv_skycolor_r = *sp_sv_skycolor_r; 
+
+cvar_t * sp_sv_skycolor_g = ADDRESS_OF_DATA(cvar_t *, 0x9E78C);
+cvar_t & sv_skycolor_g = *sp_sv_skycolor_g; 
+
+cvar_t * sp_sv_skycolor_b = ADDRESS_OF_DATA(cvar_t *, 0x9E796);
+cvar_t & sv_skycolor_b = *sp_sv_skycolor_b; 
+
+cvar_t * sp_sv_skyvec_x = ADDRESS_OF_DATA(cvar_t *, 0x9E7A0);
+cvar_t & sv_skyvec_x = *sp_sv_skyvec_x; 
+
+cvar_t * sp_sv_skyvec_y = ADDRESS_OF_DATA(cvar_t *, 0x9E7AA);
+cvar_t & sv_skyvec_y = *sp_sv_skyvec_y; 
+
+cvar_t * sp_sv_skyvec_z = ADDRESS_OF_DATA(cvar_t *, 0x9E7B4);
+cvar_t & sv_skyvec_z = *sp_sv_skyvec_z;
+
+cvar_t * sp_sv_timeout = ADDRESS_OF_DATA(cvar_t *, 0x9E7BE);
+cvar_t & sv_timeout = *sp_sv_timeout; 
+
+cvar_t * sp_sv_clienttrace = ADDRESS_OF_DATA(cvar_t *, 0x9E7C8);
+cvar_t & sv_clienttrace = *sp_sv_clienttrace;
+
+cvar_t * sp_sv_zmax = ADDRESS_OF_DATA(cvar_t *, 0x9E7D2);
+cvar_t & sv_zmax = *sp_sv_zmax; 
+
+cvar_t * sp_sv_wateramp = ADDRESS_OF_DATA(cvar_t *, 0x9E7DF);
+cvar_t & sv_wateramp = *sp_sv_wateramp;
+
+cvar_t * sp_sv_skyname = ADDRESS_OF_DATA(cvar_t *, 0x9E7E9);
+cvar_t & sv_skyname = *sp_sv_skyname;
+
+cvar_t * sp_sv_cheats = ADDRESS_OF_DATA(cvar_t *, 0x9E7FD);
+cvar_t & sv_cheats = *sp_sv_cheats;
+
+cvar_t * sp_sv_spectatormaxspeed = ADDRESS_OF_DATA(cvar_t *, 0x9E83D);
+cvar_t & sv_spectatormaxspeed = *sp_sv_spectatormaxspeed;
+
+cvar_t * sp_sv_allow_download = ADDRESS_OF_DATA(cvar_t *, 0x9E847);
+cvar_t & sv_allow_download = *sp_sv_allow_download;
+
+cvar_t * sp_sv_allow_upload = ADDRESS_OF_DATA(cvar_t *, 0x9E851);
+cvar_t & sv_allow_upload = *sp_sv_allow_upload;
+
+cvar_t * sp_sv_max_upload = ADDRESS_OF_DATA(cvar_t *, 0x9E85B);
+cvar_t & sv_max_upload = *sp_sv_max_upload;
+
+cvar_t * sp_sv_send_logos = ADDRESS_OF_DATA(cvar_t *, 0x9E865);
+cvar_t & sv_send_logos = *sp_sv_send_logos;
+
+cvar_t * sp_sv_send_resources = ADDRESS_OF_DATA(cvar_t *, 0x9E86F);
+cvar_t & sv_send_resources = *sp_sv_send_resources; 
+
+cvar_t * sp_sv_logbans = ADDRESS_OF_DATA(cvar_t *, 0x9E879);
+cvar_t & sv_logbans = *sp_sv_logbans;
+
+cvar_t * sp_hpk_maxsize = ADDRESS_OF_DATA(cvar_t *, 0x9E883);
+cvar_t & hpk_maxsize = *sp_hpk_maxsize; 
+
+cvar_t * sp_mapcyclefile = ADDRESS_OF_DATA(cvar_t *, 0x9E88D);
+cvar_t & mapcyclefile = *sp_mapcyclefile;
+
+cvar_t * sp_motdfile = ADDRESS_OF_DATA(cvar_t *, 0x9E8A8);
+cvar_t & motdfile = *sp_motdfile;
+
+cvar_t * sp_servercfgfile = ADDRESS_OF_DATA(cvar_t *, 0x9E8B2);
+cvar_t & servercfgfile = *sp_servercfgfile;
+
+cvar_t * sp_mapchangecfgfile = ADDRESS_OF_DATA(cvar_t *, 0x9E8BC);
+cvar_t & mapchangecfgfile = *sp_mapchangecfgfile;
+
+cvar_t * sp_lservercfgfile = ADDRESS_OF_DATA(cvar_t *, 0x9E8C6);
+cvar_t & lservercfgfile = *sp_lservercfgfile;
+
+cvar_t * sp_logsdir = ADDRESS_OF_DATA(cvar_t *, 0x9E8D0);
+cvar_t & logsdir = *sp_logsdir;
+
+cvar_t * sp_bannedcfgfile = ADDRESS_OF_DATA(cvar_t *, 0x9E8DD);
+cvar_t & bannedcfgfile = *sp_bannedcfgfile;
+
+cvar_t * sp_sv_rcon_minfailures = ADDRESS_OF_DATA(cvar_t *, 0x9E8E7);
+cvar_t & sv_rcon_minfailures = *sp_sv_rcon_minfailures;
+
+cvar_t * sp_sv_rcon_maxfailures = ADDRESS_OF_DATA(cvar_t *, 0x9E8F1);
+cvar_t & sv_rcon_maxfailures = *sp_sv_rcon_maxfailures;
+
+cvar_t * sp_sv_rcon_minfailuretime = ADDRESS_OF_DATA(cvar_t *, 0x9E8FB);
+cvar_t & sv_rcon_minfailuretime = *sp_sv_rcon_minfailuretime;
+
+cvar_t * sp_sv_rcon_banpenalty = ADDRESS_OF_DATA(cvar_t *, 0x9E905);
+cvar_t & sv_rcon_banpenalty = *sp_sv_rcon_banpenalty;
+
+cvar_t * sp_sv_minrate = ADDRESS_OF_DATA(cvar_t *, 0x9E90F);
+cvar_t & sv_minrate = *sp_sv_minrate;
+
+cvar_t * sp_sv_maxrate = ADDRESS_OF_DATA(cvar_t *, 0x9E919);
+cvar_t & sv_maxrate = *sp_sv_maxrate;
+
+
+cvar_t * sp_sv_downloadurl = ADDRESS_OF_DATA(cvar_t *, 0x9E94B);
+cvar_t & sv_downloadurl = *sp_sv_downloadurl;
+
+cvar_t * sp_sv_version = ADDRESS_OF_DATA(cvar_t *, 0x9E955);
+cvar_t & sv_version = *sp_sv_version;
+
+cvar_t * sp_sv_allow_dlfile = ADDRESS_OF_DATA(cvar_t *, 0x9E95F);
+cvar_t & sv_allow_dlfile = *sp_sv_allow_dlfile;
+
+cvarhook_t * sp_sv_cheats_hook = ADDRESS_OF_DATA(cvarhook_t *, 0x9E80C);
+cvarhook_t & sv_cheats_hook = *sp_sv_cheats_hook; 
+
+cvarhook_t * sp_mapcyclefile_hook = ADDRESS_OF_DATA(cvarhook_t *, 0x9E89D);
+cvarhook_t & mapcyclefile_hook = *sp_mapcyclefile_hook;
+#else
+cvar_t sv_failuretime = { "sv_failuretime", "0.5", 0, 0.0f, NULL };
+cvar_t rcon_password = { "rcon_password", "", 0, 0.0f, NULL };
+cvar_t sv_enableoldqueries = { "sv_enableoldqueries", "0", 0, 0.0f, NULL };
+cvar_t sv_instancedbaseline = { "sv_instancedbaseline", "1", 0, 0.0f, NULL };
+cvar_t sv_contact = { "sv_contact", "", FCVAR_SERVER, 0.0f, NULL };
+cvar_t sv_filterban = { "sv_filterban", "1", 0, 0.0f, NULL };
+cvar_t sv_maxupdaterate = { "sv_maxupdaterate", "30.0", 0, 0.0f, NULL };
+cvar_t sv_minupdaterate = { "sv_minupdaterate", "10.0", 0, 0.0f, NULL };
+cvar_t sv_logrelay = { "sv_logrelay", "0", 0, 0.0f, NULL };
 cvar_t sv_lan = { "sv_lan", "0", 0, 0.0f, NULL };
 cvar_t sv_lan_rate = { "sv_lan_rate", "20000.0", 0, 0.0f, NULL };
+cvar_t sv_proxies = { "sv_proxies", "1", FCVAR_SERVER, 0.0f, NULL };
+cvar_t sv_outofdatetime = { "sv_outofdatetime", "1800", 0, 0.0f, NULL };
+cvar_t sv_visiblemaxplayers = { "sv_visiblemaxplayers", "-1", 0, 0.0f, NULL };
+cvar_t sv_password = { "sv_password", "", FCVAR_SERVER | FCVAR_PROTECTED, 0.0f, NULL };
 cvar_t sv_aim = { "sv_aim", "1", FCVAR_SERVER | FCVAR_ARCHIVE , 0.0f, NULL };
-cvar_t sv_allow_autoaim = { "sv_allow_autoaim", "1", FCVAR_SERVER | FCVAR_ARCHIVE, 0.0f, NULL };
-
+cvar_t violence_hblood = { "violence_hblood", "1", 0, 0.0f, NULL };
+cvar_t violence_ablood = { "violence_ablood", "1", 0, 0.0f, NULL };
+cvar_t violence_hgibs = { "violence_hgibs", "1", 0, 0.0f, NULL };
+cvar_t violence_agibs = { "violence_agibs", "1", 0, 0.0f, NULL };
+cvar_t sv_newunit = { "sv_newunit", "0", 0, 0.0f, NULL };
+cvar_t sv_airaccelerate = { "sv_airaccelerate", "10", FCVAR_SERVER, 0.0f, NULL };
+cvar_t sv_wateraccelerate = { "sv_wateraccelerate", "10", FCVAR_SERVER, 0.0f, NULL };
+cvar_t sv_waterfriction = { "sv_waterfriction", "1", FCVAR_SERVER, 0.0f, NULL };
 cvar_t sv_skycolor_r = { "sv_skycolor_r", "0", 0, 0.0f, NULL };
 cvar_t sv_skycolor_g = { "sv_skycolor_g", "0", 0, 0.0f, NULL };
 cvar_t sv_skycolor_b = { "sv_skycolor_b", "0", 0, 0.0f, NULL };
 cvar_t sv_skyvec_x = { "sv_skyvec_x", "0", 0, 0.0f, NULL };
 cvar_t sv_skyvec_y = { "sv_skyvec_y", "0", 0, 0.0f, NULL };
 cvar_t sv_skyvec_z = { "sv_skyvec_z", "0", 0, 0.0f, NULL };
-
-cvar_t sv_spectatormaxspeed = { "sv_spectatormaxspeed", "500", 0, 0.0f, NULL };
-cvar_t sv_airaccelerate = { "sv_airaccelerate", "10", FCVAR_SERVER, 0.0f, NULL };
-cvar_t sv_wateraccelerate = { "sv_wateraccelerate", "10", FCVAR_SERVER, 0.0f, NULL };
-cvar_t sv_waterfriction = { "sv_waterfriction", "1", FCVAR_SERVER, 0.0f, NULL };
+cvar_t sv_timeout = { "sv_timeout", "60", 0, 0.0f, NULL };
+cvar_t sv_clienttrace = { "sv_clienttrace", "1", FCVAR_SERVER, 0.0f, NULL };
 cvar_t sv_zmax = { "sv_zmax", "4096", FCVAR_SPONLY, 0.0f, NULL };
 cvar_t sv_wateramp = { "sv_wateramp", "0", 0, 0.0f, NULL };
+cvar_t sv_skyname = { "sv_skyname", "desert", 0, 0.0f, NULL };
+cvar_t sv_cheats = { "sv_cheats", "0", FCVAR_SERVER, 0.0f, NULL };
+cvar_t sv_spectatormaxspeed = { "sv_spectatormaxspeed", "500", 0, 0.0f, NULL };
+cvar_t sv_allow_download = { "sv_allowdownload", "1", 0, 0.0f, NULL };
+cvar_t sv_allow_upload = { "sv_allowupload", "1", FCVAR_SERVER, 0.0f, NULL };
+cvar_t sv_max_upload = { "sv_uploadmax", "0.5", FCVAR_SERVER, 0.0f, NULL };
+cvar_t sv_send_logos = { "sv_send_logos", "1", 0, 0.0f, NULL };
+cvar_t sv_send_resources = { "sv_send_resources", "1", 0, 0.0f, NULL };
+cvar_t sv_logbans = { "sv_logbans", "0", 0, 0.0f, NULL };
+cvar_t hpk_maxsize = { "hpk_maxsize", "4", FCVAR_ARCHIVE, 0.0f, NULL };
+cvar_t mapcyclefile = { "mapcyclefile", "mapcycle.txt", 0, 0.0f, NULL };
+cvar_t motdfile = { "motdfile", "motd.txt", 0, 0.0f, NULL };
+cvar_t servercfgfile = { "servercfgfile", "server.cfg", 0, 0.0f, NULL };
+cvar_t mapchangecfgfile = { "mapchangecfgfile", "", 0, 0.0f, NULL };
+cvar_t lservercfgfile = { "lservercfgfile", "listenserver.cfg", 0, 0.0f, NULL };
+cvar_t logsdir = { "logsdir", "logs", 0, 0.0f, NULL };
+cvar_t sv_rcon_minfailures = { "sv_rcon_minfailures", "5", 0, 0.0f, NULL };
+cvar_t sv_rcon_maxfailures = { "sv_rcon_maxfailures", "10", 0, 0.0f, NULL };
+cvar_t sv_rcon_minfailuretime = { "sv_rcon_minfailuretime", "30", 0, 0.0f, NULL };
+cvar_t sv_rcon_banpenalty = { "sv_rcon_banpenalty", "0", 0, 0.0f, NULL };
+cvar_t sv_minrate = { "sv_minrate", "0", FCVAR_SERVER, 0.0f, NULL };
+cvar_t sv_maxrate = { "sv_maxrate", "0", FCVAR_SERVER, 0.0f, NULL };
+cvar_t sv_downloadurl = { "sv_downloadurl", "", FCVAR_PROTECTED, 0.0f, NULL };
+cvar_t sv_allow_dlfile = { "sv_allow_dlfile", "1", 0, 0.0f, NULL };
+
+#ifdef REHLDS_FIXES
+cvar_t sv_version = { "sv_version", "", FCVAR_SERVER, 0.0f, NULL };
+#else
+cvar_t sv_version = { "sv_version", "", 0, 0.0f, NULL };
+#endif
+
+cvarhook_t sv_cheats_hook = { sv_cheats_hook_callback, NULL, NULL };
+cvarhook_t mapcyclefile_hook = { mapcyclefile_hook_callback, NULL, NULL };
+#endif
+
+cvar_t sv_allow_autoaim = { "sv_allow_autoaim", "1", FCVAR_SERVER | FCVAR_ARCHIVE, 0.0f, NULL };
+
 
 
 void sv_cheats_hook_callback(cvar_t *cvar);
 void mapcyclefile_hook_callback(cvar_t *cvar);
 
-cvarhook_t sv_cheats_hook = { sv_cheats_hook_callback, NULL, NULL };
-cvarhook_t mapcyclefile_hook = { mapcyclefile_hook_callback, NULL, NULL };
 
-cvar_t sv_skyname = { "sv_skyname", "desert", 0, 0.0f, NULL };
-cvar_t mapcyclefile = { "mapcyclefile", "mapcycle.txt", 0, 0.0f, NULL };
-cvar_t motdfile = { "motdfile", "motd.txt", 0, 0.0f, NULL };
-cvar_t servercfgfile = { "servercfgfile", "server.cfg", 0, 0.0f, NULL };
-cvar_t lservercfgfile = { "lservercfgfile", "listenserver.cfg", 0, 0.0f, NULL };
-cvar_t logsdir = { "logsdir", "logs", 0, 0.0f, NULL };
-cvar_t bannedcfgfile = { "bannedcfgfile", "banned.cfg", 0, 0.0f, NULL };
 
 int g_userid = 1;
 
-cvar_t rcon_password = { "rcon_password", "", 0, 0.0f, NULL };
-cvar_t sv_enableoldqueries = { "sv_enableoldqueries", "0", 0, 0.0f, NULL };
-
-cvar_t sv_instancedbaseline = { "sv_instancedbaseline", "1", 0, 0.0f, NULL };
-cvar_t sv_contact = { "sv_contact", "", FCVAR_SERVER, 0.0f, NULL };
-cvar_t sv_maxupdaterate = { "sv_maxupdaterate", "30.0", 0, 0.0f, NULL };
-cvar_t sv_minupdaterate = { "sv_minupdaterate", "10.0", 0, 0.0f, NULL };
-cvar_t sv_filterban = { "sv_filterban", "1", 0, 0.0f, NULL };
-cvar_t sv_minrate = { "sv_minrate", "0", FCVAR_SERVER, 0.0f, NULL };
-cvar_t sv_maxrate = { "sv_maxrate", "0", FCVAR_SERVER, 0.0f, NULL };
-cvar_t sv_logrelay = { "sv_logrelay", "0", 0, 0.0f, NULL };
-
-cvar_t violence_hblood = { "violence_hblood", "1", 0, 0.0f, NULL };
-cvar_t violence_ablood = { "violence_ablood", "1", 0, 0.0f, NULL };
-cvar_t violence_hgibs = { "violence_hgibs", "1", 0, 0.0f, NULL };
-cvar_t violence_agibs = { "violence_agibs", "1", 0, 0.0f, NULL };
-cvar_t sv_newunit = { "sv_newunit", "0", 0, 0.0f, NULL };
-
-cvar_t sv_clienttrace = { "sv_clienttrace", "1", FCVAR_SERVER, 0.0f, NULL };
-cvar_t sv_timeout = { "sv_timeout", "60", 0, 0.0f, NULL };
-cvar_t sv_failuretime = { "sv_failuretime", "0.5", 0, 0.0f, NULL };
-cvar_t sv_cheats = { "sv_cheats", "0", FCVAR_SERVER, 0.0f, NULL };
-cvar_t sv_password = { "sv_password", "", FCVAR_SERVER | FCVAR_PROTECTED, 0.0f, NULL };
-cvar_t sv_proxies = { "sv_proxies", "1", FCVAR_SERVER, 0.0f, NULL };
-cvar_t sv_outofdatetime = { "sv_outofdatetime", "1800", 0, 0.0f, NULL };
-cvar_t mapchangecfgfile = { "mapchangecfgfile", "", 0, 0.0f, NULL };
-
-cvar_t sv_allow_download = { "sv_allowdownload", "1", 0, 0.0f, NULL };
-cvar_t sv_send_logos = { "sv_send_logos", "1", 0, 0.0f, NULL };
-cvar_t sv_send_resources = { "sv_send_resources", "1", 0, 0.0f, NULL };
 cvar_t sv_log_singleplayer = { "sv_log_singleplayer", "0", 0, 0.0f, NULL };
 cvar_t sv_logsecret = { "sv_logsecret", "0", 0, 0.0f, NULL };
 cvar_t sv_log_onefile = { "sv_log_onefile", "0", 0, 0.0f, NULL };
-cvar_t sv_logbans = { "sv_logbans", "0", 0, 0.0f, NULL };
-cvar_t sv_allow_upload = { "sv_allowupload", "1", FCVAR_SERVER, 0.0f, NULL };
-cvar_t sv_max_upload = { "sv_uploadmax", "0.5", FCVAR_SERVER, 0.0f, NULL };
-cvar_t hpk_maxsize = { "hpk_maxsize", "4", FCVAR_ARCHIVE, 0.0f, NULL };
-cvar_t sv_visiblemaxplayers = { "sv_visiblemaxplayers", "-1", 0, 0.0f, NULL };
-
-cvar_t sv_downloadurl = { "sv_downloadurl", "", FCVAR_PROTECTED, 0.0f, NULL };
-cvar_t sv_allow_dlfile = { "sv_allow_dlfile", "1", 0, 0.0f, NULL };
-#ifdef REHLDS_FIXES
-cvar_t sv_version = { "sv_version", "", FCVAR_SERVER, 0.0f, NULL };
-#else
-cvar_t sv_version = {"sv_version", "", 0, 0.0f, NULL};
-#endif
 
 cvar_t sv_tags = { "sv_tags", "", 0, 0.0f, NULL };
 
-cvar_t sv_rcon_minfailures = { "sv_rcon_minfailures", "5", 0, 0.0f, NULL };
-cvar_t sv_rcon_maxfailures = { "sv_rcon_maxfailures", "10", 0, 0.0f, NULL };
-cvar_t sv_rcon_minfailuretime = { "sv_rcon_minfailuretime", "30", 0, 0.0f, NULL };
-cvar_t sv_rcon_banpenalty = { "sv_rcon_banpenalty", "0", 0, 0.0f, NULL };
 
 cvar_t scr_downloading = { "scr_downloading", "0", 0, 0.0f, NULL };
 
@@ -365,6 +586,7 @@ void SV_ReallocateDynamicData(void)
 
 void SV_AllocClientFrames(void)
 {
+	return Call_Function<void>(0x93390);
 	client_t *cl = g_psvs.clients;
 
 	for (int i = 0; i < g_psvs.maxclientslimit; i++, cl++)
@@ -466,6 +688,7 @@ void SV_ClearFrames(client_frame_t **frames)
 
 void SV_Serverinfo_f(void)
 {
+	NOT_TESTED;
 	if (Cmd_Argc() == 1)
 	{
 		Con_Printf("Server info settings:\n");
@@ -502,6 +725,7 @@ void SV_Serverinfo_f(void)
 
 void SV_Localinfo_f(void)
 {
+	NOT_TESTED;
 	if (Cmd_Argc() == 1)
 	{
 		Con_Printf("Local info settings:\n");
@@ -524,6 +748,7 @@ void SV_Localinfo_f(void)
 
 void SV_User_f(void)
 {
+	NOT_TESTED;
 	if (!g_psv.active)
 	{
 		Con_Printf("Can't 'user', not running a server\n");
@@ -558,6 +783,7 @@ void SV_User_f(void)
 
 void SV_Users_f(void)
 {
+	NOT_TESTED;
 	if (!g_psv.active)
 	{
 		Con_Printf("Can't 'users', not running a server\n");
@@ -1505,6 +1731,7 @@ void EXT_FUNC SV_SendUserReg(sizebuf_t *msg)
 
 void SV_New_f(void)
 {
+	NOT_TESTED;
 	int i;
 	client_t *client;
 	unsigned char data[NET_MAX_PAYLOAD];
@@ -1598,6 +1825,7 @@ void SV_New_f(void)
 
 void SV_SendRes_f(void)
 {
+	NOT_TESTED;
 	unsigned char data[NET_MAX_PAYLOAD];
 	sizebuf_t msg;
 
@@ -1622,6 +1850,7 @@ void SV_SendRes_f(void)
 
 void SV_Spawn_f(void)
 {
+	NOT_TESTED;
 	g_RehldsHookchains.m_SV_Spawn_f.callChain(SV_Spawn_f_internal);
 }
 
@@ -3280,11 +3509,18 @@ typedef struct rcon_failure_s
 	float failure_times[MAX_RCON_FAILURES];
 } rcon_failure_t;
 
-rcon_failure_t g_rgRconFailures[MAX_RCON_FAILURES_STORAGE];
+#ifdef SHARED_GAME_DATA
+rcon_failure_t(*sp_g_rgRconFailures)[MAX_RCON_FAILURES_STORAGE] = ADDRESS_OF_DATA(rcon_failure_t(*)[MAX_RCON_FAILURES_STORAGE], 0x0);
+rcon_failure_t(&g_rgRconFailures)[MAX_RCON_FAILURES_STORAGE] = *sp_g_rgRconFailures;
+#else
+rcon_failure_t g_rgRconFailures; [MAX_RCON_FAILURES_STORAGE];
+#endif
+
 
 void SV_ResetRcon_f(void)
 {
-	Q_memset(g_rgRconFailures, 0, sizeof(g_rgRconFailures));
+	NOT_TESTED;
+	Q_memset(g_rgRconFailures, 0, sizeof(rcon_failure_t) * MAX_RCON_FAILURES_STORAGE);
 }
 
 const int MAX_RCON_USERS = 128;
@@ -5960,32 +6196,33 @@ NOXREF void SV_ReconnectAllClients(void)
 
 void SetCStrikeFlags(void)
 {
-	if (g_eGameType == GT_Unitialized)
+	if (!g_bCS_CZ_Flags_Initialized)
 	{
-		if (!Q_stricmp(com_gamedir, "valve"))
+		if (!_strcmpi(com_gamedir, "cstrike") || !_strcmpi(com_gamedir, "cstrike_beta"))
 		{
-			g_eGameType = GT_HL1;
+			g_bIsCStrike = 1;
 		}
-		else if (!Q_stricmp(com_gamedir, "cstrike") || !Q_stricmp(com_gamedir, "cstrike_beta"))
+		else if (!_strcmpi(com_gamedir, "czero"))
 		{
-			g_eGameType = GT_CStrike;
+			g_bIsCZero = 1;
 		}
-		else if (!Q_stricmp(com_gamedir, "czero"))
+		else if (!_strcmpi(com_gamedir, "czeror"))
 		{
-			g_eGameType = GT_CZero;
+			g_bIsCZeroRitual = 1;
 		}
-		else if (!Q_stricmp(com_gamedir, "czeror"))
+		else if (!_strcmpi(com_gamedir, "terror"))
 		{
-			g_eGameType = GT_CZeroRitual;
+			g_bIsTerrorStrike = 1;
 		}
-		else if (!Q_stricmp(com_gamedir, "terror"))
+		else if (!_strcmpi(com_gamedir, "tfc"))
 		{
-			g_eGameType = GT_TerrorStrike;
+			g_bIsTFC = 1;
 		}
-		else if (!Q_stricmp(com_gamedir, "tfc"))
+		else if (!_strcmpi(com_gamedir, "valve"))
 		{
-			g_eGameType = GT_TFC;
+			g_bIsHL1 = 1;
 		}
+		g_bCS_CZ_Flags_Initialized = true;
 	}
 }
 
@@ -6812,6 +7049,8 @@ void mapcyclefile_hook_callback(cvar_t *cvar)
 
 void SV_BanId_f(void)
 {
+	NOT_TESTED;
+
 	char szreason[256];
 	char idstring[64];
 
@@ -7193,6 +7432,8 @@ void Host_Kick_f(void)
 
 void SV_RemoveId_f(void)
 {
+	NOT_TESTED;
+
 	if (Cmd_Argc() != 2 && Cmd_Argc() != 6)
 	{
 		Con_Printf("Usage:  removeid <uniqueid | #slotnumber>\n");
@@ -7274,6 +7515,7 @@ void SV_RemoveId_f(void)
 
 void SV_WriteId_f(void)
 {
+	NOT_TESTED;
 	if (bannedcfgfile.string[0] == '/' ||
 		Q_strstr(bannedcfgfile.string, ":") ||
 		Q_strstr(bannedcfgfile.string, "..") ||
@@ -7316,6 +7558,7 @@ void SV_WriteId_f(void)
 
 void SV_ListId_f(void)
 {
+	NOT_TESTED;
 	if (numuserfilters <= 0)
 	{
 		Con_Printf("UserID filter list: empty\n");
@@ -7338,6 +7581,7 @@ void SV_ListId_f(void)
 
 void SV_AddIP_f(void)
 {
+	NOT_TESTED;
 	if (Cmd_Argc() != 3)
 	{
 #ifdef REHLDS_FIXES
@@ -7438,6 +7682,8 @@ void SV_AddIP_f(void)
 
 void SV_RemoveIP_f(void)
 {
+	NOT_TESTED;
+
 #ifdef REHLDS_FIXES
 	int argCount = Cmd_Argc();
 	if (argCount != 2 && argCount != 3)
@@ -7509,6 +7755,8 @@ void SV_RemoveIP_f(void)
 
 void SV_ListIP_f(void)
 {
+	NOT_TESTED;
+
 	if (numipfilters <= 0)
 	{
 		Con_Printf("IP filter list: empty\n");
@@ -7563,6 +7811,7 @@ void SV_ListIP_f(void)
 
 void SV_WriteIP_f(void)
 {
+	NOT_TESTED;
 	char name[MAX_PATH];
 #ifdef REHLDS_FIXES
 	Q_snprintf(name, MAX_PATH, "%s", listipcfgfile.string);
@@ -7803,6 +8052,7 @@ qboolean IsSafeFileToDownload(const char *filename)
 
 void SV_BeginFileDownload_f(void)
 {
+	NOT_TESTED;
 	const char *name;
 	char szModuleC[13] = "!ModuleC.dll";
 
@@ -8084,6 +8334,7 @@ void EXT_FUNC SV_Frame_Internal()
 
 void SV_Drop_f(void)
 {
+	NOT_TESTED;
 	if (cmd_source == src_command)
 	{
 		Cmd_ForwardToServer();
@@ -8116,6 +8367,7 @@ void SV_RegisterDelta(char *name, char *loadfile)
 
 void SV_InitDeltas(void)
 {
+	return Call_Function<void>(0x9E2C0);
 	Con_DPrintf("Initializing deltas\n");
 	SV_RegisterDelta("clientdata_t", "delta.lst");
 	SV_RegisterDelta("entity_state_t", "delta.lst");
@@ -8317,7 +8569,6 @@ void SV_Init(void)
 	Cvar_RegisterVariable(&sv_use_entity_file);
 	Cvar_RegisterVariable(&sv_usercmd_custom_random_seed);
 #endif
-
 	for (int i = 0; i < MAX_MODELS; i++)
 	{
 		Q_snprintf(localmodels[i], sizeof(localmodels[i]), "*%i", i);

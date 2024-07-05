@@ -35,11 +35,25 @@
 
 extern cvar_t pm_showclip;
 
+#ifdef SHARED_GAME_DATA
+//extern vec3_t*& player_mins;
+//extern vec3_t*& player_maxs;
+
+extern vec_t(&player_mins)[4][3];
+extern vec_t(&player_maxs)[4][3];
+
+extern movevars_t& movevars;
+
+extern playermove_t*& pmove;
+#else
 extern vec3_t player_mins[MAX_MAP_HULLS];
 extern vec3_t player_maxs[MAX_MAP_HULLS];
 
+extern movevars_t& movevars;
 extern playermove_t *pmove;
-extern movevars_t movevars;
+
+#endif
+
 
 qboolean PM_AddToTouched(pmtrace_t tr, vec_t *impactvelocity);
 void PM_StuckTouch(int hitent, pmtrace_t *ptraceresult);

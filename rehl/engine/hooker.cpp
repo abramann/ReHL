@@ -3,8 +3,12 @@
 #include <Windows.h>
 #include "sys_dll2.h"
 
+extern playermove_t ** sp_pmove;
+
 void SetupHooks()
 {
+	DirectHook(0x70750, ran1);
+
 	// One time call functions hook removed after implement caller function.
 	
 	DirectHook(0x27570, Cbuf_Execute); // TODO Cbuf_ExecuteCommandsFromBuffer
@@ -34,9 +38,11 @@ void SetupHooks()
 	DirectHook(0x2FB20, Decal_MergeInDecals);
 	DirectHook(0x2F360, Draw_CacheWadInitFromFile);
 	DirectHook(0x28A90, Mod_Init);
-	DirectHook(0x69230, NET_Init);
+	//DirectHook(0x69230, NET_Init);	// Correct wrong implement
 	DirectHook(0x325E0, DELTA_Init);
-	//DirectHook(0x9E450, SV_Init); // Share variables
+#ifdef UNSRESOLVED_ISSUE
+	DirectHook(0x9E450, SV_Init); // Implemented but couldn't resolve the CRT issue with _snprintf, someone
+#endif
 	DirectHook(0xB1230, SystemWrapper_Init);
 	DirectHook(0x8EF0, build_number);
 	DirectHook(0x57B10, Host_Version);
@@ -45,9 +51,18 @@ void SetupHooks()
 	DirectHook(0x51280, HPAK_FlushHostQueue);
 	DirectHook(0x512E0, HPAK_AddLump);	// Check implement
 	DirectHook(0x4CFF0, GL_Init);	// Game crashed one time during testing after added this function
+	DirectHook(0x4CBC0, GL_Config);
 	DirectHook(0x3C100, GL_SelectTexture);
 
-	Host_Init;
+	//DirectHook(0x6B2F0, PM_Init); // Under implement
+	DirectHook(0x5DFD0, Info_ValueForKey);	// Check implement
+	DirectHook(0x134A0, CL_Particle);
+	DirectHook(0x58190, SV_GetPlayerHulls);
+	DirectHook(0x6B810, PM_HullPointContents);
+	DirectHook(0x810C0, R_StudioHull);
+	DirectHook(0x40030, Mod_LoadModel);
+	//DirectHook(0x2D1D0, CRC32_ProcessBuffer);
+	DirectHook(0x29A70, COM_ExplainDisconnection);
 }
 
 uintptr_t AddBase(uintptr_t offset)
@@ -68,7 +83,7 @@ uintptr_t AddBase(uintptr_t offset)
 	if (!thePtr)
 		MessageBoxA(NULL, "Wrong address calculate", "ReHL", MB_OK);
 
-	return (uintptr_t)offset + (uintptr_t)theBase;
+	return thePtr;
 }
 
 template<typename T>

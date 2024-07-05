@@ -29,12 +29,27 @@
 #include "precompiled.h"
 
 int g_contentsresult;
-hull_t box_hull_0;
-box_clipnodes_t box_clipnodes_0;
-box_planes_t box_planes_0;
+
+#ifdef SHARED_GAME_DATA
+hull_t * sp_box_hull_0 = ADDRESS_OF_DATA(hull_t *, 0x6B7FD);
+hull_t & box_hull_0 = *sp_box_hull_0;
+
+dclipnode_t * box_clipnodes_0 = ADDRESS_OF_DATA(dclipnode_t *, 0x6B765);
+
+mplane_t * box_planes_0 = ADDRESS_OF_DATA(mplane_t *, 0x6B7B3);
+#else
+hull_t  box_hull_0;
+dclipnode_t box_clipnodes_0[6];
+mplane_t box_planes_0[6];
+#endif
 
 float EXT_FUNC PM_TraceModel(physent_t *pEnt, vec_t *start, vec_t *end, trace_t *trace)
 {
+	NOT_TESTED;
+
+	return Call_Function<float, physent_t *, vec_t *, vec_t *, trace_t*>(0x6B650, pEnt, start, end, trace);
+	NOT_IMPLEMENTED;
+
 	hull_t *pHull;
 	int saveHull;
 	vec3_t start_l;
@@ -58,6 +73,8 @@ float EXT_FUNC PM_TraceModel(physent_t *pEnt, vec_t *start, vec_t *end, trace_t 
 
 void EXT_FUNC PM_GetModelBounds(struct model_s *mod, vec_t *mins, vec_t *maxs)
 {
+	NOT_TESTED;
+
 	mins[0] = mod->mins[0];
 	mins[1] = mod->mins[1];
 	mins[2] = mod->mins[2];
@@ -69,13 +86,14 @@ void EXT_FUNC PM_GetModelBounds(struct model_s *mod, vec_t *mins, vec_t *maxs)
 
 int EXT_FUNC PM_GetModelType(struct model_s *mod)
 {
+	NOT_TESTED;
 	return mod->type;
 }
 
 void PM_InitBoxHull(void)
 {
-	box_hull_0.clipnodes = &box_clipnodes_0[0];
-	box_hull_0.planes = &box_planes_0[0];
+	box_hull_0.clipnodes = box_clipnodes_0;
+	box_hull_0.planes = box_planes_0;
 	box_hull_0.firstclipnode = 0;
 	box_hull_0.lastclipnode = 5;
 
@@ -103,6 +121,9 @@ hull_t *PM_HullForBox(vec_t *mins, vec_t *maxs)
 
 int EXT_FUNC PM_HullPointContents(hull_t *hull, int num, vec_t *p)
 {
+	//return Call_Function<int, hull_t*, int, vec_t*>(0x6B810, hull, num, p);
+	//NOT_IMPLEMENTED;
+
 	float d;
 	dclipnode_t *node;
 	mplane_t *plane;
@@ -157,6 +178,7 @@ int PM_LinkContents(vec_t *p, int *pIndex)
 
 int EXT_FUNC PM_PointContents(vec_t *p, int *truecontents)
 {
+	//return Call_Function<int, vec_t*, int*>(0x6B970, p, truecontents);
 #ifndef SWDS
 	g_engdstAddrs.PM_PointContents(&p, &truecontents);
 #endif
@@ -209,6 +231,11 @@ int PM_WaterEntity(vec_t *p)
 
 int EXT_FUNC PM_TruePointContents(vec_t *p)
 {
+	NOT_TESTED;
+
+	return Call_Function<int, vec_t*>(0x6BA70, p);
+	NOT_IMPLEMENTED;
+
 	if ((int)pmove->physents[0].model == -208)
 		return -1;
 	else
@@ -231,6 +258,7 @@ hull_t *PM_HullForStudioModel(model_t *pModel, vec_t *offset, float frame, int s
 
 hull_t* EXT_FUNC PM_HullForBsp(physent_t *pe, vec_t *offset)
 {
+	//return Call_Function<hull_t*, physent_t*, vec_t*>(0x6BB50, pe, offset);
 	hull_t *hull;
 
 	switch (pmove->usehull) {
@@ -259,9 +287,12 @@ hull_t* EXT_FUNC PM_HullForBsp(physent_t *pe, vec_t *offset)
 	offset[2] += pe->origin[2];
 	return hull;
 }
+extern playermove_t ** sp_pmove;
 
 int _PM_TestPlayerPosition(vec_t *pos, pmtrace_t *ptrace, int(*pfnIgnore)(physent_t *))
 {
+	//return Call_Function<int, vec_t*, pmtrace_t *, int(*)(physent_t *)>(0x6BBD0, pos, ptrace, pfnIgnore);
+
 	hull_t *hull;
 	pmtrace_t tr;
 	vec3_t mins;
@@ -269,7 +300,6 @@ int _PM_TestPlayerPosition(vec_t *pos, pmtrace_t *ptrace, int(*pfnIgnore)(physen
 	vec3_t offset;
 	int numhulls;
 	vec3_t test;
-
 	tr = PM_PlayerTrace(pmove->origin, pmove->origin, PM_NORMAL, -1);
 	if (ptrace)
 		Q_memcpy(ptrace, &tr, sizeof(tr));
@@ -350,6 +380,8 @@ int EXT_FUNC PM_TestPlayerPosition(vec_t *pos, pmtrace_t *ptrace)
 
 int EXT_FUNC PM_TestPlayerPositionEx(vec_t *pos, pmtrace_t *ptrace, int(*pfnIgnore)(physent_t *))
 {
+	NOT_TESTED;
+
 	return _PM_TestPlayerPosition(pos, ptrace, pfnIgnore);
 }
 
@@ -557,18 +589,32 @@ pmtrace_t _PM_PlayerTrace(vec_t *start, vec_t *end, int traceFlags, int numphyse
 
 pmtrace_t EXT_FUNC PM_PlayerTrace(vec_t *start, vec_t *end, int traceFlags, int ignore_pe)
 {
+	//NOT_TESTED;
+	//return Call_Function<pmtrace_t, vec_t*, vec_t*, int, int>(0x6C5C0, start, end, traceFlags, ignore_pe);
+	//NOT_IMPLEMENTED;
+
 	pmtrace_t tr = _PM_PlayerTrace(start, end, traceFlags, pmove->numphysent, pmove->physents, ignore_pe, NULL);
 	return tr;
 }
 
 pmtrace_t EXT_FUNC PM_PlayerTraceEx(vec_t *start, vec_t *end, int traceFlags, int(*pfnIgnore)(physent_t *))
 {
+	NOT_TESTED;
+
+	return Call_Function<pmtrace_t, vec_t*, vec_t*, int, int(*)(physent_t *)>(0x6C620, start, end, traceFlags, pfnIgnore);
+	NOT_IMPLEMENTED;
+
 	pmtrace_t tr = _PM_PlayerTrace(start, end, traceFlags, pmove->numphysent, pmove->physents, -1, pfnIgnore);
 	return tr;
 }
 
 struct pmtrace_s* EXT_FUNC PM_TraceLine(float *start, float *end, int flags, int usehull, int ignore_pe)
 {
+	NOT_TESTED;
+
+	return Call_Function<pmtrace_s*, float *, float *, int, int, int>(0x6C680, start, end, flags, usehull, ignore_pe);
+	NOT_IMPLEMENTED;
+
 	int oldhull;
 	static pmtrace_t tr;
 
@@ -593,6 +639,11 @@ struct pmtrace_s* EXT_FUNC PM_TraceLine(float *start, float *end, int flags, int
 
 struct pmtrace_s* EXT_FUNC PM_TraceLineEx(float *start, float *end, int flags, int usehull, int(*pfnIgnore)(physent_t *))
 {
+	NOT_TESTED;
+
+	return Call_Function<pmtrace_t*, float*, float*, int, int, int(*)(physent_t *)>(0x6C770, start, end, flags, usehull, pfnIgnore);
+	NOT_IMPLEMENTED;
+
 	int oldhull;
 	static pmtrace_t tr;
 

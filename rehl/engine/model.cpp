@@ -30,22 +30,53 @@
 
 #ifdef SHARED_GAME_DATA
 extern uchar* mod_novis;
+
+mod_known_info_t (*sp_mod_known_info) [MAX_KNOWN_MODELS] = ADDRESS_OF_DATA(mod_known_info_t(*)[MAX_KNOWN_MODELS], 0x401CF);
+mod_known_info_t(&mod_known_info)[MAX_KNOWN_MODELS] = *sp_mod_known_info;
+
+model_t ** sp_loadmodel = ADDRESS_OF_DATA(model_t **, 0x402C1);
+model_t*& loadmodel = *sp_loadmodel;
+
+char (*sp_loadname)[MAX_MODEL_NAME] = ADDRESS_OF_DATA(char(*)[MAX_MODEL_NAME], 0x402B3);
+char (&loadname)[MAX_MODEL_NAME] = *sp_loadname;
+
+model_t (*sp_mod_known)[MAX_KNOWN_MODELS] = ADDRESS_OF_DATA(model_t(*)[MAX_KNOWN_MODELS], 0x3FE48);
+model_t (&mod_known)[MAX_KNOWN_MODELS] = *sp_mod_known;
+
+int * sp_mod_numknown = ADDRESS_OF_DATA(int *, 0x3FE3F);
+int & mod_numknown = *sp_mod_numknown; 
+
+int * sp_gSpriteTextureFormat = ADDRESS_OF_DATA(int *, 0x42A62);
+int & gSpriteTextureFormat = *sp_gSpriteTextureFormat;
+
+uchar ** sp_pspritepal = ADDRESS_OF_DATA(uchar **, 0x42B04);
+uchar*& pspritepal = *sp_pspritepal; 
+
+qboolean* sp_gSpriteMipMap = ADDRESS_OF_DATA(qboolean *, 0x42828);
+qboolean gSpriteMipMap = *sp_gSpriteMipMap;
+
+uchar** sp_mod_base = ADDRESS_OF_DATA(uchar**, 0x41C0C);
+uchar* & mod_base = *sp_mod_base;
+
+char ** sp_wadpath = ADDRESS_OF_DATA(char**, 0x40AC5);
+char*& wadpath = *sp_wadpath;
 #else
 extern byte mod_novis[1024];
-#endif
+mod_known_info_t mod_known_info[MAX_KNOWN_MODELS];
 model_t *loadmodel;
-char loadname[MAX_MODEL_NAME];
+char loadname[MAX_MODEL_NAME]; 
 model_t mod_known[MAX_KNOWN_MODELS];
 int mod_numknown;
-unsigned char* mod_base;
+int gSpriteTextureFormat;
+uchar *pspritepal;
+qboolean gSpriteMipMap = false;
+uchar* mod_base;
 char *wadpath;
+#endif
+
 int tested;
 int ad_enabled;
 cachewad_t ad_wad;
-mod_known_info_t mod_known_info[MAX_KNOWN_MODELS];
-int gSpriteTextureFormat;
-qboolean gSpriteMipMap = false;
-uchar *pspritepal;
 
 
 // values for model_t's needload
@@ -65,6 +96,8 @@ void SW_Mod_Init(void)
 
 void* EXT_FUNC Mod_Extradata(model_t *mod)
 {
+	//return Call_Function<void*, model_t*>(0x3FD00, mod);
+
 	void* cache = nullptr;
 
 	if (!mod)
@@ -316,7 +349,7 @@ model_t *Mod_LoadModel(model_t *mod, qboolean crash, qboolean trackCRC)
 #ifndef REHLDS_FIXES
 				SetCStrikeFlags();
 #endif
-				if (!IsGameSubscribed("czero") && g_eGameType == GT_CStrike && IsCZPlayerModel(currentCRC, mod->name) && g_pcls.state)
+				if (!IsGameSubscribed("czero") && g_bIsCStrike && IsCZPlayerModel(currentCRC, mod->name) && g_pcls.state)
 				{
 					COM_ExplainDisconnection(TRUE, "Cannot continue with altered model %s, disconnecting.", mod->name);
 					CL_Disconnect();
@@ -330,11 +363,7 @@ model_t *Mod_LoadModel(model_t *mod, qboolean crash, qboolean trackCRC)
 		Con_DPrintf("loading %s\n", mod->name);
 
 	// allocate a new model
-	if (!COM_FileBase_s(mod->name, loadname, sizeof(loadname)))
-	{
-		Sys_Error("%s: Bad model name length: %s", __func__, mod->name);
-		return NULL;
-	}
+	COM_FileBase(mod->name, loadname);
 
 	loadmodel = mod;
 
@@ -354,12 +383,13 @@ model_t *Mod_LoadModel(model_t *mod, qboolean crash, qboolean trackCRC)
 		Mod_LoadStudioModel(mod, buf);
 		break;
 	default:
+		DT_LoadDetailMapFile(loadname);
 		Mod_LoadBrushModel(mod, buf);
 		break;
 	}
 
-	if (g_modfuncs.m_pfnModelLoad)
-		g_modfuncs.m_pfnModelLoad(mod, buf);
+	//if (g_modfuncs.m_pfnModelLoad)
+		//g_modfuncs.m_pfnModelLoad(mod, buf);
 
 	Mem_Free(buf);
 	return mod;
@@ -441,6 +471,7 @@ void Mod_AdSwap(texture_t *src, int pixels, int entries)
 
 void Mod_LoadTextures(lump_t *l)
 {
+	return Call_Function<void, lump_t*>(0x40470, l);
 	NOT_IMPLEMENTED;
 
 	/*
@@ -1255,7 +1286,105 @@ float RadiusFromBounds(vec_t *mins, vec_t *maxs)
 
 void Mod_LoadBrushModel(model_t *mod, void *buffer)
 {
-	g_RehldsHookchains.m_Mod_LoadBrushModel.callChain(&Mod_LoadBrushModel_internal, mod, buffer);
+	return Call_Function<void, model_t*, void*>(0x41BB0, mod, buffer);
+	
+	dmodel_t *bm;
+	dheader_t *header;
+
+	loadmodel->type = mod_brush;
+	header = (dheader_t *)buffer;
+
+	int version = LittleLong(header->version);
+	if (version != Q1BSP_VERSION  && version != HLBSP_VERSION)
+	{
+		if (g_pcls.state)
+		{
+			COM_ExplainDisconnection(true, "Mod_LoadBrushModel: %s has wrong version number (%i should be %i)\n", mod->name, version, HLBSP_VERSION);
+			
+			CL_Disconnect();
+		}
+		return;
+	}
+
+	// swap all the lumps
+	mod_base = (byte *)header;
+
+	for (int i = 0; i < sizeof(dheader_t) / 4; i++)
+		((int *)header)[i] = LittleLong(((int *)header)[i]);
+
+	// load into heap
+	Mod_LoadVertexes(&header->lumps[LUMP_VERTEXES]);
+	Mod_LoadEdges(&header->lumps[LUMP_EDGES]);
+	Mod_LoadSurfedges(&header->lumps[LUMP_SURFEDGES]);
+
+	if (Q_stricmp(com_gamedir, "bshift") == 0)
+	{
+		Mod_LoadEntities(&header->lumps[LUMP_ENTITIES + 1]);
+		Mod_LoadTextures(&header->lumps[LUMP_TEXTURES]);
+		Mod_LoadLighting(&header->lumps[LUMP_LIGHTING]);
+		Mod_LoadPlanes(&header->lumps[LUMP_PLANES - 1]);
+	}
+	else
+	{
+		Mod_LoadEntities(&header->lumps[LUMP_ENTITIES]);
+		Mod_LoadTextures(&header->lumps[LUMP_TEXTURES]);
+		Mod_LoadLighting(&header->lumps[LUMP_LIGHTING]);
+		Mod_LoadPlanes(&header->lumps[LUMP_PLANES]);
+	}
+
+	Mod_LoadTexinfo(&header->lumps[LUMP_TEXINFO]);
+	Mod_LoadFaces(&header->lumps[LUMP_FACES]);
+	Mod_LoadMarksurfaces(&header->lumps[LUMP_MARKSURFACES]);
+	Mod_LoadVisibility(&header->lumps[LUMP_VISIBILITY]);
+	Mod_LoadLeafs(&header->lumps[LUMP_LEAFS]);
+	Mod_LoadNodes(&header->lumps[LUMP_NODES]);
+	Mod_LoadClipnodes(&header->lumps[LUMP_CLIPNODES]);
+	Mod_LoadSubmodels(&header->lumps[LUMP_MODELS]);
+	Mod_MakeHull0();
+
+	// regular and alternate animation
+	mod->numframes = 2;
+	mod->flags = 0;
+
+	// set up the submodels (FIXME: this is confusing)
+	for (int i = 0; i < mod->numsubmodels; i++)
+	{
+		bm = &mod->submodels[i];
+
+		mod->hulls[0].firstclipnode = bm->headnode[0];
+		for (int j = 1; j < MAX_MAP_HULLS; j++)
+		{
+			mod->hulls[j].firstclipnode = bm->headnode[j];
+			mod->hulls[j].lastclipnode = mod->numclipnodes - 1;
+		}
+
+		mod->firstmodelsurface = bm->firstface;
+		mod->nummodelsurfaces = bm->numfaces;
+
+		mod->maxs[0] = bm->maxs[0];
+		mod->maxs[2] = bm->maxs[2];
+		mod->maxs[1] = bm->maxs[1];
+
+		mod->mins[0] = bm->mins[0];
+		mod->mins[1] = bm->mins[1];
+		mod->mins[2] = bm->mins[2];
+
+		mod->radius = RadiusFromBounds(mod->mins, mod->maxs);
+		mod->numleafs = bm->visleafs;
+
+		if (i < mod->numsubmodels - 1)
+		{
+			char name[12];
+			Q_snprintf(name, ARRAYSIZE(name), "*%i", i + 1);
+
+			loadmodel = Mod_FindName(0, name);
+			*loadmodel = *mod;
+
+			Q_strncpy(loadmodel->name, name, sizeof(loadmodel->name) - 1);
+			loadmodel->name[sizeof(loadmodel->name) - 1] = 0;
+			mod = loadmodel;
+		}
+	}
 }
 
 void EXT_FUNC Mod_LoadBrushModel_internal(model_t *mod, void *buffer)
@@ -1672,6 +1801,8 @@ void Mod_LoadAliasModel(model_t *mod, void *buffer)
 
 void *Mod_LoadSpriteFrame(void *pin, mspriteframe_t **ppframe, int framenum)
 {
+	//return Call_Function<void*, void*, mspriteframe_t**, int>(0x42720, pin, ppframe, framenum);
+
 	dspriteframe_t		*pinframe;
 	mspriteframe_t		*dest;
 	int					width, height, size, origin[2];
@@ -1718,14 +1849,14 @@ void *Mod_LoadSpriteFrame(void *pin, mspriteframe_t **ppframe, int framenum)
 			type = GLT_DECAL;
 		}
 	}
-
+	
 	Q_memcpy(bPal, pspritepal, 768);
 	int texnum;
 	if(gSpriteMipMap)
-		texnum = GL_LoadTexture(name, GLT_SPRITE, width, height, pdata, gSpriteMipMap, type, &bPal[4]);
+		texnum = GL_LoadTexture(name, GLT_SPRITE, width, height, pdata, gSpriteMipMap, type, bPal);
 	else
-		texnum = GL_LoadTexture(name, GLT_HUDSPRITE, width, width, pdata, 0, type, &bPal[4]);
-
+		texnum = GL_LoadTexture(name, GLT_HUDSPRITE, width, width, pdata, 0, type, bPal);
+		
 	dest->gl_texturenum = texnum;
 
 	return (void *)((byte *)pinframe + sizeof(dspriteframe_t) + size);
@@ -1777,6 +1908,7 @@ void *Mod_LoadSpriteGroup(void *pin, mspriteframe_t **ppframe, int framenum)
 
 void Mod_LoadSpriteModel(model_t *mod, void *buffer)
 {
+	//return Call_Function<void, model_t*, void*>(0x429E0, mod, buffer);
 	int					i;
 	int					version;
 	dsprite_t			*pin;

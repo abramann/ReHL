@@ -148,13 +148,15 @@ extern qboolean& noipx;
 extern sizebuf_t& net_message;
 extern sizebuf_t& in_message;
 
-extern uchar* net_message_buffer;
-extern uchar* in_message_buf;
+extern uchar(&net_message_buffer)[65536];
+
+extern uchar(&in_message_buf)[65536];
 
 extern qboolean& net_thread_initialized;
 extern net_messages_t*& normalqueue;
 
-extern packetlag_t* g_pLagData;
+extern packetlag_t(&g_pLagData)[NS_MAX];
+
 #else
 extern cvar_t net_address;
 extern cvar_t ipname;
@@ -220,6 +222,7 @@ extern net_messages_t *messages[3];
 
 void NET_ThreadLock();
 void NET_ThreadUnlock();
+void NET_InitColors();
 unsigned short Q_ntohs(unsigned short netshort);
 void NetadrToSockadr(const netadr_t *a, struct sockaddr *s);
 void SockadrToNetadr(const struct sockaddr *s, netadr_t *a);

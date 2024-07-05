@@ -32,13 +32,21 @@
 #include "model.h"
 #include "cvar.h"
 
+#ifdef SHARED_GAME_DATA
+extern cvar_t& sv_maxvelocity;
+extern cvar_t& sv_gravity;
+extern cvar_t& sv_bounce;
+extern cvar_t& sv_stepsize;
+extern cvar_t& sv_friction;
+extern cvar_t& sv_stopspeed;
+#else
 extern cvar_t sv_maxvelocity;
 extern cvar_t sv_gravity;
 extern cvar_t sv_bounce;
 extern cvar_t sv_stepsize;
 extern cvar_t sv_friction;
 extern cvar_t sv_stopspeed;
-
+#endif
 extern vec3_t *g_moved_from;
 extern edict_t **g_moved_edict;
 

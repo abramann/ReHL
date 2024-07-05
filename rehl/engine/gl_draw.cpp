@@ -608,6 +608,7 @@ int GL_LoadTexture(char * identifier, GL_TEXTURETYPE textureType, int width, int
 
 int GL_LoadTexture2(char * identifier, GL_TEXTURETYPE textureType, int width, int height, unsigned char * data, qboolean mipmap, int iType, unsigned char * pPal, int filter)
 {
+	return Call_Function<int, char *, GL_TEXTURETYPE, int, int, uchar *, qboolean, int, uchar *, int>(0x3EC60, identifier, textureType, width, height, data, mipmap, iType, pPal, filter);
 	gltexture_t* slot = nullptr;
 
 	if (identifier[0] == '\0')

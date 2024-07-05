@@ -68,9 +68,14 @@ enum
 	:                                           \
 		BoxOnPlaneSide((emins), (emaxs), (p)))
 
-extern vec3_t vec3_origin;
 
 static const int nanmask = 0x7F800000;
+
+#ifdef SHARED_GAME_DATA
+extern vec3_t & vec3_origin;
+#else
+extern vec3_t  vec3_origin;
+#endif
 
 #define IS_NAN(fvar) ((*reinterpret_cast<int*>(&(fvar)) & nanmask) == nanmask)
 

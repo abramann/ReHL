@@ -28,7 +28,12 @@
 
 #include "precompiled.h"
 
-vec3_t vec3_origin;
+#ifdef SHARED_GAME_DATA
+vec3_t * sp_vec3_origin = ADDRESS_OF_DATA(vec3_t *, 0x134BF);
+vec3_t & vec3_origin = *sp_vec3_origin;
+#else
+vec3_t  vec3_origin;
+#endif
 //int nanmask;
 //short int new_cw;
 //short int old_cw;

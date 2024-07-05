@@ -47,18 +47,50 @@ const char *clcommands[] = { "status", "name", "kill", "pause", "spawn", "new", 
 const char *clcommands[23] = { "status", "god", "notarget", "fly", "name", "noclip", "kill", "pause", "spawn", "new", "sendres", "dropclient", "kick", "ping", "dlfile", "nextdl", "setinfo", "showinfo", "sendents", "fullupdate", "setpause", "unpause", NULL };
 #endif
 
-cvar_t sv_edgefriction = { "edgefriction", "2", FCVAR_SERVER, 0.0f, NULL };
-cvar_t sv_maxspeed = { "sv_maxspeed", "320", FCVAR_SERVER, 0.0f, NULL };
-cvar_t sv_accelerate = { "sv_accelerate", "10", FCVAR_SERVER, 0.0f, NULL };
-cvar_t sv_footsteps = { "mp_footsteps", "1", FCVAR_SERVER, 0.0f, NULL };
-cvar_t sv_rollspeed = { "sv_rollspeed", "0.0", 0, 0.0f, NULL };
-cvar_t sv_rollangle = { "sv_rollangle", "0.0", 0, 0.0f, NULL };
+#ifdef SHARED_GAME_DATA
+cvar_t * sp_sv_voiceenable = ADDRESS_OF_DATA(cvar_t *, 0x9E5DB);
+cvar_t & sv_voiceenable = *sp_sv_voiceenable;
+
+
+cvar_t * sp_mp_consistency = ADDRESS_OF_DATA(cvar_t *, 0x9E5F9);
+cvar_t & mp_consistency = *sp_mp_consistency; 
+
+cvar_t * sp_sv_unlag = ADDRESS_OF_DATA(cvar_t *, 0x9E617);
+cvar_t & sv_unlag = *sp_sv_unlag;
+
+cvar_t * sp_sv_maxunlag = ADDRESS_OF_DATA(cvar_t *, 0x9E621);
+cvar_t & sv_maxunlag = *sp_sv_maxunlag;
+
+cvar_t * sp_sv_unlagpush = ADDRESS_OF_DATA(cvar_t *, 0X9E62B);
+cvar_t & sv_unlagpush = *sp_sv_unlagpush;
+
+cvar_t * sp_sv_unlagsamples = ADDRESS_OF_DATA(cvar_t *, 0x9E635);
+cvar_t & sv_unlagsamples = *sp_sv_unlagsamples;
+
+cvar_t * sp_sv_edgefriction = ADDRESS_OF_DATA(cvar_t *, 0x9E71B);
+cvar_t & sv_edgefriction = *sp_sv_edgefriction;
+
+cvar_t * sp_sv_footsteps = ADDRESS_OF_DATA(cvar_t *, 0x9E73C);
+cvar_t & sv_footsteps = *sp_sv_footsteps;
+
+cvar_t * sp_sv_accelerate = ADDRESS_OF_DATA(cvar_t *, 0x9E746);
+cvar_t & sv_accelerate = *sp_sv_accelerate;
+
+#else
+cvar_t sv_voiceenable = { "sv_voiceenable", "1", FCVAR_SERVER | FCVAR_ARCHIVE, 0.0f, NULL };
+cvar_t mp_consistency = { "mp_consistency", "1", FCVAR_SERVER, 0.0f, NULL };
 cvar_t sv_unlag = { "sv_unlag", "1", 0, 0.0f, NULL };
 cvar_t sv_maxunlag = { "sv_maxunlag", "0.5", 0, 0.0f, NULL };
 cvar_t sv_unlagpush = { "sv_unlagpush", "0.0", 0, 0.0f, NULL };
 cvar_t sv_unlagsamples = { "sv_unlagsamples", "1", 0, 0.0f, NULL };
-cvar_t mp_consistency = { "mp_consistency", "1", FCVAR_SERVER, 0.0f, NULL };
-cvar_t sv_voiceenable = { "sv_voiceenable", "1", FCVAR_SERVER | FCVAR_ARCHIVE, 0.0f, NULL };
+cvar_t sv_edgefriction = { "edgefriction", "2", FCVAR_SERVER, 0.0f, NULL };
+cvar_t sv_footsteps = { "mp_footsteps", "1", FCVAR_SERVER, 0.0f, NULL };
+cvar_t sv_accelerate = { "sv_accelerate", "10", FCVAR_SERVER, 0.0f, NULL };
+
+#endif
+
+cvar_t sv_rollspeed = { "sv_rollspeed", "0.0", 0, 0.0f, NULL };
+cvar_t sv_rollangle = { "sv_rollangle", "0.0", 0, 0.0f, NULL };
 
 clc_func_t sv_clcfuncs[] = {
 	{ clc_bad,             "clc_bad",             nullptr                      },
@@ -1885,6 +1917,7 @@ qboolean SV_SetPlayer(int idnum)
 
 void SV_ShowServerinfo_f(void)
 {
+	NOT_TESTED;
 	if (cmd_source == src_command)
 	{
 		Cmd_ForwardToServer();
@@ -1902,6 +1935,7 @@ void SV_ShowServerinfo_f(void)
 
 void SV_SendEnts_f(void)
 {
+	NOT_TESTED;
 	if (cmd_source == src_command)
 	{
 		Cmd_ForwardToServer();
@@ -1943,6 +1977,7 @@ void SV_SendEnts_f(void)
 
 void SV_FullUpdate_f(void)
 {
+	NOT_TESTED;
 	int entIndex;
 	float ltime;
 

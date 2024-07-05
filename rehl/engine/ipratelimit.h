@@ -65,9 +65,15 @@ private:
 	static bool LessIP(const iprate_t &lhs, const iprate_t &rhs);
 };
 
+#ifdef SHARED_GAME_DATA
+extern cvar_t& max_queries_sec;
+extern cvar_t& max_queries_sec_global;
+extern cvar_t& max_queries_window;
+extern cvar_t& sv_logblocks;
+#else
 extern cvar_t max_queries_sec;
 extern cvar_t max_queries_sec_global;
 extern cvar_t max_queries_window;
 extern cvar_t sv_logblocks;
-
+#endif
 bool SV_CheckConnectionLessRateLimits(netadr_t &adr);

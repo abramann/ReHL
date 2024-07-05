@@ -29,9 +29,6 @@ static int g_i;
 
 unsigned int g_lastground = UINT_MAX;
 
-qboolean g_bIsCStrike;
-qboolean g_bIsCZero;
-
 int num_servers;
 int cl_playerindex;
 server_cache_t cached_servers[16];
@@ -337,6 +334,7 @@ void CL_DeallocateDynamicData(void)
 
 void CL_Disconnect(void)
 {
+	return Call_Function<void>(0x17850);
 	NOT_IMPLEMENTED;
 }
 

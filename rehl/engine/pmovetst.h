@@ -33,10 +33,17 @@
 #include "model.h"
 #include "world.h"
 
-extern int g_contentsresult;
+#ifdef SHARED_GAME_DATA
+extern hull_t &box_hull_0;
+extern dclipnode_t* box_clipnodes_0;
+extern mplane_t* box_planes_0;
+#else
 extern hull_t box_hull_0;
 extern box_clipnodes_t box_clipnodes_0;
-extern box_planes_t box_planes_0;
+extern box_planes_t box_planes_0; #endif
+#endif
+
+extern int g_contentsresult;
 
 float PM_TraceModel(physent_t *pEnt, vec_t *start, vec_t *end, trace_t *trace);
 void PM_GetModelBounds(struct model_s *mod, vec_t *mins, vec_t *maxs);

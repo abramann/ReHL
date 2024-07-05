@@ -42,13 +42,10 @@ const int MAX_DISCONNECT_REASON = 256;
 
 extern enginefuncs_t g_engfuncsExportedToDlls;
 
-extern char gszDisconnectReason[MAX_DISCONNECT_REASON];
 extern char gszExtendedDisconnectReason[MAX_DISCONNECT_REASON];
 
-extern qboolean gfExtendedError;
 extern int giSubState;
 extern int giStateInfo;
-extern DLL_FUNCTIONS gEntityInterface;
 extern NEW_DLL_FUNCTIONS gNewDLLFunctions;
 extern modfuncs_t g_modfuncs;
 extern extensiondll_t g_rgextdll[50];
@@ -63,6 +60,7 @@ extern double& curtime;
 extern double& lastcurtime;
 extern qboolean& g_bIsDedicatedServer;
 extern char * g_szNotifyAreaString;
+extern DLL_FUNCTIONS& gEntityInterface;
 #ifdef _WIN32
 extern int& g_PerfCounterInitialized;
 extern CRITICAL_SECTION& g_PerfCounterMutex;
@@ -75,9 +73,12 @@ extern void(*&Launcher_ConsolePrintf)(char *, ...);
 extern FileFindHandle_t& g_hfind;
 
 extern qboolean& con_debuglog;
+extern char (&gszDisconnectReason)[MAX_DISCONNECT_REASON];
+extern qboolean& gfExtendedError;
 
 #endif
 #else
+extern qboolean gfExtendedError;
 extern int giActive;
 extern qboolean g_bIsDedicatedServer;
 extern modinfo_t gmodinfo;
@@ -85,6 +86,7 @@ extern double curtime;
 extern double lastcurtime;
 extern modinfo_t gmodinfo;
 extern qboolean g_bIsDedicatedServer;
+extern DLL_FUNCTIONS gEntityInterface;
 #ifdef _WIN32
 extern int g_PerfCounterInitialized;
 extern CRITICAL_SECTION g_PerfCounterMutex;
@@ -95,6 +97,7 @@ extern void(*Launcher_ConsolePrintf)(char *, ...);
 extern FileFindHandle_t g_hfind;
 extern qboolean con_debuglog;
 extern char g_szNotifyAreaString[256];
+extern char gszDisconnectReason[MAX_DISCONNECT_REASON];
 #endif
 #endif
 extern int g_iextdllMac;

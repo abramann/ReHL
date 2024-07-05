@@ -45,10 +45,8 @@ void(*Launcher_MP3subsys_Resume_Audio)(void);
 //const char g_szHalfLifeDllName;
 //const char g_szBaseDllName;
 
-char gszDisconnectReason[MAX_DISCONNECT_REASON];
 char gszExtendedDisconnectReason[MAX_DISCONNECT_REASON];
 
-qboolean gfExtendedError;
 
 int giSubState;
 #ifdef SHARED_GAME_DATA
@@ -72,6 +70,14 @@ char * g_szNotifyAreaString = ADDRESS_OF_DATA(char *, 0x2CC59);
 qboolean * sp_con_initialized = ADDRESS_OF_DATA(qboolean *, 0x2CA76);
 qboolean & con_initialized = *sp_con_initialized;
 
+DLL_FUNCTIONS * sp_gEntityInterface = ADDRESS_OF_DATA(DLL_FUNCTIONS *, 0xAB71D);
+DLL_FUNCTIONS & gEntityInterface = *sp_gEntityInterface;
+
+char (*sp_gszDisconnectReason)[MAX_DISCONNECT_REASON] = ADDRESS_OF_DATA(char(*)[MAX_DISCONNECT_REASON], 0x0);
+char (&gszDisconnectReason)[MAX_DISCONNECT_REASON] = *sp_gszDisconnectReason;
+
+qboolean * sp_gfExtendedError = ADDRESS_OF_DATA(qboolean *, 0x29AAE);
+qboolean & gfExtendedError = *sp_gfExtendedError; 
 #else
 int giActive;
 modinfo_t gmodinfo;
@@ -81,9 +87,12 @@ qboolean con_debuglog;
 qboolean con_initialized = false;
 static char g_szNotifyAreaString[256] = { 0 };
 static float* con_times = nullptr;
+DLL_FUNCTIONS gEntityInterface;
+char sp_gszDisconnectReason[MAX_DISCONNECT_REASON];
+qboolean gfExtendedError;
+
 #endif
 int giStateInfo;
-DLL_FUNCTIONS gEntityInterface;
 NEW_DLL_FUNCTIONS gNewDLLFunctions;
 
 extensiondll_t g_rgextdll[MAX_EXTENSION_DLL];
@@ -1409,9 +1418,38 @@ void Con_Printf(const char *fmt, ...)
 
 	va_start(va, fmt);
 	Q_vsnprintf(Dest, sizeof(Dest), fmt, va);
+	Sys_Printf("%s", Dest);
+	if (sv_redirected)
+	{
+		if ((Q_strlen(outputbuf) + Q_strlen(Dest)) > sizeof(outputbuf) - 1)
+			SV_FlushRedirect();
+		Q_strncat(outputbuf, Dest, sizeof(outputbuf) - 1);
+	}
+	else
+	{
+		if (con_debuglog)
+			Con_DebugLog("qconsole.log", "%s", Dest);
+		if (host_initialized && con_initialized && g_pcls.state)
+		{
+			if (developer.value != 0.0f)
+			{
+				Q_strncpy(g_szNotifyAreaString, Dest, 255);
+				g_szNotifyAreaString[255] = 0;
+				*con_times = realtime;
+			}
+			VGuiWrap2_ConPrintf(Dest);
+		}
+	}
+	/*char Dest[4096];
+	va_list va;
+
+	va_start(va, fmt);
+	Q_vsnprintf(Dest, sizeof(Dest), fmt, va);
 	va_end(va);
 
 	g_RehldsHookchains.m_Con_Printf.callChain(Con_Printf_internal, Dest);
+	*/
+
 }
 
 void EXT_FUNC Con_Printf_internal(const char *Dest)

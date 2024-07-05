@@ -12,11 +12,12 @@ namespace vgui
 class ICareerUI;
 #ifdef SHARED_GAME_DATA
 extern ICareerUI*& staticCareerUI;
+extern CUtlVector<char>& g_TempConsoleBuffer;
 #else
 ICareerUI* staticCareerUI
+extern CUtlVector<char> g_TempConsoleBuffer;
 #endif
 
-extern CUtlVector<char> g_TempConsoleBuffer;
 
 // VGUI interface
 

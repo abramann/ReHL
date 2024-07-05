@@ -7,6 +7,17 @@ void CL_LinkPacketEntities();
 void CL_FireEvents();
 long double CL_LerpPoint();
 
+#ifdef SHARED_GAME_DATA
+particle_t ** sp_free_particles = ADDRESS_OF_DATA(particle_t **, 0x134A4);
+particle_t *& free_particles = *sp_free_particles;
+
+particle_t ** sp_active_particles = ADDRESS_OF_DATA(particle_t **, 0x13513);
+particle_t *& active_particles = *sp_active_particles; 
+#else
+particle_t  *free_particles;
+particle_t *active_particles
+#endif
+
 extern double parsecounttime;
 double g_flLatency;
 int last_incoming_sequence = 0;
@@ -39,7 +50,21 @@ void CL_ResetFrameStats(frame_t* frame)
 
 void CL_Particle(vec_t* origin, int color, float life, int zpos, int zvel)
 {
-	NOT_IMPLEMENTED;
+	NOT_TESTED;
+	if (!free_particles)
+		return;
+
+	active_particles = free_particles;
+	free_particles = free_particles->next;
+	active_particles->next = free_particles;
+	active_particles->die = life + g_pcl.time;
+	active_particles->color = color;
+	active_particles->packedColor = 0;
+	active_particles->type = pt_static;
+
+	VectorCopy(active_particles->vel, vec3_origin);
+	VectorCopy(active_particles->org, vec3_origin);
+	active_particles->org[2] += zpos;
 }
 
 void CL_SetSolidPlayers(int playernum)

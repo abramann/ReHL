@@ -45,16 +45,26 @@
 #include "bspfile.h"
 #include "crc.h"
 
+#ifdef SHARED_GAME_DATA
+extern mod_known_info_t(&mod_known_info)[MAX_KNOWN_MODELS];
+extern model_t*& loadmodel;
+extern char(&loadname)[MAX_MODEL_NAME];
+extern model_t(&mod_known)[MAX_KNOWN_MODELS];
+extern int& mod_numknown;
+extern uchar*& mod_base;
+#else
+extern mod_known_info_t mod_known_info[MAX_KNOWN_MODELS];
 extern model_t* loadmodel;
 extern char loadname[MAX_MODEL_NAME];
 extern model_t mod_known[MAX_KNOWN_MODELS];
-extern int mod_numknown;
-extern unsigned char* mod_base;
-extern char *wadpath;
+extern int mod_numknown; 
+extern uchar* mod_base;
+#endif
+
+
 extern int tested;
 extern int ad_enabled;
 extern cachewad_t ad_wad;
-extern mod_known_info_t mod_known_info[MAX_KNOWN_MODELS];
 
 void SW_Mod_Init(void);
 void *Mod_Extradata(model_t *mod);

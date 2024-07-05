@@ -28,11 +28,23 @@
 
 #include "precompiled.h"
 
-playermove_t *pmove;
-movevars_t movevars;
-
 cvar_t pm_showclip = { "pm_showclip", "0", 0, 0.0f, NULL };
 
+#ifdef SHARED_GAME_DATA
+
+playermove_t ** sp_pmove = ADDRESS_OF_DATA(playermove_t **, 0x144E6);
+playermove_t*& pmove = *sp_pmove;
+
+vec_t(*sp_player_mins)[4][3] = ADDRESS_OF_DATA(vec_t(*)[4][3], 0x9B31A);
+vec_t(&player_mins)[4][3] = *sp_player_mins;
+
+vec_t(*sp_player_maxs)[4][3] = ADDRESS_OF_DATA(vec_t(*)[4][3], 0x9B315);
+//vec_t(*sp_player_maxs)[4][3] = ADDRESS_OF_DATA(vec_t(*)[4][3], 0x6B312);
+vec_t(&player_maxs)[4][3] = *sp_player_maxs;
+
+movevars_t * sp_movevars = ADDRESS_OF_DATA(movevars_t *, 0x940F0);
+movevars_t & movevars = *sp_movevars;
+#else
 vec3_t player_mins[MAX_MAP_HULLS] = {
 	{ -16.0f, -16.0f, -36.0f, },
 	{ -16.0f, -16.0f, -18.0f, },
@@ -47,6 +59,9 @@ vec3_t player_maxs[MAX_MAP_HULLS] = {
 	{ 32.0f, 32.0f, 32.0f, }
 };
 
+movevars_t movevars;
+playermove_t  *pmove;
+#endif
 qboolean PM_AddToTouched(pmtrace_t tr, vec_t *impactvelocity)
 {
 	int i;
@@ -74,6 +89,9 @@ qboolean PM_AddToTouched(pmtrace_t tr, vec_t *impactvelocity)
 
 void EXT_FUNC PM_StuckTouch(int hitent, pmtrace_t *ptraceresult)
 {
+	return Call_Function<void, int, pmtrace_t*>(0x6B290, hitent, ptraceresult);
+	NOT_IMPLEMENTED;
+
 #ifdef REHLDS_CHECKS
 	if (hitent >= MAX_PHYSENTS)	// FIXED: added for preventing buffer overrun
 	{
@@ -92,11 +110,9 @@ void EXT_FUNC PM_StuckTouch(int hitent, pmtrace_t *ptraceresult)
 void PM_Init(playermove_t *ppm)
 {
 	PM_InitBoxHull();
-	for (int i = 0; i < MAX_MAP_HULLS; i++)
-	{
-		VectorCopy(player_mins[i], ppm->player_mins[i]);
-		VectorCopy(player_maxs[i], ppm->player_maxs[i]);
-	}
+
+	memcpy(ppm->player_mins, player_mins, sizeof(player_mins));
+	memcpy(ppm->player_maxs, player_maxs, sizeof(player_maxs));
 
 	ppm->_movevars = &movevars;
 

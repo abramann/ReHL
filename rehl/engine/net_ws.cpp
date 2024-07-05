@@ -99,8 +99,11 @@ sizebuf_t & net_message = *sp_net_message;
 sizebuf_t * sp_in_message = ADDRESS_OF_DATA(sizebuf_t *, 0x67DAC);
 sizebuf_t & in_message = *sp_in_message; 
 
-uchar* net_message_buffer = ADDRESS_OF_DATA(uchar*, 0x693D6);
-uchar* in_message_buf = ADDRESS_OF_DATA(uchar*, 0x693FD);
+uchar(*sp_net_message_buffer)[65536] = ADDRESS_OF_DATA(uchar(*)[65536], 0x693D6);
+uchar(&net_message_buffer)[65536] = *sp_net_message_buffer;
+
+uchar(*sp_in_message_buf)[65536] = ADDRESS_OF_DATA(uchar(*)[65536], 0x693FD);
+uchar(&in_message_buf)[65536] = *sp_in_message_buf;
 
 net_messages_t ** sp_normalqueue = ADDRESS_OF_DATA(net_messages_t **, 0x6862E);
 net_messages_t*& normalqueue = *sp_normalqueue;
@@ -120,7 +123,11 @@ CRITICAL_SECTION * sp_net_cs = ADDRESS_OF_DATA(CRITICAL_SECTION *, 0x683A3);
 CRITICAL_SECTION & net_cs = *sp_net_cs; 
 #endif
 
-packetlag_t* g_pLagData = ADDRESS_OF_DATA(packetlag_t*, 0x69419);		// List of lag structures, if fakelag is set.
+
+packetlag_t(*sp_g_pLagData)[NS_MAX] = ADDRESS_OF_DATA(packetlag_t(*)[NS_MAX], 0x69419);	// List of lag structures, if fakelag is set.
+
+packetlag_t(&g_pLagData)[NS_MAX] = *sp_g_pLagData;
+
 #else
 cvar_t net_address = { "net_address", "", 0, 0.0f, NULL };
 cvar_t ipname = { "ip", "localhost", 0, 0.0f, NULL };
@@ -221,6 +228,11 @@ void NET_ThreadUnlock()
 		LeaveCriticalSection(&net_cs);
 	}
 #endif // _WIN32
+}
+
+void NET_InitColors()
+{
+	return Call_Function<void>(0x69760);
 }
 
 unsigned short Q_ntohs(unsigned short netshort)
@@ -1377,6 +1389,7 @@ qboolean NET_GetPacket(netsrc_t sock)
 
 void NET_AllocateQueues()
 {
+	//return Call_Function<void>(0x68610);
 	for (int i = 0; i < NUM_MSG_QUEUES; i++)
 	{
 		net_messages_t *p = (net_messages_t *)Mem_ZeroMalloc(sizeof(net_messages_t));
@@ -1493,6 +1506,7 @@ void EXT_FUNC NET_SendPacket_api(unsigned int length, void *data, const netadr_t
 
 void NET_SendPacket(netsrc_t sock, int length, void *data, const netadr_t& to)
 {
+	return Call_Function<void, netsrc_t, int, void *, const netadr_t&>(0x068840, sock, length, data, to);
 	if (to.type == NA_LOOPBACK)
 	{
 		NET_SendLoopPacket(sock, length, data, to);
@@ -2037,6 +2051,7 @@ void NET_Config(qboolean multiplayer)
 
 void MaxPlayers_f()
 {
+	return Call_Function<void>(0x69450);
 	if (Cmd_Argc() != 2)
 	{
 		Con_Printf("\"maxplayers\" is \"%u\"\n", g_psvs.maxclients);
@@ -2068,6 +2083,8 @@ void MaxPlayers_f()
 
 void NET_Init()
 {
+	NET_InitColors();
+
 	Cmd_AddCommand("maxplayers", MaxPlayers_f);
 
 	Cvar_RegisterVariable(&net_address);
@@ -2112,13 +2129,12 @@ void NET_Init()
 	if (clockwindow_)
 		Cvar_SetValue("clockwindow", Q_atof(com_argv[clockwindow_ + 1]));
 
-	net_message.data = (byte *)&net_message_buffer;
-	in_message.data = (byte *)&in_message_buf;
-
+	net_message.data = (byte *)net_message_buffer;
 	net_message.maxsize = 65536; //sizeof(net_message_buffer);
 	net_message.flags = 0;
 	net_message.buffername = "net_message";
 
+	in_message.data = (byte *)in_message_buf;
 	in_message.maxsize = 65536; //sizeof(in_message_buf);
 	in_message.flags = 0;
 	in_message.buffername = "in_message";

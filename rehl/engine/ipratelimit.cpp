@@ -30,11 +30,24 @@
 
 CIPRateLimit rateChecker;
 
+#ifdef SHARED_GAME_DATA
+cvar_t * sp_max_queries_sec = ADDRESS_OF_DATA(cvar_t *, 0x9E923);
+cvar_t & max_queries_sec = *sp_max_queries_sec; 
+
+cvar_t * sp_max_queries_sec_global = ADDRESS_OF_DATA(cvar_t *, 0x9E92D);
+cvar_t & max_queries_sec_global = *sp_max_queries_sec_global; 
+
+cvar_t * sp_max_queries_window = ADDRESS_OF_DATA(cvar_t *, 0x9E937);
+cvar_t & max_queries_window = *sp_max_queries_window; 
+
+cvar_t * sp_sv_logblocks = ADDRESS_OF_DATA(cvar_t *, 0x9E941);
+cvar_t & sv_logblocks = *sp_sv_logblocks;
+#else
 cvar_t max_queries_sec        = { "max_queries_sec",        "3.0", FCVAR_SERVER | FCVAR_PROTECTED, 0.0f, nullptr };
 cvar_t max_queries_sec_global = { "max_queries_sec_global", "30",  FCVAR_SERVER | FCVAR_PROTECTED, 0.0f, nullptr };
 cvar_t max_queries_window     = { "max_queries_window",     "60",  FCVAR_SERVER | FCVAR_PROTECTED, 0.0f, nullptr };
 cvar_t sv_logblocks           = { "sv_logblocks",           "0",   FCVAR_SERVER, 0.0f, nullptr };
-
+#endif
 CIPRateLimit::CIPRateLimit() : m_IPTree(0, START_TREE_SIZE, LessIP)
 {
 	m_iGlobalCount = 0;

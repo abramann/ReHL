@@ -43,3 +43,8 @@ void DT_ClearRenderState()
 	qglDisable(GL_TEXTURE_2D);
 	qglSelectTextureSGIS(TEXTURE1_SGIS);
 }
+
+void DT_LoadDetailMapFile(char * levelName)
+{
+	return Call_Function<void, char*>(0x334B0, levelName);
+}
