@@ -1,2 +1,2 @@
 # ReHL
-Re-implementation of Half Life hardware engine (hw). Forked from [ReHLDS](ithub.com/dreamstalker/rehlds/tree/master/rehlds/engine).
+Re-implementation of Half Life hardware engine (hw) build 8684. Forked from [ReHLDS](github.com/dreamstalker/rehlds/tree/master/rehlds/engine).
