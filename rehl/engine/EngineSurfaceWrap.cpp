@@ -1,8 +1,8 @@
 #include "precompiled.h"
-#include "../FakeVGUI/Dar.h"
-#include "../FakeVGUI/InputStream.h"
-#include "../FakeVGUI/Image.h"
-#include "../FakeVGUI/App.h"
+#include "../../../dep/FakeVGUI/Dar.h"
+#include "../../../dep/FakeVGUI/InputStream.h"
+#include "../../../dep/FakeVGUI/Image.h"
+#include "../../../dep/FakeVGUI/App.h"
 #include "vgui2\KeyCode.h"
 #include <SDL.h>
 #include <SDL_syswm.h>

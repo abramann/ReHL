@@ -1,7 +1,7 @@
 #pragma once
 
 
-#include "../FakeVGUI\KeyCode.h"
+#include "../../../dep/FakeVGUI/KeyCode.h"
 
 namespace vgui2
 {

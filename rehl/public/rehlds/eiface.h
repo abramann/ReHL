@@ -513,8 +513,11 @@ typedef struct
 	int				(*pfnAllowLagCompensation)( void );
 } DLL_FUNCTIONS;
 
+#ifdef SHARED_GAME_DATA
+extern DLL_FUNCTIONS&		gEntityInterface;
+#else
 extern DLL_FUNCTIONS		gEntityInterface;
-
+#endif
 // Current version.
 #define NEW_DLL_FUNCTIONS_VERSION	1
 

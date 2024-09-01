@@ -26,8 +26,6 @@
 // TODO: define key lines - Solokiller
 
 #define MAXCMDLINE 256
-char key_lines[32][MAXCMDLINE];
-int key_linepos;
 int shift_down = false;
 
 int edit_line = 0;
@@ -35,20 +33,44 @@ int history_line = 0;
 
 keydest_t key_dest;
 
-char* keybindings[256];
-qboolean consolekeys[256]; // if true, can't be rebound while in console
-qboolean menubound[256];   // if true, can't be rebound while in menu
-int keyshift[256];	   // key to map to if shift held down in console
 int key_repeats[256];  // if > 1, it is autorepeating
 #ifdef SHARED_GAME_DATA
 qboolean* keydown = ADDRESS_OF_DATA(qboolean*, 0x61A82);
+
+char(*sp_key_lines)[32][MAXCMDLINE] = ADDRESS_OF_DATA(char(*)[32][MAXCMDLINE], 0x61461);
+char(&key_lines)[32][MAXCMDLINE] = *sp_key_lines;
+
+int(*sp_keyshift)[256] = ADDRESS_OF_DATA(int(*)[256], 0x6195E);
+int(&keyshift)[256] = *sp_keyshift;
+
+qboolean(*sp_consolekeys)[256] = ADDRESS_OF_DATA(qboolean(*)[256], 0x61928);
+qboolean(&consolekeys)[256] = *sp_consolekeys;
+
+qboolean(*sp_menubound)[256] = ADDRESS_OF_DATA(qboolean(*)[256], 0x61945);
+qboolean(&menubound)[256] = *sp_menubound;
+
+int * sp_key_linepos = ADDRESS_OF_DATA(int *, 0x6148D);
+int & key_linepos = *sp_key_linepos;
+
+int * sp_toggleconsole_key = ADDRESS_OF_DATA(int *, 0x19E4);
+int & toggleconsole_key = *sp_toggleconsole_key;
+
+char*(*sp_keybindings)[256] = ADDRESS_OF_DATA(char*(*)[256], 0x61AB9);
+char*(&keybindings)[256] = *sp_keybindings;
 #else
 qboolean keydown[256];
+char key_lines[32][MAXCMDLINE];
+qboolean consolekeys[256]; // if true, can't be rebound while in console 61928
+int keyshift[256];	   // key to map to if shift held down in console
+qboolean menubound[256];   // if true, can't be rebound while in menu
+int key_linepos;
+int toggleconsole_key = 0;
+char* keybindings[256];
+
 #endif
 bool keyGameUIdown[256];
 bool g_fUseDInput = false;
 
-int toggleconsole_key = 0;
 
 typedef struct
 {
@@ -174,6 +196,7 @@ LINE TYPING INTO THE CONSOLE
 
 void Key_Unbindall_f()
 {
+	return Call_Function<void>(0x61130);
 	for (int i = 0; i < 256; ++i)
 	{
 		if (keybindings[i] && i != K_ESCAPE)
@@ -194,14 +217,17 @@ Key_Bind_f
 */
 void Key_Bind_f()
 {
+	//return Call_Function<void>(0x61200);
 	const int c = Cmd_Argc();
-
+#ifdef REHLDS
 	if (c != 2 && c != 3)
+#else
+	if(c > 3)
 	{
 		Con_Printf("bind <key> [command] : attach a command to a key\n");
 		return;
 	}
-
+#endif
 	const int b = Key_StringToKeynum(Cmd_Argv(1));
 	if (b == -1)
 	{
@@ -247,6 +273,7 @@ Key_Unbind_f
 */
 void Key_Unbind_f()
 {
+	return Call_Function<void>(0x610C0);
 	if (Cmd_Argc() != 2)
 	{
 		Con_Printf("unbind <key> : remove commands from a key\n");
@@ -668,6 +695,7 @@ void Key_Message(int key)
 
 void Key_Escape_f()
 {
+	return Call_Function<void>(0x61190);
 	if (giSubState & 0x10)
 	{
 		Cbuf_AddText("disconnect\n");
@@ -700,7 +728,7 @@ the K_* names are matched up.
 */
 int Key_StringToKeynum(const char* str)
 {
-	if (!str || !str[0])
+	if (!str || str[0] == '\0')
 		return -1;
 	if (!str[1])
 		return str[0];
@@ -920,9 +948,10 @@ void Key_Init()
 	//
 	// register our functions
 	//
-	Cmd_AddCommand("bind", Key_Bind_f);
-	Cmd_AddCommand("unbind", Key_Unbind_f);
-	Cmd_AddCommand("unbindall", Key_Unbindall_f);
+
+	Cmd_AddCommandWithFlags("bind", Key_Bind_f, 8);
+	Cmd_AddCommandWithFlags("unbind", Key_Unbind_f, 8);
+	Cmd_AddCommandWithFlags("unbindall", Key_Unbindall_f, 8);
 	Cmd_AddCommand("escape", Key_Escape_f);
 }
 

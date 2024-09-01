@@ -133,11 +133,19 @@ typedef enum {
 
 const size_t MAX_CHAT_BUFFER = 120;
 
-extern keydest_t key_dest;
+#ifdef SHARED_GAME_DATA
+extern int & toggleconsole_key;
+extern char*(&keybindings)[256];
+
+#else
+extern int  toggleconsole_key;
 extern char* keybindings[256];
+
+#endif
+
+extern keydest_t key_dest;
 extern int key_repeats[256];
 
-extern int toggleconsole_key;
 
 extern char chat_buffer[MAX_CHAT_BUFFER];
 extern int chat_bufferlen;

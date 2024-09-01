@@ -1,0 +1,21 @@
+﻿  App.cpp
+  Image.cpp
+d:\hl workspace\rehl\dep\fakevgui\Image.h(50): warning C4275: non dll-interface class 'vgui::Image' used as base for dll-interface class 'vgui::Bitmap'
+  d:\hl workspace\rehl\dep\fakevgui\Image.h(15): note: see declaration of 'vgui::Image'
+  d:\hl workspace\rehl\dep\fakevgui\Image.h(49): note: see declaration of 'vgui::Bitmap'
+  InputStream.cpp
+  Panel.cpp
+  Scheme.cpp
+  Source.cpp
+d:\hl workspace\rehl\dep\fakevgui\IHTML.h(19): warning C4067: unexpected tokens following preprocessor directive - expected a newline
+Source.cpp(24): warning C4273: 'g_pMemAlloc': inconsistent dll linkage
+  d:\hl workspace\rehl\dep\fakevgui\tier0/memalloc.h(132): note: see previous definition of 'g_pMemAlloc'
+  SurfaceBase.cpp
+d:\hl workspace\rehl\dep\fakevgui\SurfaceBase.h(84): warning C4251: 'vgui::SurfaceBase::_modeInfoDar': class 'vgui::Dar<char *>' needs to have dll-interface to be used by clients of class 'vgui::SurfaceBase'
+  d:\hl workspace\rehl\dep\fakevgui\SurfaceBase.h(84): note: see declaration of 'vgui::Dar<char *>'
+     Creating library D:\HL Workspace\ReHL\dep\FakeVGUI\Build\vgui.lib and object D:\HL Workspace\ReHL\dep\FakeVGUI\Build\vgui.exp
+  Generating code
+  All 359 functions were compiled because no usable IPDB/IOBJ from previous compilation was found.
+  Finished generating code
+  FakeVGUI.vcxproj -> D:\HL Workspace\ReHL\dep\FakeVGUI\Build\vgui.dll
+  FakeVGUI.vcxproj -> D:\HL Workspace\ReHL\dep\FakeVGUI\Build\vgui.pdb (Full PDB)

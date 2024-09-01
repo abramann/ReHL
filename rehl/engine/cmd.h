@@ -106,7 +106,7 @@ void Cmd_TokenizeString(char *text);
 NOXREF cmd_function_t *Cmd_FindCmd(const char *cmd_name);
 cmd_function_t *Cmd_FindCmdPrev(const char *cmd_name);
 void Cmd_AddCommand(const char *cmd_name, xcommand_t function);
-void Cmd_AddCommandWithFlags(char *cmd_name, xcommand_t function, int flags);
+void Cmd_AddCommandWithFlags(const char *cmd_name, xcommand_t function, int flags);
 void Cmd_AddMallocCommand(const char *cmd_name, xcommand_t function, int flag);
 void Cmd_AddHUDCommand(const char *cmd_name, xcommand_t function);
 void Cmd_AddWrapperCommand(const char *cmd_name, xcommand_t function);

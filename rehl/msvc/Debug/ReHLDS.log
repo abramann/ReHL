@@ -1,0 +1,211 @@
+﻿C:\Program Files (x86)\MSBuild\Microsoft.Cpp\v4.0\V140\Microsoft.CppBuild.targets(368,5): warning MSB8004: Output Directory does not end with a trailing slash.  This build instance will add the slash as it is required to allow proper evaluation of the Output Directory.
+C:\Program Files (x86)\MSBuild\Microsoft.Cpp\v4.0\V140\Microsoft.CppBuild.targets(392,5): warning MSB8028: The intermediate directory (Debug\) contains files shared from another project (ReHLDS.vcxproj).  This can lead to incorrect clean and rebuild behavior.
+  precompiled.cpp
+d:\hl workspace\rehl\rehl\public\strtools.h(69): warning C4229: anachronism used: modifiers on data are ignored
+d:\hl workspace\rehl\rehl\engine\mem.h(42): warning C4595: 'operator new': non-member operator new or delete functions may not be declared inline
+d:\hl workspace\rehl\rehl\engine\mem.h(47): warning C4595: 'operator delete': non-member operator new or delete functions may not be declared inline
+d:\hl workspace\rehl\dep\fakevgui\surfacebase.h(84): warning C4251: 'vgui::SurfaceBase::_modeInfoDar': class 'vgui::Dar<char *>' needs to have dll-interface to be used by clients of class 'vgui::SurfaceBase'
+  d:\hl workspace\rehl\dep\fakevgui\surfacebase.h(84): note: see declaration of 'vgui::Dar<char *>'
+  studio_api.cpp
+  BuildGroup.cpp
+  VGui_Controls.cpp
+  Panel.cpp
+d:\hl workspace\rehl\rehl\engine\memorypool.h(32): warning C4018: '<': signed/unsigned mismatch
+d:\hl workspace\rehl\rehl\engine\memorypool.h(80): warning C4804: '<=': unsafe use of type 'bool' in operation
+d:\hl workspace\rehl\rehl\vgui2\panel.cpp(1532): warning C4800: 'int': forcing value to bool 'true' or 'false' (performance warning)
+  FocusNavGroup.cpp
+  EditablePanel.cpp
+  testsuite.cpp
+  recorder.cpp
+  player.cpp
+  memory.cpp
+  funccalls.cpp
+  anonymizer.cpp
+  text_draw.cpp
+  structSizeCheck.cpp
+  rehlds_security.cpp
+  RehldsRuntimeConfig.cpp
+  platform.cpp
+  hookchains_impl.cpp
+  rehlds_interfaces_impl.cpp
+d:\hl workspace\rehl\rehl\rehlds\rehlds_interfaces_impl.cpp(142): warning C4800: 'qboolean': forcing value to bool 'true' or 'false' (performance warning)
+d:\hl workspace\rehl\rehl\rehlds\rehlds_interfaces_impl.cpp(152): warning C4800: 'qboolean': forcing value to bool 'true' or 'false' (performance warning)
+  rehlds_api_impl.cpp
+  Generating Code...
+  Compiling...
+  main.cpp
+  flight_recorder.cpp
+  FlightRecorderImpl.cpp
+  utlsymbol.cpp
+  utlbuffer.cpp
+  dbg.cpp
+  steamid.cpp
+  registry.cpp
+  qgl.cpp
+  zone.cpp
+  world.cpp
+  wad.cpp
+  voice.cpp
+d:\hl workspace\rehl\rehl\engine\voice.cpp(77): warning C4800: 'ISteamUser *': forcing value to bool 'true' or 'false' (performance warning)
+  view.cpp
+d:\hl workspace\rehl\rehl\engine\view.cpp(389): warning C4800: 'int': forcing value to bool 'true' or 'false' (performance warning)
+  vid_null.cpp
+  vgui_init.cpp
+  unicode_strtools.cpp
+  traceinit.cpp
+  ToolTip.cpp
+  tmessage.cpp
+  Generating Code...
+  Compiling...
+  thread.cpp
+  textures.cpp
+  sys_linuxwind.cpp
+  sys_getmodes.cpp
+  sys_engine.cpp
+d:\hl workspace\rehl\rehl\engine\sys_engine.cpp(105): warning C4067: unexpected tokens following preprocessor directive - expected a newline
+  sys_dll2.cpp
+  sys_dll.cpp
+  SystemWrapper.cpp
+  sv_user.cpp
+  sv_upld.cpp
+  sv_steam3.cpp
+  sv_remoteaccess.cpp
+  sv_pmove.cpp
+  sv_phys.cpp
+  sv_move.cpp
+  sv_main.cpp
+  sv_log.cpp
+  sse_mathfun.cpp
+  snd_null.cpp
+d:\hl workspace\rehl\rehl\engine\snd_null.cpp(33): warning C4101: 'fmt': unreferenced local variable
+  snd_mix.cpp
+  Generating Code...
+  Compiling...
+  Sequence.cpp
+d:\hl workspace\rehl\rehl\engine\sequence.cpp(48): warning C4800: 'qboolean': forcing value to bool 'true' or 'false' (performance warning)
+  r_triangle.cpp
+  r_studio.cpp
+  r_part.cpp
+  r_efx.cpp
+  public_amalgamation.cpp
+  pr_edict.cpp
+  pr_cmds.cpp
+  pmovetst.cpp
+  pmove.cpp
+  net_ws.cpp
+  net_chan.cpp
+  module.cpp
+  model.cpp
+d:\hl workspace\rehl\rehl\engine\model.cpp(1809): warning C4101: 'ppixout': unreferenced local variable
+d:\hl workspace\rehl\rehl\engine\model.cpp(1810): warning C4101: 'ppixin': unreferenced local variable
+d:\hl workspace\rehl\rehl\engine\model.cpp(1912): warning C4101: 'i': unreferenced local variable
+  MixerControls.cpp
+  mem.cpp
+  md5.cpp
+  mathlib_sse.cpp
+  mathlib.cpp
+  l_studio.cpp
+d:\hl workspace\rehl\rehl\engine\l_studio.cpp(92): warning C4101: 'pindata': unreferenced local variable
+d:\hl workspace\rehl\rehl\engine\l_studio.cpp(94): warning C4101: 'size': unreferenced local variable
+d:\hl workspace\rehl\rehl\engine\l_studio.cpp(91): warning C4101: 'poutdata': unreferenced local variable
+  Generating Code...
+  Compiling...
+  LinuxFont.cpp
+d:\hl workspace\rehl\rehl\engine\linuxfont.cpp(54): warning C4996: 'GetVersionExA': was declared deprecated
+  c:\program files (x86)\windows kits\10\include\10.0.19041.0\um\sysinfoapi.h(414): note: see declaration of 'GetVersionExA'
+d:\hl workspace\rehl\rehl\engine\linuxfont.cpp(148): warning C4800: 'BYTE': forcing value to bool 'true' or 'false' (performance warning)
+d:\hl workspace\rehl\rehl\engine\linuxfont.cpp(209): warning C4554: '&': check operator precedence for possible error; use parentheses to clarify precedence
+  KeyValues.cpp
+  keys.cpp
+d:\hl workspace\rehl\rehl\engine\keys.cpp(735): warning C4551: function call missing argument list
+  KeyCode.cpp
+  ipratelimit.cpp
+  info.cpp
+  host_cmd.cpp
+  host.cpp
+  hooker.cpp
+d:\hl workspace\rehl\rehl\engine\hooker.cpp(107): warning C4101: 'failed': unreferenced local variable
+  d:\hl workspace\rehl\rehl\engine\hooker.cpp(10): note: see reference to function template instantiation 'void DirectHook<int32(__cdecl *)(void)>(uintptr_t,T)' being compiled
+          with
+          [
+              T=int32 (__cdecl *)(void)
+          ]
+  hashpak.cpp
+  gl_warp.cpp
+  gl_vidnt.cpp
+  gl_screen.cpp
+  gl_rsuf.cpp
+  gl_rmisc.cpp
+  gl_main.cpp
+  gl_hud.cpp
+  gl_draw.cpp
+d:\hl workspace\rehl\rehl\engine\gl_draw.cpp(976): warning C4554: '&': check operator precedence for possible error; use parentheses to clarify precedence
+  FontTextureCache.cpp
+  FontManager.cpp
+  Generating Code...
+d:\hl workspace\rehl\rehl\engine\linuxfont.cpp(220): warning C4715: 'CLinuxFont::Create': not all control paths return a value
+  Compiling...
+  FontAmalgma.cpp
+  filesystem_internal.cpp
+  filesystem.cpp
+  event_api.cpp
+  EngineSurfaceWrap.cpp
+d:\hl workspace\rehl\dep\fakevgui\image.h(50): warning C4275: non dll-interface class 'vgui::Image' used as base for dll-interface class 'vgui::Bitmap'
+  d:\hl workspace\rehl\dep\fakevgui\image.h(15): note: see declaration of 'vgui::Image'
+  d:\hl workspace\rehl\dep\fakevgui\image.h(49): note: see declaration of 'vgui::Bitmap'
+  EngineSurface.cpp
+  ed_strpool.cpp
+  detail_texture.cpp
+  DemoPlayerWrapper.cpp
+d:\hl workspace\rehl\rehl\engine\demoplayerwrapper.cpp(13): warning C4800: 'int': forcing value to bool 'true' or 'false' (performance warning)
+  delta_jit.cpp
+  delta.cpp
+  decals.cpp
+  cvar.cpp
+  crc.cpp
+  console.cpp
+  com_custom.cpp
+  common.cpp
+  cmodel.cpp
+  cmd.cpp
+  cl_tent.cpp
+d:\hl workspace\rehl\rehl\engine\cl_tent.cpp(571): warning C4101: 'iVar3': unreferenced local variable
+  Generating Code...
+  Compiling...
+  cl_spectator.cpp
+  cl_pred.cpp
+  cl_pmove.cpp
+  cl_parsefn.cpp
+  cl_null.cpp
+  cl_main.cpp
+d:\hl workspace\rehl\rehl\engine\cl_main.cpp(649): warning C4800: 'qboolean': forcing value to bool 'true' or 'false' (performance warning)
+d:\hl workspace\rehl\rehl\engine\cl_main.cpp(724): warning C4554: '&': check operator precedence for possible error; use parentheses to clarify precedence
+d:\hl workspace\rehl\rehl\engine\cl_main.cpp(732): warning C4018: '<': signed/unsigned mismatch
+d:\hl workspace\rehl\rehl\engine\cl_main.cpp(629): warning C4101: 'random_seed': unreferenced local variable
+  cl_ents.cpp
+  cl_draw.cpp
+d:\hl workspace\rehl\rehl\engine\cl_draw.cpp(81): warning C4390: ';': empty controlled statement found; is this the intent?
+  cl_demo.cpp
+  chase.cpp
+  cdll_int.cpp
+  cdll_exp.cpp
+  cd.cpp
+  buildnum.cpp
+  blob.cpp
+  BaseUISurface.cpp
+d:\hl workspace\rehl\rehl\engine\ihtmlchromecontroller.h(13): warning C4091: 'typedef ': ignored on left of 'HTMLCommandBuffer_t' when no variable is declared
+  BaseUI.cpp
+d:\hl workspace\rehl\rehl\engine\ihtmlchromecontroller.h(13): warning C4091: 'typedef ': ignored on left of 'HTMLCommandBuffer_t' when no variable is declared
+  TokenLine.cpp
+  ObjectList.cpp
+  net_api.cpp
+  Generating Code...
+  Compiling...
+  BaseSystemModule.cpp
+  Generating Code...
+     Creating library ..\..\..\HL 8084\hw.lib and object ..\..\..\HL 8084\hw.exp
+  ReHLDS.vcxproj -> D:\HL Workspace\ReHL\rehl\msvc\..\..\..\HL 8084\hw.dll
+  ReHLDS.vcxproj -> ..\..\..\HL 8084\hw.pdb (Full PDB)
+  Force build to run Pre-Build event
+  Empty Action
+  	No deployment path specified. Create PublishPath_swds.txt near PostBuild_swds.bat with paths on separate lines for auto deployment.

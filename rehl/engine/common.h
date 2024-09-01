@@ -38,8 +38,13 @@
 
 #ifndef REHLDS_FIXES
 #ifdef _WIN32
+#ifdef SWDS
 	#define __BUILD_TIME__ "11:17:23"
 	#define __BUILD_DATE__ "Aug  8 2013"
+#else
+#define __BUILD_TIME__ "19:53:27"
+#define __BUILD_DATE__ "Aug  3 2020"
+#endif
 #else
 	#define __BUILD_TIME__ "13:14:09"
 	#define __BUILD_DATE__ "Aug 29 2013"

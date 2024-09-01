@@ -1,9 +1,9 @@
 #include "precompiled.h"
-#include "../FakeVGUI/App.h"
-#include "../FakeVGUI/Panel.h"
+#include "../../../dep/FakeVGUI/App.h"
+#include "../../../dep/FakeVGUI/Panel.h"
+#include "../../../dep/FakeVGUI/SurfaceBase.h"
 #include "GameUI.h"
 #include "VClientVGUI.h"
-#include "FakeVGUI\SurfaceBase.h"
 #include "GameConsole.h"
 
 #define BMP_TYPE 0x4D42

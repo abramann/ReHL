@@ -54,9 +54,14 @@ struct glwstate_t
 	FileHandle_t log_fp;
 };
 
+#ifdef SHARED_GAME_DATA
+extern char*& wadpath;
+#else
+extern char*  wadpath;
+#endif
+
 extern glwstate_t glw_state;
 
-extern char* wadpath;
 
 bool QGL_Init(const char* pdllname, const char* pszCmdLine);
 void QGL_Shutdown();

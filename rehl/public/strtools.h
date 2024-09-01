@@ -64,6 +64,10 @@ inline char *_strlwr(char *start)
 }
 #endif
 
+extern uintptr_t AddBase(uintptr_t offset);
+
+static int(*__cdecl GameSNPrintf)(char*  const, size_t const, char const* const, ...) = (int(*__cdecl)(char*  const, size_t, char const* const, ...)) AddBase(0x106F72);
+
 #if defined(ASMLIB_H) && defined(HAVE_OPT_STRTOOLS)
 	#define Q_memset A_memset
 	#define Q_memcpy A_memcpy
@@ -86,7 +90,11 @@ inline char *_strlwr(char *start)
 	#define Q_strlwr A_strtolower
 	#define Q_strupr A_strtoupper
 	#define Q_sprintf sprintf
+#ifdef SHARED_GAME_DATA
+	#define Q_snprintf GameSNPrintf
+#else
 	#define Q_snprintf _snprintf
+#endif
 	#define Q_vsnprintf _vsnprintf
 	#define Q_vsnwprintf _vsnwprintf
 	#define Q_atoi atoi

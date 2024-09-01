@@ -27,6 +27,7 @@
 */
 
 #include "precompiled.h"
+#include "cdll_int.h"
 
 // Complete arguments string
 
@@ -605,10 +606,6 @@ const char* EXT_FUNC Cmd_Argv(int arg)
 
 const char* EXT_FUNC Cmd_Args(void)
 {
-#ifndef SWDS
-	NOT_IMPLEMENTED;
-	//g_engdstAddrs->Cmd_Args();
-#endif
 	return cmd_args;
 }
 
@@ -746,6 +743,9 @@ void Cmd_InsertCommand(cmd_function_t *cmd)
 // Use this for engine inside call only, not from user code, because it doesn't alloc string for the name.
 void Cmd_AddCommand(const char *cmd_name, xcommand_t function)
 {
+#ifndef REHLDS
+	Cmd_AddCommandWithFlags(cmd_name, function, NULL);
+#else
 	cmd_function_t *cmd;
 
 	if (host_initialized)
@@ -774,9 +774,10 @@ void Cmd_AddCommand(const char *cmd_name, xcommand_t function)
 	cmd->flags = 0;
 
 	Cmd_InsertCommand(cmd);
+#endif
 }
 
-void Cmd_AddCommandWithFlags(char * cmd_name, xcommand_t function, int flags)
+void Cmd_AddCommandWithFlags(const char * cmd_name, xcommand_t function, int flags)
 {
 	cmd_function_t *cmd;
 
@@ -786,7 +787,7 @@ void Cmd_AddCommandWithFlags(char * cmd_name, xcommand_t function, int flags)
 	}
 
 	// Check in variables list
-	if (Cvar_FindVar(cmd_name) != NULL)
+	if(Cvar_FindVar(cmd_name) != NULL)
 	{
 		Con_Printf("%s: \"%s\" already defined as a var\n", __func__, cmd_name);
 		return;
@@ -805,7 +806,27 @@ void Cmd_AddCommandWithFlags(char * cmd_name, xcommand_t function, int flags)
 	cmd->function = function ? function : Cmd_ForwardToServer;
 	cmd->flags = flags;
 
-	Cmd_InsertCommand(cmd);
+	cmd_function_t *c, **p;
+
+	// Commands list is alphabetically sorted, search where to push
+	c = cmd_functions;
+	p = &cmd_functions;
+	while (c)
+	{
+		if (Q_stricmp(c->name, cmd->name) > 0)
+		{
+			// Current command name is bigger, insert before it
+			cmd->next = c;
+			*p = cmd;
+			return;
+		}
+		p = &c->next;
+		c = c->next;
+	}
+
+	// All commands in the list are lower then the new one
+	cmd->next = NULL;
+	*p = cmd;
 }
 
 // Use this for call from user code, because it alloc string for the name.

@@ -5,9 +5,9 @@
 #include "KeyCode.h"
 #include "MouseCode.h"
 #include "Color.h"
-#include "FakeVGUI\Dar.h"
 #include "MessageMap.h"
 #include "BuildGroup.h"
+#include "../../../dep/FakeVGUI/Dar.h"
 
 #define ADD_ONE_TIME \
 	static bool bAdded = false;\

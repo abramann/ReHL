@@ -35,9 +35,12 @@
 #include "osconfig.h"
 #include "mathlib.h"
 
-#define NOT_IMPLEMENTED if(IsDebuggerPresent())DebugBreak()
-#define CHECK_REQUIRED if(IsDebuggerPresent())DebugBreak();
+#define DEBUG_BREAK_IF_PRESENT if(IsDebuggerPresent()) DebugBreak();
+#define NOT_IMPLEMENTED DEBUG_BREAK_IF_PRESENT
+#define NOT_TESTED DEBUG_BREAK_IF_PRESENT
+#define CHECK_REQUIRED DEBUG_BREAK_IF_PRESENT
 #define UNRESOLVED_ISSUE
+
 // Has no references on server side.
 #define NOXREF
 // Function body is not implemented.

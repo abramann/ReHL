@@ -31,7 +31,12 @@ void SetupHooks()
 	DirectHook(0x5C2A0, Host_ClearSaveDirectory);
 	DirectHook(0x52E60, HPAK_Init);
 	DirectHook(0xC56C0, W_LoadWadFile);
-	//DirectHook(0x61460, Key_Init);	// TODO
+
+	DirectHook(0x61460, Key_Init);
+	DirectHook(0x281A0, Cmd_AddCommand);
+	DirectHook(0x28090, Cmd_AddCommandWithFlags);
+	DirectHook(0x286C0, Cmd_ForwardToServerInternal);
+
 	DirectHook(0x2C790, Con_CheckResize);	// Check implement
 	DirectHook(0x2C920, Con_Init);
 	//DirectHook(0x2FD70, Decal_Init); // Correct the wrong implement
@@ -41,7 +46,7 @@ void SetupHooks()
 	//DirectHook(0x69230, NET_Init);	// Correct wrong implement
 	DirectHook(0x325E0, DELTA_Init);
 #ifdef UNSRESOLVED_ISSUE
-	DirectHook(0x9E450, SV_Init); // Implemented but couldn't resolve the CRT issue with _snprintf, someone
+	DirectHook(0x9E450, SV_Init); // Implemented but couldn't resolve the CRT issue with _snprintf
 #endif
 	DirectHook(0xB1230, SystemWrapper_Init);
 	DirectHook(0x8EF0, build_number);
@@ -63,6 +68,7 @@ void SetupHooks()
 	DirectHook(0x40030, Mod_LoadModel);
 	//DirectHook(0x2D1D0, CRC32_ProcessBuffer);
 	DirectHook(0x29A70, COM_ExplainDisconnection);
+	
 }
 
 uintptr_t AddBase(uintptr_t offset)

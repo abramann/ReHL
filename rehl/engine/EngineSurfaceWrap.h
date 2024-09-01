@@ -1,7 +1,6 @@
 #pragma once
 
-#include "../FakeVGUI/SurfaceBase.h"
-
+#include "../../../dep/FakeVGUI/SurfaceBase.h"
 
 class IEngineSurface;
 

@@ -8,22 +8,6 @@ uintptr_t AddBase(uintptr_t offset);
 #define ADDRESS_OF_DATAPTR(TYPE, ADDR) (TYPE)**(DWORD**)AddBase(ADDR)
 
 template<typename T>
-T DbgAddressOfData(uintptr_t addr)
-{
-	MessageBoxA(0, "DebugBreak MessageBox", "ReHL", MB_OK);
-	auto theAddr = ADDRESS_OF_DATA(T, addr);
-	return theAddr;
-}
-
-template<typename T>
-T DbgAddressOfDataPtr(uintptr_t addr)
-{
-	MessageBoxA(0, "DebugBreak MessageBox", "ReHL", MB_OK);
-	auto theAddr = ADDRESS_OF_DATA(T, addr);
-	return theAddr;
-}
-
-template<typename T>
 void DirectHook(uintptr_t offset, T directedFunction);
 
 template<typename ReturnType, typename... Arguments>

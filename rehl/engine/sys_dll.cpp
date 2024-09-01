@@ -1440,16 +1440,6 @@ void Con_Printf(const char *fmt, ...)
 			VGuiWrap2_ConPrintf(Dest);
 		}
 	}
-	/*char Dest[4096];
-	va_list va;
-
-	va_start(va, fmt);
-	Q_vsnprintf(Dest, sizeof(Dest), fmt, va);
-	va_end(va);
-
-	g_RehldsHookchains.m_Con_Printf.callChain(Con_Printf_internal, Dest);
-	*/
-
 }
 
 void EXT_FUNC Con_Printf_internal(const char *Dest)

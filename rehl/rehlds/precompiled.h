@@ -104,3 +104,4 @@
 #include "cdll_int.h"
 #include "server_static.h"
 #include "host.h"
+#include "detail_texture.h"

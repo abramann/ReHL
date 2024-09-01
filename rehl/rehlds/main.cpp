@@ -46,15 +46,18 @@ BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved)
 		if(MessageBoxA(NULL, "Disable hook", "ReHL", MB_YESNO) == 6)
 			run_without_hook = true;
 		else
+		{
 			SetupHooks();
 
-		Module hlds_exe;
-		if (!FindModuleByName("hlds.exe", &hlds_exe))
-		{
-			printf("%s: launcher is not hlds.exe, tests playing/recording disabled!\n", __func__);
-		}
-		else {
-			TestSuite_Init(NULL, &hlds_exe, NULL);
+			Module hlds_exe;
+			if (!FindModuleByName("hlds.exe", &hlds_exe))
+			{
+				printf("%s: launcher is not hlds.exe, tests playing/recording disabled!\n", __func__);
+			}
+			else 
+			{
+				TestSuite_Init(NULL, &hlds_exe, NULL);
+			}
 		}
 #endif
 	}
