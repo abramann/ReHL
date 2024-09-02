@@ -31,12 +31,15 @@
 // TODO: Implement security module
 cl_enginefunc_dst_t *pg_engdstAddrs;
 
-modfuncs_t g_modfuncs;
 #ifdef SHARED_GAME_DATA
 module_t * sp_g_module = ADDRESS_OF_DATA(module_t *, 0x57EDE);
 module_t & g_module = *sp_g_module;
+
+modfuncs_t * sp_g_modfuncs = ADDRESS_OF_DATA(modfuncs_t *, 0x63B72);
+modfuncs_t & g_modfuncs = *sp_g_modfuncs;
 #else
 module_t  g_module;
+modfuncs_t g_modfuncs;
 #endif
 
 void NullDst(void)

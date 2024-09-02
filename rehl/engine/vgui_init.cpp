@@ -81,7 +81,6 @@ CDummyApp theApp;
 void AllowFog(int allowed);
 
 
-static vgui::Panel* staticPanel = nullptr;
 #ifdef SHARED_GAME_DATA
 IBaseUI** sp_staticUIFuncs = ADDRESS_OF_DATA(IBaseUI**, 0x70D7);
 IBaseUI*& staticUIFuncs = *sp_staticUIFuncs;
@@ -92,10 +91,13 @@ static EngineSurfaceWrap*& staticEngineSurface = *sp_staticEngineSurface;
 CUtlVector<char> * sp_g_TempConsoleBuffer = ADDRESS_OF_DATA(CUtlVector<char> *, 0x7520);
 CUtlVector<char> & g_TempConsoleBuffer = *sp_g_TempConsoleBuffer; 
 
+vgui::Panel* * sp_staticPanel = ADDRESS_OF_DATA(vgui::Panel* *, 0xC138C);
+vgui::Panel* & staticPanel = *sp_staticPanel;
 #else
 static IBaseUI* staticUIFuncs = nullptr;
 static EngineSurfaceWrap* staticEngineSurface = nullptr;
 CUtlVector<char> g_TempConsoleBuffer;
+static vgui::Panel* staticPanel = nullptr;
 #endif
 extern bool scr_drawloading;
 
@@ -228,6 +230,7 @@ bool VGui_LoadBMP(FileHandle_t file, byte* buffer, int bufsize, int* width, int*
 
 void VGuiWrap_SetRootPanelSize()
 {
+	return Call_Function<void>(0xC1270);
 	auto pRoot = VGuiWrap_GetPanel();
 
 	if (pRoot)
@@ -272,7 +275,7 @@ void VGuiWrap_Startup()
 
 	auto factoryFn = Sys_GetFactoryThis();
 
-	IEngineSurface* pSurface = (IEngineSurface*)factoryFn(VENGINE_HLDS_API_VERSION, nullptr);
+	IEngineSurface* pSurface = (IEngineSurface*)factoryFn(ENGINESURFACE_INTERFACE_VERSION, nullptr);
 
 	staticEngineSurface = new EngineSurfaceWrap(staticPanel, pSurface);
 

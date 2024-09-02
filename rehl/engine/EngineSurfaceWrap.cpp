@@ -19,13 +19,32 @@ namespace vgui
 
 vgui::MouseCode CSWTCH_59[4] = { vgui::MOUSE_MIDDLE, vgui::MOUSE_LEFT, vgui::MOUSE_RIGHT, vgui::MOUSE_LEFT };
 
-static SDL_Cursor* staticDefaultCursor[20];
-static SDL_Cursor* staticCurrentCursor;
+#ifdef SHARED_GAME_DATA
+vgui::Font* * sp_staticFont = ADDRESS_OF_DATA(vgui::Font* *, 0xB8F77);
+vgui::Font* & staticFont = *sp_staticFont; 
+
+FontInfoVGUI* * sp_staticFontInfoVGUI = ADDRESS_OF_DATA(FontInfoVGUI* *, 0xB8F7D);
+FontInfoVGUI* & staticFontInfoVGUI = *sp_staticFontInfoVGUI; 
+
+vgui::Dar<FontInfoVGUI*> * sp_staticFontInfoVGUIDar = ADDRESS_OF_DATA(vgui::Dar<FontInfoVGUI*> *, 0xB8F85);
+vgui::Dar<FontInfoVGUI*> & staticFontInfoVGUIDar = *sp_staticFontInfoVGUIDar;
+
+int * sp_staticContextCount = ADDRESS_OF_DATA(int *, 0xB8F96);
+int & staticContextCount = *sp_staticContextCount;
+
+SDL_Cursor*(*sp_staticDefaultCursor)[20] = ADDRESS_OF_DATA(SDL_Cursor*(*)[20],0xB9001);
+SDL_Cursor*(&staticDefaultCursor)[20] = *sp_staticDefaultCursor;
+
+SDL_Cursor* * sp_staticCurrentCursor = ADDRESS_OF_DATA(SDL_Cursor**, 0xB909C);
+SDL_Cursor* & staticCurrentCursor = *sp_staticCurrentCursor;
+#else
 static vgui::Font* staticFont;
 static FontInfoVGUI* staticFontInfoVGUI;
 static vgui::Dar<FontInfoVGUI*> staticFontInfoVGUIDar;
 static int staticContextCount;
-
+static SDL_Cursor* staticDefaultCursor[20];
+static SDL_Cursor* staticCurrentCursor;
+#endif
 
 void EngineSurfaceWrap::AppHandler(void * event, void * userData)
 {
@@ -122,7 +141,7 @@ void EngineSurfaceWrap::unlockCursor()
 {
 	this->_cursorLocked = false;
 	NOT_IMPLEMENTED;
-	(*(void(__cdecl **)(EngineSurfaceWrap *const, byte*))(this + 120))(this, baseclass_0);
+	//(*(void(__cdecl **)(EngineSurfaceWrap *const, byte*))(this + 120))(this, baseclass_0);
 }
 
 void EngineSurfaceWrap::drawLine(int x1, int y1, int x2, int y2)
@@ -268,37 +287,42 @@ void EngineSurfaceWrap::enableMouseCapture(bool state)
 }
 EngineSurfaceWrap::EngineSurfaceWrap(vgui::Panel * embeddedPanel, IEngineSurface * engineSurface) : SurfaceBase::SurfaceBase(embeddedPanel)
 {
+	auto xa = sizeof(SurfaceBase);
+	//Call_Method<void*, EngineSurfaceWrap, vgui::Panel*, IEngineSurface*>(0xB8F50, this, embeddedPanel, engineSurface);
 	vgui::FileInputStream *inputStream;
 	_engineSurface = engineSurface;
 	staticFont = 0;
 	staticFontInfoVGUI = 0;
 	_cursorLocked = false;
 	++staticContextCount;
+	
 	inputStream = new vgui::FileInputStream("valve/gfx/vgui/mouse.tga", false);
 	_emulatedMouseImage = new vgui::BitmapTGA((vgui::InputStream*)inputStream, true);
 	inputStream->close();
-	delete inputStream;
+	//delete inputStream;
 
-	if (!SDL_WasInit(32))
+	if (!SDL_WasInit(SDL_INIT_VIDEO))
 	{
+#ifndef _WIN32
 		SDL_SetHint("SDL_VIDEO_X11_XRANDR", "1");
 		SDL_SetHint("SDL_VIDEO_X11_XVIDMODE", "1");
-		SDL_InitSubSystem(32);
+#endif
+		SDL_InitSubSystem(SDL_INIT_VIDEO);
 	}
-
-	staticDefaultCursor[1] = nullptr;
-	staticDefaultCursor[2] = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_ARROW);
-	staticDefaultCursor[3] = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_IBEAM);
-	staticDefaultCursor[4] = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_WAIT);
-	staticDefaultCursor[5] = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_CROSSHAIR);
-	staticDefaultCursor[6] = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_SIZENS);
-	staticDefaultCursor[7] = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_SIZENWSE);
-	staticDefaultCursor[8] = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_SIZENESW);
-	staticDefaultCursor[9] = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_SIZEWE);
-	staticDefaultCursor[10] = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_SIZENS);
-	staticDefaultCursor[11] = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_SIZEALL);
-	staticDefaultCursor[12] = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_NO);
-	staticDefaultCursor[13] = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_HAND);
+	staticDefaultCursor[0] = nullptr;
+	staticDefaultCursor[1] = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_ARROW);
+	staticDefaultCursor[2] = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_IBEAM);
+	staticDefaultCursor[3] = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_WAIT);
+	staticDefaultCursor[4] = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_CROSSHAIR);
+	staticDefaultCursor[5] = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_SIZENS);
+	staticDefaultCursor[6] = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_SIZENWSE);
+	staticDefaultCursor[7] = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_SIZENESW);
+	staticDefaultCursor[8] = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_SIZEWE);
+	staticDefaultCursor[9] = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_SIZENS);
+	staticDefaultCursor[10] = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_SIZEALL);
+	staticDefaultCursor[11] = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_NO);
+	staticDefaultCursor[12] = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_HAND);
+	staticDefaultCursor[13] = SDL_CreateSystemCursor(SDL_NUM_SYSTEM_CURSORS);
 
 	staticCurrentCursor = staticDefaultCursor[2];
 }

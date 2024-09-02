@@ -161,10 +161,6 @@ extern void ClientDLL_ChatInputPosition( int *x, int *y );
 
 //extern cldll_func_t cl_funcs;
 extern cl_enginefunc_t cl_engsrcProxies;
-extern CSysModule* hClientDLL;
-
-// Module exports
-extern modfuncs_t g_modfuncs;
 
 // Macros for exported engine funcs
 #define RecEngSPR_Load(a)									(g_engdstAddrs.pfnSPR_Load(&a))
@@ -458,14 +454,22 @@ extern void NullDst(void);
 }
 #endif
 
-extern char g_szfullClientName[512];
-extern cl_enginefunc_t cl_enginefuncs;
 #ifdef SHARED_GAME_DATA
 extern module_t& g_module;
 extern cldll_func_t& cl_funcs;
 extern cl_enginefunc_dst_t& g_engdstAddrs;
+extern modfuncs_t& g_modfuncs;
+extern char(&g_szfullClientName)[512];
+extern CSysModule*& hClientDLL;
+extern cl_enginefunc_t& cl_enginefuncs;
 #else
 extern cldll_func_t cl_funcs;
 extern module_t	g_module;
 extern cl_enginefunc_dst_t g_engdstAddrs; 
+extern char g_szfullClientName[512];
+extern CSysModule*& hClientDLL;
+extern cl_enginefunc_t cl_enginefuncs;
+
+// Module exports
+extern modfuncs_t g_modfuncs;
 #endif

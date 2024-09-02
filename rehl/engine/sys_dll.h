@@ -47,7 +47,6 @@ extern char gszExtendedDisconnectReason[MAX_DISCONNECT_REASON];
 extern int giSubState;
 extern int giStateInfo;
 extern NEW_DLL_FUNCTIONS gNewDLLFunctions;
-extern modfuncs_t g_modfuncs;
 extern extensiondll_t g_rgextdll[50];
 
 #ifdef SHARED_GAME_DATA
@@ -75,7 +74,6 @@ extern FileFindHandle_t& g_hfind;
 extern qboolean& con_debuglog;
 extern char (&gszDisconnectReason)[MAX_DISCONNECT_REASON];
 extern qboolean& gfExtendedError;
-
 #endif
 #else
 extern qboolean gfExtendedError;

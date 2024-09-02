@@ -81,6 +81,12 @@ qboolean & atismoothing = *sp_atismoothing;
 
 int * sp_gGLHardwareType = ADDRESS_OF_DATA(int *, 0x4CC21);
 int & gGLHardwareType = *sp_gGLHardwareType;
+
+cvar_t * sp_gl_ztrick = ADDRESS_OF_DATA(cvar_t *, 0x4E121);
+cvar_t & gl_ztrick = *sp_gl_ztrick; 
+
+cvar_t * sp_gl_vsync = ADDRESS_OF_DATA(cvar_t *, 0x4E12B);
+cvar_t & gl_vsync = *sp_gl_vsync;
 #else
 SDL_Window** pmainwindow = nullptr;
 static qboolean gfMiniDriver = false;
@@ -112,13 +118,11 @@ const char* gl_version = nullptr;
 bool atismoothing = false;
 
 int gGLHardwareType = 0;
-
+cvar_t gl_ztrick = { "gl_ztrick", "0" };
+cvar_t gl_vsync = { "gl_vsync", "1", FCVAR_ARCHIVE };
 #endif
 
 void GLimp_LogNewFrame();
-
-cvar_t gl_ztrick = { "gl_ztrick", "0" };
-cvar_t gl_vsync = { "gl_vsync", "1", FCVAR_ARCHIVE };
 
 extern cvar_t  gl_clear;
 

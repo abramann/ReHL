@@ -3,9 +3,7 @@
 
 cvar_t* cl_righthand;
 
-char g_szfullClientName[512];
 
-CSysModule* hClientDLL = nullptr;
 
 #ifdef SHARED_GAME_DATA
 qboolean* sp_fClientLoaded = ADDRESS_OF_DATA(qboolean*, 0xBCE4);
@@ -13,11 +11,22 @@ qboolean& fClientLoaded = *sp_fClientLoaded;
 
 cldll_func_t* sp_cl_funcs = ADDRESS_OF_DATA(cldll_func_t*, 0xBDEC);
 cldll_func_t& cl_funcs = *sp_cl_funcs;
+
+char(*sp_g_szfullClientName)[512] = ADDRESS_OF_DATA(char(*)[512], 0xB1D4);
+char(&g_szfullClientName)[512] = *sp_g_szfullClientName;
+
+cldll_func_dst_t * sp_g_cldstAddrs = ADDRESS_OF_DATA(cldll_func_dst_t *, 0x635B9);
+cldll_func_dst_t & g_cldstAddrs = *sp_g_cldstAddrs;
+
+CSysModule** sp_hClientDLL = ADDRESS_OF_DATA(CSysModule**, 0x11F5);
+CSysModule*& hClientDLL = *sp_hClientDLL;
 #else
 static qboolean fClientLoaded = false;
 cldll_func_t sp_cl_funcs = { 0 };
-#endif
+char g_szfullClientName[512];
 static cldll_func_dst_t g_cldstAddrs = k_cldstNull;
+CSysModule* hClientDLL = nullptr;
+#endif
 static BlobFootprint_t g_blobfootprintClient = {};
 
 
@@ -28,6 +37,10 @@ void SDL_GetMousePos(POINT* ppt);
 
 void R_ResetStudio();
 
+#ifdef SHARED_GAME_DATA
+cl_enginefunc_t * sp_cl_enginefuncs = ADDRESS_OF_DATA(cl_enginefunc_t *, 0xB235);
+cl_enginefunc_t & cl_enginefuncs = *sp_cl_enginefuncs; 
+#else
 cl_enginefunc_t cl_enginefuncs =
 {
 	&SPR_Load,
@@ -165,6 +178,7 @@ cl_enginefunc_t cl_enginefuncs =
 	&GetAliasesList,
 	&VguiWrap2_GetMouseDelta
 };
+#endif
 
 int ClientDLL_Key_Event(int down, int keynum, const char *pszCurrentBinding)
 {
@@ -180,7 +194,8 @@ void ClientDLL_Init()
 	char szDllName[512];
 	snprintf(szDllName, ARRAYSIZE(szDllName), "cl_dlls/client." LIBRARY_PREFIX);
 
-	ClientDLL_Shutdown();
+	if (fClientLoaded)
+		ClientDLL_Shutdown();
 
 	COM_FixSlashes(szDllName);
 	Q_strcpy(g_szfullClientName, szDllName);
@@ -189,17 +204,16 @@ void ClientDLL_Init()
 
 	g_pcls.fSecureClient = false;
 
-	if (!LoadSecureClient(g_szfullClientName) && !fClientLoaded)
-	{
+	LoadSecureClient(g_szfullClientName);
+
+	if (!fClientLoaded)
 		LoadInsecureClient(g_szfullClientName);
-	}
 
 	HookServerMsg("ScreenShake", &V_ScreenShake);
 	HookServerMsg("ScreenFade", &V_ScreenFade);
 	cl_funcs.pInitFunc(&cl_enginefuncs, CLDLL_INTERFACE_VERSION);
 
-	if (cl_funcs.pClientMoveInit)
-		cl_funcs.pClientMoveInit(&g_clmove);
+	ClientDLL_ClientMoveInit(&g_clmove);
 
 	CL_GetPlayerHulls();
 }

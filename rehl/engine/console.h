@@ -34,6 +34,8 @@ const int CON_MAX_NOTIFY_STRING = 80;
 
 void Con_CheckResize();
 
+void EXT_FUNC Con_NPrintf(int idx, const char *fmt, ...);
+
 void Con_Shutdown(void);
 
 void Con_ClearNotify();

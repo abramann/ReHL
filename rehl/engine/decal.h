@@ -51,14 +51,17 @@ typedef struct lumplist_s
 
 #ifdef SHARED_GAME_DATA
 extern cachewad_t*& decal_wad;
+extern cachewad_t*& menu_wad;
+extern qboolean& m_bDrawInitialized;
+extern char(&decal_names)[MAX_DECALS][16];
 #else
 extern cachewad_t *decal_wad;
+extern cachewad_t* menu_wad;
+extern qboolean m_bDrawInitialized;
+extern char decal_names[MAX_DECALS][16];
 #endif
 
-extern cachewad_t *menu_wad;
 extern char szCustName[10];
-extern char decal_names[MAX_DECALS][16];
-extern qboolean m_bDrawInitialized;
 extern qboolean gfCustomBuild;
 
 void Draw_Shutdown(void);

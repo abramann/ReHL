@@ -19,12 +19,15 @@ enum GL_TEXTURETYPE
 #ifdef SHARED_GAME_DATA
 extern GLenum & oldtarget;
 extern cvar_t& gl_ansio;
+extern cvar_t& gl_round_down;
+extern cvar_t& gl_picmip;
+extern cvar_t& gl_palette_tex;
+extern cvar_t& gl_texturemode;
+extern cvar_t& gl_max_size;
+extern cvarhook_t& gl_texturemode_hook;
 #else
 extern GLenum  oldtarget;
 extern cvar_t gl_ansio;
-#endif
-
-extern int g_currentpalette;
 extern cvar_t gl_round_down;
 extern cvar_t gl_picmip;
 extern cvar_t gl_palette_tex;
@@ -32,6 +35,10 @@ extern cvar_t gl_texturemode;
 extern cvar_t gl_max_size;
 
 extern cvarhook_t gl_texturemode_hook;
+#endif
+
+extern int g_currentpalette;
+
 
 extern qboolean giScissorTest;
 

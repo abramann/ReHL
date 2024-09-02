@@ -45,10 +45,7 @@ mplane_t box_planes_0[6];
 
 float EXT_FUNC PM_TraceModel(physent_t *pEnt, vec_t *start, vec_t *end, trace_t *trace)
 {
-	NOT_TESTED;
-
-	return Call_Function<float, physent_t *, vec_t *, vec_t *, trace_t*>(0x6B650, pEnt, start, end, trace);
-	NOT_IMPLEMENTED;
+	//return Call_Function<float, physent_t *, vec_t *, vec_t *, trace_t*>(0x6B650, pEnt, start, end, trace);
 
 	hull_t *pHull;
 	int saveHull;
@@ -73,8 +70,6 @@ float EXT_FUNC PM_TraceModel(physent_t *pEnt, vec_t *start, vec_t *end, trace_t 
 
 void EXT_FUNC PM_GetModelBounds(struct model_s *mod, vec_t *mins, vec_t *maxs)
 {
-	NOT_TESTED;
-
 	mins[0] = mod->mins[0];
 	mins[1] = mod->mins[1];
 	mins[2] = mod->mins[2];
@@ -86,7 +81,6 @@ void EXT_FUNC PM_GetModelBounds(struct model_s *mod, vec_t *mins, vec_t *maxs)
 
 int EXT_FUNC PM_GetModelType(struct model_s *mod)
 {
-	NOT_TESTED;
 	return mod->type;
 }
 
@@ -380,8 +374,6 @@ int EXT_FUNC PM_TestPlayerPosition(vec_t *pos, pmtrace_t *ptrace)
 
 int EXT_FUNC PM_TestPlayerPositionEx(vec_t *pos, pmtrace_t *ptrace, int(*pfnIgnore)(physent_t *))
 {
-	NOT_TESTED;
-
 	return _PM_TestPlayerPosition(pos, ptrace, pfnIgnore);
 }
 
@@ -612,8 +604,7 @@ struct pmtrace_s* EXT_FUNC PM_TraceLine(float *start, float *end, int flags, int
 {
 	NOT_TESTED;
 
-	return Call_Function<pmtrace_s*, float *, float *, int, int, int>(0x6C680, start, end, flags, usehull, ignore_pe);
-	NOT_IMPLEMENTED;
+	//return Call_Function<pmtrace_s*, float *, float *, int, int, int>(0x6C680, start, end, flags, usehull, ignore_pe);
 
 	int oldhull;
 	static pmtrace_t tr;

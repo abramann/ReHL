@@ -28,16 +28,58 @@ quake_mode_t modes[6] =
 	{"GL_LINEAR_MIPMAP_LINEAR",GL_LINEAR_MIPMAP_LINEAR , GL_LINEAR }
 };
 
+struct GL_PALETTE
+{
+	int tag;
+	int referenceCount;
+	unsigned __int8 colors[768];
+};
+
 #ifdef SHARED_GAME_DATA
 GLenum * sp_oldtarget = ADDRESS_OF_DATA(GLenum *, 0x4CB82);
 GLenum & oldtarget = *sp_oldtarget;
 
 cvar_t * sp_gl_ansio = ADDRESS_OF_DATA(cvar_t *, 0x3C391);
 cvar_t & gl_ansio = *sp_gl_ansio;
+
+int * sp_texels = ADDRESS_OF_DATA(int *, 0x3C0E1);
+int & texels = *sp_texels;
+
+cvar_t * sp_gl_max_size = ADDRESS_OF_DATA(cvar_t *, 0x3C35F);
+cvar_t & gl_max_size = *sp_gl_max_size; 
+
+cvar_t * sp_gl_round_down = ADDRESS_OF_DATA(cvar_t *, 0x3C369);
+cvar_t & gl_round_down = *sp_gl_round_down; 
+
+cvar_t * sp_gl_picmip = ADDRESS_OF_DATA(cvar_t *, 0x3C373);
+cvar_t & gl_picmip = *sp_gl_picmip; 
+
+cvar_t * sp_gl_palette_tex = ADDRESS_OF_DATA(cvar_t *, 0x3C37D);
+cvar_t & gl_palette_tex = *sp_gl_palette_tex; 
+
+cvar_t * sp_gl_texturemode = ADDRESS_OF_DATA(cvar_t *, 0x3C387);
+cvar_t & gl_texturemode = *sp_gl_texturemode; 
+
+cvarhook_t * sp_gl_texturemode_hook = ADDRESS_OF_DATA(cvarhook_t *, 0x3C3A0);
+cvarhook_t & gl_texturemode_hook = *sp_gl_texturemode_hook;
+
+GL_PALETTE(*sp_gGLPalette)[350] = ADDRESS_OF_DATA(GL_PALETTE(*)[350], 0x2);
+GL_PALETTE (&gGLPalette)[350] = *sp_gGLPalette;
+
+qpic_t* * sp_draw_disc = ADDRESS_OF_DATA(qpic_t**, 0x3C465);
+qpic_t* & draw_disc = *sp_draw_disc; 
 #else
 GLenum oldtarget = GL_ASYNC_READ_PIXELS_SGIX;
-
 cvar_t gl_ansio = { "gl_ansio", "16" };
+cvar_t gl_max_size = { "gl_max_size", "256", FCVAR_ARCHIVE };
+cvar_t gl_round_down = { "gl_round_down", "3" , FCVAR_ARCHIVE };
+cvar_t gl_picmip = { "gl_picmip", "0", FCVAR_ARCHIVE };
+cvar_t gl_palette_tex = { "gl_palette_tex", "1" };
+cvar_t gl_texturemode = { "gl_texturemode", "GL_LINEAR_MIPMAP_LINEAR", FCVAR_ARCHIVE };
+cvarhook_t gl_texturemode_hook = { gl_texturemode_hook_callback };
+static int texels = 0;
+GL_PALETTE gGLPalette[350];
+qpic_t* draw_disc = nullptr;
 #endif
 
 unsigned int scaled_25071[524288] = { 0 }; //
@@ -46,18 +88,10 @@ int giTotalTextures = 0;
 
 int gl_filter_max = GL_LINEAR;
 int gl_filter_min = GL_LINEAR_MIPMAP_LINEAR;
-static int texels = 0;
 
-cvar_t gl_round_down = { "gl_round_down", "3" , FCVAR_ARCHIVE };
-cvar_t gl_picmip = { "gl_picmip", "0", FCVAR_ARCHIVE };
-cvar_t gl_palette_tex = { "gl_palette_tex", "1" };
-cvar_t gl_texturemode = { "gl_texturemode", "GL_LINEAR_MIPMAP_LINEAR", FCVAR_ARCHIVE };
-cvar_t gl_max_size = { "gl_max_size", "256", FCVAR_ARCHIVE };
 cvar_t gl_spriteblend = { "gl_spriteblend", "1", FCVAR_ARCHIVE };
 cvar_t gl_dither = { "gl_dither", "1", FCVAR_ARCHIVE };
-cvarhook_t gl_texturemode_hook = { gl_texturemode_hook_callback };
 
-qpic_t* draw_disc = nullptr;
 
 #define MAX_CACHED_PICS 128
 
@@ -87,18 +121,11 @@ void ComputeScaledSize(int *wscale, int *hscale, int width, int height);
 void GL_ResampleAlphaTexture(unsigned char *in, int inwidth, int inheight, unsigned char *out, int outwidth, int outheight);
 void GL_ResampleTexture(unsigned int *in, int inwidth, int inheight, unsigned int *out, int outwidth, int outheight);
 short GL_PaletteAdd(unsigned char *pPal, qboolean isSky);
+void GL_PaletteInit();
 void ApplyScale(unsigned char* data, int width, int height, unsigned char* scaledData, int scaled_width, int scaled_height);
 
 unsigned int trans_25102[307202] = { 0 };
 
-struct GL_PALETTE
-{
-	int tag;
-	int referenceCount;
-	unsigned __int8 colors[768];
-};
-
-GL_PALETTE gGLPalette[350];
 static int numgltextures = 0;
 
 static int scissor_x = 0, scissor_y = 0, scissor_width = 0, scissor_height = 0;
@@ -185,15 +212,11 @@ void Draw_Init()
 	Cvar_HookVariable(gl_texturemode.name, &gl_texturemode_hook);
 	if (Host_GetVideoLevel() > 0)
 	{
-		Cvar_DirectSet(&gl_ansio, "4");
+		//Cvar_DirectSet(&gl_ansio, "4");
 		qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, gl_ansio.value);
 	}
 
-	for (int i = 0; i < 350; i++)
-	{
-		gGLPalette[i].tag = -1;
-		gGLPalette[i].referenceCount = 0;
-	}
+	GL_PaletteInit();
 
 	static cachewad_t custom_wad = { 0 };
 
@@ -207,15 +230,13 @@ void Draw_Init()
 
 	if (qglColorTableEXT && gl_palette_tex.value != 0.0)
 	{
-		qglEnable(0x81FBu);
+		qglEnable(GL_SHARED_TEXTURE_PALETTE_EXT);
 	}
 
 	Q_memset(decal_names, 0, 0x2000);
 
 	for (int i = 0; i < ARRAYSIZE(texgammatable); i++)
-	{
 		texgammatable[i] = i;
-	}
 
 	draw_disc = LoadTransBMP("lambda");
 	Draw_ResetTextColor();
@@ -346,6 +367,15 @@ void GL_SelectTexture(GLenum target)
 	cnttextures[oldtarget - TEXTURE0_SGIS] = currenttexture;
 	currenttexture = cnttextures[target - TEXTURE0_SGIS];
 	oldtarget = target;
+}
+
+void GL_PaletteInit()
+{
+	for (int i = 0; i < ARRAYSIZE(gGLPalette); i++)
+	{
+		gGLPalette[i].tag = -1;
+		gGLPalette[i].referenceCount = 0;
+	}
 }
 
 void GL_PaletteSelect(int paletteIndex)

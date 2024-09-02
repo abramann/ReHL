@@ -14,7 +14,11 @@ typedef struct event_hook_s
 	void(*pfnEvent)(event_args_s*);
 } event_hook_t;
 
+#ifdef SHARED_GAME_DATA
+extern event_hook_t* & g_pEventHooks;
+#else
 extern event_hook_t* g_pEventHooks;
+#endif
 
 void CL_InitEventSystem();
 

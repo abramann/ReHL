@@ -31,7 +31,6 @@
 #include "maintypes.h"
 
 extern int r_pixbytes;
-extern cvar_t gl_vsync;
 extern float scr_con_current;
 
 void D_FlushCaches(void);

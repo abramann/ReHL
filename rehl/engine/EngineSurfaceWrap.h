@@ -61,7 +61,7 @@ public:
 
 private:
 
-	byte baseclass_0[36];
+	//byte baseclass_0[36];
 	vgui::BitmapTGA* _emulatedMouseImage = nullptr;
 	IEngineSurface* _engineSurface;
 	bool _cursorLocked = false;

@@ -61,7 +61,7 @@ client_textmessage_t gNetworkTextMessage[MAX_NETMESSAGE] =
 
 char* EXT_FUNC memfgets(unsigned char *pMemFile, int fileSize, int *pFilePos, char *pBuffer, int bufferSize)
 {
-	return Call_Function<char*, uchar*, int, int*, char*, int>(0xB3100, pMemFile, fileSize, pFilePos, pBuffer, bufferSize);
+	//return Call_Function<char*, uchar*, int, int*, char*, int>(0xB3100, pMemFile, fileSize, pFilePos, pBuffer, bufferSize);
 	int filePos;
 	int last;
 	int i;

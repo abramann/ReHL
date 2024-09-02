@@ -40,7 +40,7 @@ typedef struct texlumpinfo_s
 } texlumpinfo_t;
 
 #ifdef SHARED_GAME_DATA
-extern uchar* texgammatable;
+extern uchar(&texgammatable)[256];
 extern texture_t *& r_notexture_mip;
 #else
 extern unsigned char texgammatable[256];

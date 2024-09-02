@@ -115,6 +115,12 @@ void Con_CheckResize()
 	con_current = con_totallines - 1;
 }
 
+void EXT_FUNC Con_NPrintf(int idx, const char * fmt, ...)
+{
+	NOT_IMPLEMENTED;
+	return void EXT_FUNC();
+}
+
 void Con_Shutdown(void)
 {
 	if (con_times)

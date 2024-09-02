@@ -3,9 +3,17 @@
 int msg_buckets[64];
 int total_data[64];
 
-event_hook_t* g_pEventHooks;
+#ifdef SHARED_GAME_DATA
+event_hook_t* * sp_g_pEventHooks = ADDRESS_OF_DATA(event_hook_t* *, 0x1EF42);
+event_hook_t* & g_pEventHooks = *sp_g_pEventHooks;
 
+UserMsg** sp_gClientUserMsgs = ADDRESS_OF_DATA(UserMsg**, 0x1A8C1);
+UserMsg* & gClientUserMsgs = *sp_gClientUserMsgs;
+#else
+event_hook_t*  g_pEventHooks;
 UserMsg* gClientUserMsgs = nullptr;
+#endif
+
 
 void CL_InitEventSystem(void)
 {
@@ -35,7 +43,6 @@ void CL_ShutDownUsrMessages()
 pfnUserMsgHook HookServerMsg(const char* pszName, pfnUserMsgHook pfn)
 {
 	UserMsg* pHooked = nullptr;
-
 	for (UserMsg* pClientMsg = gClientUserMsgs; pClientMsg; pClientMsg = pClientMsg->next)
 	{
 		if (!Q_stricmp(pszName, pClientMsg->szName))
@@ -48,21 +55,25 @@ pfnUserMsgHook HookServerMsg(const char* pszName, pfnUserMsgHook pfn)
 		}
 	}
 
-	if (!pHooked)
-	{
-		gClientUserMsgs = (UserMsg*)Mem_ZeroMalloc(sizeof(UserMsg));
-		Q_strncpy(gClientUserMsgs->szName, pszName, 15);
-		gClientUserMsgs->szName[15] = 0;
-		gClientUserMsgs->pfn = pfn;
-		gClientUserMsgs->next = nullptr;// gClientUserMsgs;
-		return nullptr;
-	}
-
 	UserMsg* pNewMsg = (UserMsg*)Mem_ZeroMalloc(sizeof(UserMsg));
-	Q_memcpy(pNewMsg, pHooked, sizeof(UserMsg));
+	if (pHooked)
+		Q_memcpy(pNewMsg, pHooked, sizeof(UserMsg));
+	else
+	{
+		Q_strncpy(pNewMsg->szName, pszName, 15);
+		pNewMsg->szName[15] = 0;
+	}
 	pNewMsg->pfn = pfn;
-	pNewMsg->next = gClientUserMsgs;
-	gClientUserMsgs = pNewMsg;
+	if (!gClientUserMsgs)
+	{
+		gClientUserMsgs = pNewMsg;
+		gClientUserMsgs->next = nullptr;
+	}
+	else
+	{
+		pNewMsg->next = gClientUserMsgs;
+		gClientUserMsgs = pNewMsg;
+	}
 	return nullptr;
 }
 

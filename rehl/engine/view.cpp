@@ -22,7 +22,8 @@ cvar_t & v_texgamma = *sp_v_texgamma;
 cvar_t* sp_v_brightness = ADDRESS_OF_DATA(cvar_t*, 0xC164F);
 cvar_t& v_brightness = *sp_v_brightness;
 
-uchar* texgammatable = ADDRESS_OF_DATA(uchar*, 0xC1847);
+uchar(*sp_texgammatable)[256] = ADDRESS_OF_DATA(uchar(*)[256], 0xC1847);
+uchar(&texgammatable)[256] = *sp_texgammatable;
 
 int * lineargammatable = ADDRESS_OF_DATA(int *, 0xC197A);
 int* screengammatable = ADDRESS_OF_DATA(int*, 0xC1999);

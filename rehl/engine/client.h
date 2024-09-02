@@ -266,14 +266,16 @@ typedef enum CareerStateType_e
 #ifdef SHARED_GAME_DATA
 extern client_static_t& g_pcls;
 extern client_state_t& g_pcl;
+extern playermove_t& g_clmove;
+
 #else
 extern client_static_t g_pcls;
 extern client_state_t g_pcl;
+extern playermove_t g_clmove;
 #endif
 
 extern keydest_t key_dest;
 
-extern playermove_t g_clmove;
 extern qboolean cl_inmovie;
 
 extern cvar_t cl_name;
