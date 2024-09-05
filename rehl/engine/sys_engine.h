@@ -31,13 +31,17 @@
 #include "maintypes.h"
 #include "igame.h"
 #include "iengine.h"
-#include "hooker.h"
 
 const int MINIMIZED_SLEEP = 20;
 const int NOT_FOCUS_SLEEP = 50;	// sleep time when not focus
 
-EXTERN_VAR(IGame*, game);
-EXTERN_VAR(IEngine*, eng);
+#ifdef SHARED_GAME_DATA
+extern IGame** sp_game;
+extern IGame*& game;
+#else
+extern IGame* game;
+#endif
+extern IEngine* eng;
 
 class CEngine: public IEngine
 {

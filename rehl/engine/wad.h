@@ -71,7 +71,7 @@ typedef struct lumpinfo_s lumpinfo_t;
 const int NUM_WADS = 2;
 
 #ifdef SHARED_GAME_DATA
-extern wadlist_t(&wads)[NUM_WADS];
+extern wadlist_t* wads;
 #else
 extern wadlist_t wads[NUM_WADS];
 #endif

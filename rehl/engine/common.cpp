@@ -64,12 +64,23 @@ typedef struct bf_read_s
 	unsigned char *pInByte;
 } bf_read_t;
 
+#ifdef SHARED_GAME_DATA
+bf_read_t * sp_bfread = ADDRESS_OF_DATA(bf_read_t *, 0x29E33);
+bf_read_t & bfread = *sp_bfread;
 
-VAR(bf_read_t, bfread, 0x29E33);
-VAR(bf_write_t, bfwrite, 0x29E25);
+bf_write_t * sp_bfwrite = ADDRESS_OF_DATA(bf_write_t *, 0x29E25);
+bf_write_t & bfwrite = *sp_bfwrite;
 
-ARRAY(char, gpszVersionString, [32], 0x57B23);
-ARRAY(char, gpszProductString, [32], 0x57B35);
+char* gpszVersionString = ADDRESS_OF_DATA(char*, 0x57B23);
+char* gpszProductString = ADDRESS_OF_DATA(char*, 0x57B35);
+#else
+bf_read_t bfread;
+bf_write_t bfwrite;
+
+char gpszVersionString[32];
+char gpszProductString[32];
+#endif
+
 
 char serverinfo[MAX_INFO_STRING];
 
@@ -1305,13 +1316,37 @@ void SZ_Print(sizebuf_t *buf, const char *data)
 
 #ifndef COM_Functions_region
 
-ARRAY(char, com_clientfallback, [MAX_PATH], 0x2BCB1);
-ARRAY(char, com_gamedir, [MAX_PATH], 0x2BCB6);
-VAR(qboolean, com_ignorecolons, 0xAB638);
-ARRAY(char, com_token, [COM_TOKEN_LEN], 0x96FA4);
-VAR(qboolean, s_com_token_unget, 0x2B0D4);
-VAR(int, com_argc, 0x2B326);
-VAR(char **, com_argv, 0x2B337);
+#ifdef SHARED_GAME_DATA
+int* sp_com_argc = ADDRESS_OF_DATA(int*, 0x2B326);
+int& com_argc = *sp_com_argc;
+
+char ***sp_com_argv = ADDRESS_OF_DATA(char***, 0x2B337);
+char**& com_argv = *sp_com_argv;
+
+//char** sp_com_clientfallback = ADDRESS_OF_DATA(char**, 0x2BCB1);
+char* com_clientfallback = ADDRESS_OF_DATA(char*, 0x2BCB1);
+
+//char** sp_com_gamedir = ADDRESS_OF_DATA(char**, 0x2BCB6);
+char* com_gamedir = ADDRESS_OF_DATA(char*, 0x2BCB6);
+
+qboolean* sp_com_ignorecolons = ADDRESS_OF_DATA(qboolean*, 0xAB638);
+qboolean& com_ignorecolons = *sp_com_ignorecolons;
+
+char* com_token = ADDRESS_OF_DATA(char*, 0x96FA4);
+
+qboolean* sp_s_com_token_unget = ADDRESS_OF_DATA(qboolean*, 0x2B0D4);
+qboolean& s_com_token_unget = *sp_s_com_token_unget;
+#else
+extern int com_argc;
+extern char **com_argv;
+
+char com_clientfallback[MAX_PATH];
+char com_gamedir[MAX_PATH];
+qboolean com_ignorecolons;
+char com_token[COM_TOKEN_LEN];
+qboolean s_com_token_unget;
+#endif
+
 
 
 char *com_last_in_quotes_data = NULL;

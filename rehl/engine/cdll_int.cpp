@@ -1,14 +1,33 @@
 #include "precompiled.h"
 
-SVVAR(qboolean, fClientLoaded, 0xBCE4, false);
-VAR(cldll_func_t, cl_funcs, 0xBDEC);
-ARRAY(char, g_szfullClientName, [512], 0xB1D4);
-SVVAR(cldll_func_dst_t, g_cldstAddrs, 0x635B9, k_cldstNull);
-VVAR(CSysModule*, hClientDLL, 0x11F5, nullptr);
 
-
-static BlobFootprint_t g_blobfootprintClient = {};
 cvar_t* cl_righthand;
+
+
+
+#ifdef SHARED_GAME_DATA
+qboolean* sp_fClientLoaded = ADDRESS_OF_DATA(qboolean*, 0xBCE4);
+qboolean& fClientLoaded = *sp_fClientLoaded;
+
+cldll_func_t* sp_cl_funcs = ADDRESS_OF_DATA(cldll_func_t*, 0xBDEC);
+cldll_func_t& cl_funcs = *sp_cl_funcs;
+
+char(*sp_g_szfullClientName)[512] = ADDRESS_OF_DATA(char(*)[512], 0xB1D4);
+char(&g_szfullClientName)[512] = *sp_g_szfullClientName;
+
+cldll_func_dst_t * sp_g_cldstAddrs = ADDRESS_OF_DATA(cldll_func_dst_t *, 0x635B9);
+cldll_func_dst_t & g_cldstAddrs = *sp_g_cldstAddrs;
+
+CSysModule** sp_hClientDLL = ADDRESS_OF_DATA(CSysModule**, 0x11F5);
+CSysModule*& hClientDLL = *sp_hClientDLL;
+#else
+static qboolean fClientLoaded = false;
+cldll_func_t sp_cl_funcs = { 0 };
+char g_szfullClientName[512];
+static cldll_func_dst_t g_cldstAddrs = k_cldstNull;
+CSysModule* hClientDLL = nullptr;
+#endif
+static BlobFootprint_t g_blobfootprintClient = {};
 
 
 bool LoadSecureClient(const char* pszDllName);

@@ -35,7 +35,6 @@
 #include "usercmd.h"
 #include "info.h"
 #include "com_model.h"
-#include "hooker.h"
 
 #ifndef REHLDS_FIXES
 #ifdef _WIN32
@@ -65,35 +64,62 @@ extern int msg_readcount;
 
 extern qboolean bigendien;
 
-EXTERN_VAR(char**, com_argv);
-EXTERN_VAR(int, com_argc);
-EXTERN_ARRAY(char, com_clientfallback, [MAX_PATH]);
-EXTERN_ARRAY(char, com_gamedir, [MAX_PATH]);
-EXTERN_VAR(qboolean, com_ignorecolons);
-EXTERN_VAR(qboolean, s_com_token_unget);
-EXTERN_ARRAY(char, com_token, [COM_TOKEN_LEN]);
-EXTERN_VAR(bf_read_t, bfread);
-EXTERN_VAR(bf_write_t, bfwrite);
-EXTERN_ARRAY(char, gpszVersionString, [32]);
-EXTERN_ARRAY(char, gpszProductString, [32]);
+
 
 #ifdef SHARED_GAME_DATA
+extern int* sp_com_argc;
+extern int& com_argc;
+
+extern char ***sp_com_argv;
+extern char**& com_argv;
+
+//extern char** sp_com_clientfallback;
+extern char* com_clientfallback;
+
+//extern char** sp_com_gamedir;
+extern char* com_gamedir;
+extern qboolean& com_ignorecolons;
+extern qboolean& s_com_token_unget;
+
+extern char* com_token;
+
+extern bf_read_t& bfread;
+extern bf_write_t& bfwrite;
+
 extern short(*&BigShort)(short l);
 extern short(*&LittleShort)(short l);
 extern int(*&BigLong)(int l);
 extern int(*&LittleLong)(int l);
 extern float(*&BigFloat)(float l);
 extern float(*&LittleFloat)(float l);
+
+extern char* gpszVersionString;
+extern char* gpszProductString;
 #else
+extern int com_argc;
+extern char **com_argv;
+extern char com_clientfallback[MAX_PATH];
+extern char com_gamedir[MAX_PATH];
+extern qboolean com_ignorecolons;
+extern char com_token[COM_TOKEN_LEN];
+extern qboolean s_com_token_unget;
+
+extern bf_read_t bfread;
+extern bf_write_t bfwrite;
+
 extern short(*BigShort)(short l);
 extern short(*LittleShort)(short l);
 extern int(*BigLong)(int l);
 extern int(*LittleLong)(int l);
 extern float(*BigFloat)(float l);
 extern float(*LittleFloat)(float l);
+
+extern char gpszVersionString[32];
+extern char gpszProductString[32];
 #endif
 
 extern char com_cmdline[COM_MAX_CMD_LINE];
+
 extern cache_user_t *loadcache;
 extern unsigned char *loadbuf;
 extern int loadsize;

@@ -34,3 +34,48 @@ void D_FlushCaches()
 { 
 	// Nothing
 }
+
+void R_SetStackBase() 
+{ 
+	// Nothing
+}
+
+
+
+void R_ForceCVars(qboolean multiplayer) { NOT_IMPLEMENTED; }
+void SCR_BeginLoadingPlaque(qboolean reconnect) { NOT_IMPLEMENTED; }
+void R_InitSky() { NOT_IMPLEMENTED; }
+void R_MarkLeaves()
+{
+	NOT_IMPLEMENTED;
+}
+
+void R_InitTextures()
+{
+	r_notexture_mip = (texture_t *)Hunk_AllocName(sizeof(texture_t) + 16*16 + 8*8 + 4*4 + 2*2, "notexture");
+	r_notexture_mip->height = 16;
+	r_notexture_mip->width = 16;
+	r_notexture_mip->offsets[0] = sizeof(texture_t);
+	r_notexture_mip->offsets[1] = r_notexture_mip->offsets[0] + 16*16;
+	r_notexture_mip->offsets[2] = r_notexture_mip->offsets[1] + 8*8;
+	r_notexture_mip->offsets[3] = r_notexture_mip->offsets[2] + 4*4;
+
+	for (int m = 0; m < 4; m++)
+	{
+		int texSize = 16 >> m;
+		unsigned char* dest = (unsigned char *)r_notexture_mip + r_notexture_mip->offsets[m];
+
+		for (int x = 0; x < texSize; x++)
+		{
+			for (int y = 0; y < texSize; y++, dest++)
+			{
+				if ((x < (texSize / 2)) == (y < (texSize / 2)))
+					*dest = -1;
+				else
+					*dest = 0;
+			}
+		}
+	}
+}
+
+

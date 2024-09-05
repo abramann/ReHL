@@ -1,14 +1,30 @@
 #include "precompiled.h"
 #include "dlls\vector.h"
 
+#ifdef SHARED_GAME_DATA
+cvar_t * sp_chase_back = ADDRESS_OF_DATA(cvar_t *, 0xCDC1);
+cvar_t & chase_back = *sp_chase_back; 
+
+cvar_t * sp_chase_up = ADDRESS_OF_DATA(cvar_t *, 0xCDCB);
+cvar_t & chase_up = *sp_chase_up;
+
+cvar_t * sp_chase_right = ADDRESS_OF_DATA(cvar_t *, 0xCDD5);
+cvar_t & chase_right = *sp_chase_right;
+
+cvar_t * sp_chase_active = ADDRESS_OF_DATA(cvar_t *, 0xCDDF);
+cvar_t & chase_active = *sp_chase_active;
+
+refdef_t * sp_r_refdef = ADDRESS_OF_DATA(refdef_t *, 0x4635A);
+refdef_t & r_refdef = *sp_r_refdef; 
+
+#else
 // TODO: why would this be a SP only cvar? - Solokiller
-
-VVAR(cvar_t, chase_back, 0xCDC1, { "chase_back" COMMA "100" COMMA FCVAR_SPONLY });
-VVAR(cvar_t, chase_up, 0xCDCB, { "chase_up" COMMA "16" COMMA FCVAR_SPONLY } );
-VVAR(cvar_t, chase_right, 0xCDD5, { "chase_right" COMMA "0" COMMA FCVAR_SPONLY } );
-VVAR(cvar_t, chase_active, 0xCDDF, { "chase_active" COMMA "0" COMMA FCVAR_SPONLY } );
-
-VVAR(refdef_t, r_refdef, 0x4635A, {});
+cvar_t chase_back = { "chase_back", "100", FCVAR_SPONLY };
+cvar_t chase_up = { "chase_up", "16", FCVAR_SPONLY };
+cvar_t chase_right = { "chase_right", "0", FCVAR_SPONLY };
+cvar_t chase_active = { "chase_active", "0", FCVAR_SPONLY };
+refdef_t r_refdef = {};
+#endif
 
 vec3_t chase_pos = {};
 vec3_t chase_angles = {};

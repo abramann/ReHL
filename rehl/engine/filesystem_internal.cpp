@@ -28,7 +28,12 @@
 
 #include "precompiled.h"
 
-VAR(IFileSystem *, g_pFileSystem, 0x3AEB9);
+#ifdef SHARED_GAME_DATA
+IFileSystem **sp_g_pFileSystem = ADDRESS_OF_DATA(IFileSystem**, 0x3AEB9);
+IFileSystem *&g_pFileSystem = *sp_g_pFileSystem;
+#else
+IFileSystem *g_pFileSystem;
+#endif
 
 void FS_RemoveAllSearchPaths(void)
 {

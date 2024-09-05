@@ -11,12 +11,23 @@
 
 bool bNeedsFullScreenModeSwitch = false;
 
-VVAR(IVideoMode*, videomode, 0xAEC9E, nullptr);
+#ifdef SHARED_GAME_DATA
+IVideoMode** sp_videomode = ADDRESS_OF_DATA(IVideoMode**, 0xAEC9E);
+IVideoMode*& videomode = *sp_videomode;
 
-VAR(viddef_t, vid, 0xC21AD); // global video state
+viddef_t* sp_vid = ADDRESS_OF_DATA(viddef_t*, 0xC21AD);
+viddef_t& vid = *sp_vid; // global video state
 
-VAR(qboolean, g_bDisableMSAAFBO, 0x4DA37);
+qboolean* sp_g_bDisableMSAAFBO = ADDRESS_OF_DATA(qboolean*, 0x4DA37);
+qboolean& g_bDisableMSAAFBO = *sp_g_bDisableMSAAFBO;
+#else
+IVideoMode* videomode = nullptr;
 
+viddef_t vid; // global video state
+
+qboolean g_bDisableMSAAFBO;
+
+#endif
 
 CVideoMode_Common::CVideoMode_Common()
 {

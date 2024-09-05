@@ -1,6 +1,6 @@
 #pragma once
 #include "interface.h"
-#include "hooker.h"
+
 
 #define GAMECONSOLE_INTERFACE_VERSION "GameConsole003"
 
@@ -19,4 +19,8 @@ public:
 	virtual void SetParent(int parent);
 };
 
-EXTERN_VAR(IGameConsole*, staticGameConsole);
+#ifdef SHARED_GAME_DATA
+extern IGameConsole*& staticGameConsole;
+#else
+extern IGameConsole* staticGameConsole;
+#endif

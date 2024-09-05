@@ -116,8 +116,13 @@ typedef struct delta_info_s
 	delta_t *delta;
 } delta_info_t;
 
-EXTERN_VAR(delta_registry_t*, g_deltaregistry);
-EXTERN_VAR(delta_definition_list_t*, g_defs);
+#ifdef SHARED_GAME_DATA
+extern delta_registry_t*& g_deltaregistry;
+extern delta_definition_list_t*& g_defs;
+#else
+extern delta_registry_t *g_deltaregistry;
+extern delta_definition_list_t *g_defs;
+#endif
 
 extern delta_encoder_t *g_encoders;
 extern delta_t g_MetaDelta[];

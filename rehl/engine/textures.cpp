@@ -44,6 +44,7 @@ int nTexFiles;
 int nummiptex;
 char miptex[512][64];
 
+cvar_t r_wadtextures = { "r_wadtextures", "0", 0, 0.0f, NULL };
 
 void SafeRead(FileHandle_t f, void *buffer, int count)
 {
