@@ -58,9 +58,6 @@ int & nCurrentPlane = *sp_nCurrentPlane;
 studiohdr_t ** sp_pstudiohdr = ADDRESS_OF_DATA(studiohdr_t **, 0x8119D);
 studiohdr_t *& pstudiohdr = *sp_pstudiohdr;
 
-cvar_t * sp_r_cachestudio = ADDRESS_OF_DATA(cvar_t *, 0x46BD4);
-cvar_t & r_cachestudio = *sp_r_cachestudio;
-
 rgStudioCache_t * sp_rgStudioCache = ADDRESS_OF_DATA(rgStudioCache_t *, 0x81718);
 rgStudioCache_t & rgStudioCache = *sp_rgStudioCache;
 
@@ -98,7 +95,6 @@ studiohdr_t *pstudiohdr;
 studio_hull_t  studio_hull;
 studio_clipnodes_t studio_clipnodes;
 studio_planes_t studio_planes;
-cvar_t r_cachestudio = { "r_cachestudio", "1", 0, 0.0f, nullptr };
 int r_cachecurrent;
 rgStudioCache_t rgStudioCache;
 studio_hull_hitgroup_t cache_hull_hitgroup;

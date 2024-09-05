@@ -1,16 +1,11 @@
 #pragma once
 
 #include "cvar.h"
+#include "hooker.h"
 
-#ifdef SHARED_GAME_DATA
-extern cvar_t& chase_active;
-extern cvar_t& chase_active;
-extern refdef_t& r_refdef;
-#else
-extern cvar_t chase_active;
-extern cvar_t chase_active;
-extern refdef_t r_refdef;
-#endif
+EXTERN_VAR(cvar_t, chase_active);
+EXTERN_VAR(refdef_t, r_refdef);
+
 void Chase_Init();
 
 void Chase_Reset();

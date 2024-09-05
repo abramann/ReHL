@@ -26,51 +26,6 @@
 // TODO: define key lines - Solokiller
 
 #define MAXCMDLINE 256
-int shift_down = false;
-
-int edit_line = 0;
-int history_line = 0;
-
-keydest_t key_dest;
-
-int key_repeats[256];  // if > 1, it is autorepeating
-#ifdef SHARED_GAME_DATA
-qboolean* keydown = ADDRESS_OF_DATA(qboolean*, 0x61A82);
-
-char(*sp_key_lines)[32][MAXCMDLINE] = ADDRESS_OF_DATA(char(*)[32][MAXCMDLINE], 0x61461);
-char(&key_lines)[32][MAXCMDLINE] = *sp_key_lines;
-
-int(*sp_keyshift)[256] = ADDRESS_OF_DATA(int(*)[256], 0x6195E);
-int(&keyshift)[256] = *sp_keyshift;
-
-qboolean(*sp_consolekeys)[256] = ADDRESS_OF_DATA(qboolean(*)[256], 0x61928);
-qboolean(&consolekeys)[256] = *sp_consolekeys;
-
-qboolean(*sp_menubound)[256] = ADDRESS_OF_DATA(qboolean(*)[256], 0x61945);
-qboolean(&menubound)[256] = *sp_menubound;
-
-int * sp_key_linepos = ADDRESS_OF_DATA(int *, 0x6148D);
-int & key_linepos = *sp_key_linepos;
-
-int * sp_toggleconsole_key = ADDRESS_OF_DATA(int *, 0x19E4);
-int & toggleconsole_key = *sp_toggleconsole_key;
-
-char*(*sp_keybindings)[256] = ADDRESS_OF_DATA(char*(*)[256], 0x61AB9);
-char*(&keybindings)[256] = *sp_keybindings;
-#else
-qboolean keydown[256];
-char key_lines[32][MAXCMDLINE];
-qboolean consolekeys[256]; // if true, can't be rebound while in console 61928
-int keyshift[256];	   // key to map to if shift held down in console
-qboolean menubound[256];   // if true, can't be rebound while in menu
-int key_linepos;
-int toggleconsole_key = 0;
-char* keybindings[256];
-
-#endif
-bool keyGameUIdown[256];
-bool g_fUseDInput = false;
-
 
 typedef struct
 {
@@ -78,6 +33,22 @@ typedef struct
 	int keynum;
 } keyname_t;
 
+ARRAY(qboolean, keydown, [256], 0x61A82);
+ARRAY(char, key_lines, [32][MAXCMDLINE], 0x61461);
+ARRAY(int, keyshift, [256], 0x6195E);	   // key to map to if shift held down in console
+ARRAY(qboolean, consolekeys, [256], 0x61928); // if true, can't be rebound while in console 61928
+ARRAY(qboolean, menubound, [256], 0x61945);   // if true, can't be rebound while in menu
+VAR(int, key_linepos, 0x6148D);
+VVAR(int, toggleconsole_key, 0x19E4, 0);
+ARRAY(char*, keybindings, [256], 0x61AB9);
+
+int shift_down = false;
+int edit_line = 0;
+int history_line = 0;
+keydest_t key_dest;
+bool keyGameUIdown[256];
+bool g_fUseDInput = false;
+int key_repeats[256];  // if > 1, it is autorepeating
 
 const keyname_t keynames[] =
 {

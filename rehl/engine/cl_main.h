@@ -20,18 +20,13 @@ struct startup_timing_t
 
 const int MAX_STARTUP_TIMINGS = 32;
 
-#ifdef SHARED_GAME_DATA
-extern qboolean  & g_bCS_CZ_Flags_Initialized;
-extern qboolean  & g_bIsCStrike;
-extern qboolean  & g_bIsCZero;
-extern qboolean  & g_bIsCZeroRitual;
-extern qboolean  & g_bIsTerrorStrike;
-extern qboolean  & g_bIsTFC;
-extern qboolean  & g_bIsHL1;
-#else
-extern qboolean& g_bIsCStrike;
-extern qboolean& g_bIsCZero;
-#endif
+EXTERN_VAR(qboolean, g_bCS_CZ_Flags_Initialized);	
+EXTERN_VAR(qboolean, g_bIsCStrike);
+EXTERN_VAR(qboolean, g_bIsCZero);
+EXTERN_VAR(qboolean, g_bIsCZeroRitual);
+EXTERN_VAR(qboolean, g_bIsTerrorStrike);
+EXTERN_VAR(qboolean, g_bIsTFC);
+EXTERN_VAR(qboolean, g_bIsHL1);
 
 extern cl_entity_t* cl_entities;
 

@@ -5,8 +5,52 @@
 #define SCR_CENTERSTRING_MAX 40
 #ifdef SHARED_GAME_DATA
 extern cvar_t& crosshair;
+
+cvar_t * sp_scr_viewsize = ADDRESS_OF_DATA(cvar_t *, 0x4BDE1);
+cvar_t & scr_viewsize = *sp_scr_viewsize;
+
+cvar_t * sp_scr_showpause = ADDRESS_OF_DATA(cvar_t *, 0x4BDEB);
+cvar_t & scr_showpause = *sp_scr_showpause;
+
+cvar_t * sp_scr_centertime = ADDRESS_OF_DATA(cvar_t *, 0x4BDF5);
+cvar_t & scr_centertime = *sp_scr_centertime;
+
+cvar_t * sp_scr_printspeed = ADDRESS_OF_DATA(cvar_t *, 0x4BDFF);
+cvar_t & scr_printspeed = *sp_scr_printspeed;
+
+cvar_t * sp_scr_graphheight = ADDRESS_OF_DATA(cvar_t *, 0x4BE09);
+cvar_t & scr_graphheight = *sp_scr_graphheight;
+
+cvar_t * sp_scr_connectmsg = ADDRESS_OF_DATA(cvar_t *, 0x4BE13);
+cvar_t & scr_connectmsg = *sp_scr_connectmsg;
+
+cvar_t * sp_scr_connectmsg1 = ADDRESS_OF_DATA(cvar_t *, 0x4BE1D);
+cvar_t & scr_connectmsg1 = *sp_scr_connectmsg1;
+
+cvar_t * sp_scr_connectmsg2 = ADDRESS_OF_DATA(cvar_t *, 0x4BE27);
+cvar_t & scr_connectmsg2 = *sp_scr_connectmsg2;
+
+qpic_t* * sp_scr_paused = ADDRESS_OF_DATA(qpic_t* *, 0x4BE6B);
+qpic_t* & scr_paused = *sp_scr_paused; 
+
+bool * sp_scr_initialized = ADDRESS_OF_DATA(bool *, 0x4BE71);
+bool & scr_initialized = *sp_scr_initialized; 
 #else
 extern cvar_t crosshair;
+
+cvar_t scr_viewsize = { "viewsize", "120", FCVAR_ARCHIVE };
+cvar_t scr_showpause = { "showpause", "1" };
+
+cvar_t scr_centertime = { "scr_centertime", "2" };
+cvar_t scr_printspeed = { "scr_printspeed", "8" };
+cvar_t scr_graphheight = { "graphheight", "64.0" };
+
+cvar_t scr_connectmsg = { "scr_connectmsg", "0" };
+cvar_t scr_connectmsg1 = { "scr_connectmsg1", "0" };
+cvar_t scr_connectmsg2 = { "scr_connectmsg2", "0" };
+
+qpic_t* scr_paused = nullptr;
+bool scr_initialized = false;
 #endif
 			  // TODO: check which ones are boolean - Solokiller
 int clearnotify = 0;
@@ -26,7 +70,6 @@ bool recursionGuard = false;
 
 bool scr_copytop = false;
 bool scr_copyeverything = false;
-bool scr_initialized = false;
 bool scr_drawloading = false;
 qboolean scr_skiponeupdate = false;
 
@@ -36,20 +79,7 @@ GLsizei glwidth;
 GLsizei glheight;
 int giHudLevel = 1;
 
-qpic_t* scr_paused = nullptr;
-
 vrect_t scr_vrect = {};
-
-cvar_t scr_viewsize = { "viewsize", "120", FCVAR_ARCHIVE };
-cvar_t scr_showpause = { "showpause", "1" };
-
-cvar_t scr_centertime = { "scr_centertime", "2" };
-cvar_t scr_printspeed = { "scr_printspeed", "8" };
-cvar_t scr_graphheight = { "graphheight", "64.0" };
-
-cvar_t scr_connectmsg = { "scr_connectmsg", "0" };
-cvar_t scr_connectmsg1 = { "scr_connectmsg1", "0" };
-cvar_t scr_connectmsg2 = { "scr_connectmsg2", "0" };
 
 extern cvar_t cl_showfps;
 extern double rolling_fps;
@@ -553,25 +583,109 @@ int ScreenTransform(vec_t * point, vec_t * screen)
 	return 0;
 }
 
+void HudSizeUp()
+{
+	float value;
+	float viewsize = scr_viewsize.value;
+
+	if (viewsize < 120.0)
+	{
+		value = viewsize + 10.0;
+		Cvar_SetValue("viewsize", value);
+	}
+}
+
 void SCR_SizeUp_f()
 {
-	NOT_IMPLEMENTED;
-
-	//HudSizeUp();
+	HudSizeUp();
 	vid.recalc_refdef = true;
+}
+
+void HudSizeDown()
+{
+	float value; 
+	float viewsize = scr_viewsize.value;
+
+	if (viewsize > 30.0)
+	{
+		value = viewsize - 10.0;
+		Cvar_SetValue("viewsize", value);
+	}
 }
 
 void SCR_SizeDown_f()
 {
-	NOT_IMPLEMENTED;
-
-	//HudSizeDown();
+	HudSizeDown();
 	vid.recalc_refdef = true;
 }
 
 void SCR_ScreenShot_f()
 {
-	NOT_IMPLEMENTED;
+	int width, height;
+	int imageSize;
+	char tganame[80];
+	TargaHeader targa_header;
+
+	if (bDoScaledFBO > 0 && VideoMode_IsWindowed())
+	{
+		width = abs(window_rect.top - window_rect.left);
+		height = abs(window_rect.bottom - window_rect.right);
+	}
+	else
+	{
+		width = vid.height;
+		height = vid.height;
+	}
+
+	Q_strcpy(tganame, "HalfLife__.tga");
+	for (int i = 0; i < 100; i++)
+	{
+		tganame[8] = i / 10 + 48;
+		tganame[9] = i % 10 + 48;
+		if (!FS_FileExists(tganame))
+			break;
+		if (i == 99)
+		{
+			Con_Printf("SCR_ScreenShot_f: Couldn't create a TGA file\n");
+			return;
+		}
+	}
+	imageSize = 3 * width * height;
+	auto file = FS_OpenPathID(tganame, "wb", "GAMECONFIG");
+	if(!file)
+		Sys_Error("Couldn't create file for snapshot.\n");
+
+	memset(&targa_header, 0, sizeof(TargaHeader));
+	auto y = &targa_header;
+	targa_header.image_type = 2;
+	// No alignment in header but the compiler do
+	targa_header.y_origin = width;	// height
+	targa_header.width = height;	// width
+	targa_header.height = 24; // pixel_size
+	
+	if (FS_Write(&targa_header, 18, 1, file) != 18)
+		Sys_Error("Couldn't write tga header screenshot.\n");
+
+	char* buffer = (char*)Mem_Malloc(imageSize);
+	if (!buffer)
+		Sys_Error("Couldn't allocate bitmap header to snapshot.\n");
+
+	qglPixelStorei(GL_PACK_ALIGNMENT, 1);
+	qglReadPixels(0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, buffer);
+
+
+	for (char* pixcol = buffer; pixcol != buffer + imageSize; pixcol += 3)
+	{
+		char tmp = *pixcol;
+		pixcol[0] = pixcol[2];
+		pixcol[2] = tmp;
+	}
+	if (FS_Write(buffer, imageSize, 1, file) != imageSize)
+		Sys_Error("Couldn't write bitmap data screenshot.\n");
+
+	Mem_Free(buffer);
+	FS_Close(file);
+	Con_Printf("Wrote %s\n", tganame);
 }
 
 qpic_t* Draw_PicFromWad(char *name)

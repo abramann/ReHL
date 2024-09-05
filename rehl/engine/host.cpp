@@ -31,102 +31,40 @@
 #include "gl_draw.h"
 #include "DemoPlayerWrapper.h"
 
-double rolling_fps;
+VAR(double, realtime, 0x57D76);
+VAR(quakeparms_t, host_parms, 0x57D54);
+VAR(qboolean, host_initialized, 0x5805C);
+VAR(unsigned short *, host_basepal, 0x57F2F);
+
+// cvars
+VVAR(cvar_t, developer, 0x560E6, { "developer" COMMA  "0" COMMA  0 COMMA  0.0f COMMA  NULL });
+VVAR(cvar_t, host_killtime, 0x56046, { "host_killtime" COMMA  "0.0" COMMA  0 COMMA  0.0f COMMA  NULL });
+VVAR(cvar_t, sys_ticrate, 0x56050, { "sys_ticrate" COMMA  "100.0" COMMA  0 COMMA  0.0f COMMA  NULL });
+VVAR(cvar_t, fps_max, 0x5605A, { "fps_max" COMMA  "100.0" COMMA  FCVAR_ARCHIVE COMMA  0.0f COMMA  NULL });
+VVAR(cvar_t, fps_override, 0x56064, { "fps_override" COMMA  "0" COMMA  0 COMMA  0.0f COMMA  NULL });
+VVAR(cvar_t, host_name, 0x5606E, { "hostname" COMMA  "Half-Life" COMMA  0 COMMA  0.0f COMMA  NULL });
+VVAR(cvar_t, host_limitlocal, 0x56078, { "host_limitlocal" COMMA  "0" COMMA  0 COMMA  0.0f COMMA  NULL });
+VVAR(cvar_t, host_framerate, 0x56082, { "host_framerate" COMMA  "0" COMMA  0 COMMA  0.0f COMMA  NULL });
+VVAR(cvar_t, host_speeds, 0x56095, { "host_speeds" COMMA  "0" COMMA  0 COMMA  0.0f COMMA  NULL });
+VVAR(cvar_t, host_profile, 0x5609F, { "host_profile" COMMA  "0" COMMA  0 COMMA  0.0f COMMA  NULL });
+VVAR(cvar_t, sv_stats, 0x560DC, { "sv_stats" COMMA  "1" COMMA  0 COMMA  0.0f COMMA  NULL });
+VVAR(cvar_t, deathmatch, 0x560F3, { "deathmatch" COMMA  "0" COMMA  FCVAR_SERVER COMMA  0.0f COMMA  NULL });
+VVAR(cvar_t, coop, 0x56FD, { "coop" COMMA  "0" COMMA  FCVAR_SERVER COMMA  0.0f COMMA  NULL });
+VVAR(cvar_t, pausable, 0x56107, { "pausable" COMMA  "1" COMMA  FCVAR_SERVER COMMA  0.0f COMMA  NULL });
+VVAR(cvar_t, skill, 0x56111, { "skill" COMMA  "1" COMMA  0 COMMA  0.0f COMMA  NULL });
+
+
+	// This variable never used separately
 #ifdef SHARED_GAME_DATA
-quakeparms_t* sp_host_parms = ADDRESS_OF_DATA(quakeparms_t*, 0x57D54);
-quakeparms_t& host_parms = *sp_host_parms;
-
-qboolean* sp_host_initialized = ADDRESS_OF_DATA(qboolean*, 0x5805C);
-qboolean& host_initialized = *sp_host_initialized;;
-
-double* sp_realtime = ADDRESS_OF_DATA(double*, 0x57D76);
-double&  realtime = *sp_realtime;
-
-
-cvar_t * sp_host_killtime = ADDRESS_OF_DATA(cvar_t *, 0x56046);
-cvar_t & host_killtime = *sp_host_killtime;
-
-cvar_t * sp_sys_ticrate = ADDRESS_OF_DATA(cvar_t *, 0x56050);
-cvar_t & sys_ticrate = *sp_sys_ticrate;
-
-cvar_t * sp_fps_max = ADDRESS_OF_DATA(cvar_t *, 0x5605A);
-cvar_t & fps_max = *sp_fps_max;
-
-cvar_t * sp_fps_override = ADDRESS_OF_DATA(cvar_t *, 0x56064);
-cvar_t & fps_override = *sp_fps_override;
-
-cvar_t * sp_host_name = ADDRESS_OF_DATA(cvar_t *, 0x5606E);
-cvar_t & host_name = *sp_host_name;
-
-cvar_t * sp_host_limitlocal = ADDRESS_OF_DATA(cvar_t *, 0x56078);
-cvar_t & host_limitlocal = *sp_host_limitlocal;
-
-cvar_t * sp_sys_timescale = ADDRESS_OF_DATA(cvar_t *, 0x56088) - 3;
-cvar_t & sys_timescale = *sp_sys_timescale;
-
-cvar_t * sp_host_framerate = ADDRESS_OF_DATA(cvar_t *, 0x56082);
-cvar_t & host_framerate = *sp_host_framerate;
-
-cvar_t * sp_host_speed = ADDRESS_OF_DATA(cvar_t *, 0x56095);
-cvar_t & host_speed = *sp_host_speed;
-
-cvar_t * sp_host_profile = ADDRESS_OF_DATA(cvar_t *, 0x5609F);
-cvar_t & host_profile = *sp_host_profile;
-
-cvar_t * sp_sv_stats = ADDRESS_OF_DATA(cvar_t *, 0x560DC);
-cvar_t & sv_stats = *sp_sv_stats;
-
-cvar_t* sp_developer = ADDRESS_OF_DATA(cvar_t*, 0x560E6);
-cvar_t& developer = *sp_developer;
-
-cvar_t * sp_deathmatch = ADDRESS_OF_DATA(cvar_t *, 0x560F3);
-cvar_t & deathmatch = *sp_deathmatch;
-
-cvar_t * sp_coop = ADDRESS_OF_DATA(cvar_t *, 0x56FD);
-cvar_t & coop = *sp_coop;
-
-cvar_t * sp_pausable = ADDRESS_OF_DATA(cvar_t *, 0x56107);
-cvar_t & pausable = *sp_pausable;
-
-cvar_t * sp_skill = ADDRESS_OF_DATA(cvar_t *, 0x56111);
-cvar_t & skill = *sp_skill; 
-
-cvar_t * sp_host_speeds = ADDRESS_OF_DATA(cvar_t *, 0x56096);
-cvar_t & host_speeds = *sp_host_speeds; 
-
-unsigned short** sp_host_basepal = ADDRESS_OF_DATA(unsigned short **, 0x57F2F);
-unsigned short*& host_basepal = *sp_host_basepal;
+cvar_t* sp_sys_timescale = ADDRESS_OF_DATA(cvar_t*, 0x56088) - 3;
+cvar_t& sys_timescale = *sp_sys_timescale;
 #else
-double realtime;
-quakeparms_t host_parms;
-
-qboolean host_initialized;
-cvar_t developer = { "developer", "0", 0, 0.0f, NULL };
 cvar_t sys_timescale = { "sys_timescale", "1.0", 0, 0.0f, NULL };
-
-cvar_t host_killtime = { "host_killtime", "0.0", 0, 0.0f, NULL };
-cvar_t sys_ticrate = { "sys_ticrate", "100.0", 0, 0.0f, NULL };
-cvar_t fps_max = { "fps_max", "100.0", FCVAR_ARCHIVE, 0.0f, NULL };
-cvar_t fps_override = { "fps_override", "0", 0, 0.0f, NULL };
-cvar_t host_name = { "hostname", "Half-Life", 0, 0.0f, NULL };
-cvar_t host_limitlocal = { "host_limitlocal", "0", 0, 0.0f, NULL };
-cvar_t host_framerate = { "host_framerate", "0", 0, 0.0f, NULL };
-cvar_t host_speeds = { "host_speeds", "0", 0, 0.0f, NULL };
-cvar_t host_profile = { "host_profile", "0", 0, 0.0f, NULL };
-
-cvar_t sv_stats = { "sv_stats", "1", 0, 0.0f, NULL };
-cvar_t deathmatch = { "deathmatch", "0", FCVAR_SERVER, 0.0f, NULL };
-cvar_t coop = { "coop", "0", FCVAR_SERVER, 0.0f, NULL };
-cvar_t pausable = { "pausable", "1", FCVAR_SERVER, 0.0f, NULL };
-cvar_t skill = { "skill", "1", 0, 0.0f, NULL };
-
-unsigned short *host_basepal;
-
 #endif
 
 cvar_t suitvolume = { "suitvolume", "0.25", FCVAR_ARCHIVE, 0.0f, NULL };
+double rolling_fps;
 double host_frametime;
-//unsigned short *host_basepal;
 int host_framecount;
 //int minimum_memory;
 client_t *host_client;

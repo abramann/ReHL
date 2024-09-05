@@ -116,15 +116,8 @@ public:
 
 extern bool bNeedsFullScreenModeSwitch;
 
-#ifdef SHARED_GAME_DATA
-extern IVideoMode** sp_videomode;
-extern IVideoMode*& videomode;
-extern qboolean& g_bDisableMSAAFBO;
-#else
-extern IVideoMode* videomode;
-extern qboolean g_bDisableMSAAFBO;
-#endif
-
+EXTERN_VAR(IVideoMode*, videomode);
+EXTERN_VAR(qboolean, g_bDisableMSAAFBO);
 
 extern bool BUsesSDLInput();
 

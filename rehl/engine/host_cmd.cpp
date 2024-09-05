@@ -35,18 +35,21 @@ double cpuPercent;
 int32 startTime;
 int current_skill;
 CareerStateType g_careerState;
-int gHostSpawnCount;
 
 //qboolean noclip_anglehack;
 qboolean g_bMajorMapChange;
 
 int g_iQuitCommandIssued;
 
-#ifdef SHARE_GAME_DATA
-char** p_g_pPostRestartCmdLineArgs = (char**)ADDRESS_OF_DATA(588E9);
-char*& g_pPostRestartCmdLineArgs = *p_g_pPostRestartCmdLineArgs;
+#ifdef SHARED_GAME_DATA
+char** sp_g_pPostRestartCmdLineArgs = ADDRESS_OF_DATA(char**, 0x588E9);
+char*& g_pPostRestartCmdLineArgs = *sp_g_pPostRestartCmdLineArgs;
+
+int * sp_gHostSpawnCount = ADDRESS_OF_DATA(int *, 0x1C679);
+int & gHostSpawnCount = *sp_gHostSpawnCount;
 #else
 char *g_pPostRestartCmdLineArgs;
+int gHostSpawnCount;
 #endif
 int r_dointerp = 1;
 
