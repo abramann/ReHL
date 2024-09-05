@@ -28,7 +28,10 @@
 
 #include "precompiled.h"
 
-
+#ifdef SHARED_GAME_DATA
+uint32 (*sp_pulCRCTable)[256] = ADDRESS_OF_DATA(uint32(*)[256], 0x2D46E);
+uint32 (&pulCRCTable)[256] = *sp_pulCRCTable;
+#else
 static const uint32 pulCRCTable[256] =
 {
 	0x00000000, 0x77073096, 0xee0e612c, 0x990951ba,
@@ -96,6 +99,7 @@ static const uint32 pulCRCTable[256] =
 	0xb3667a2e, 0xc4614ab8, 0x5d681b02, 0x2a6f2b94,
 	0xb40bbe37, 0xc30c8ea1, 0x5a05df1b, 0x2d02ef8d
 };
+#endif
 
 void EXT_FUNC CRC32_Init(CRC32_t *pulCRC)
 {

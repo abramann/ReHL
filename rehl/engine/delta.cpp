@@ -66,8 +66,16 @@ delta_encoder_t *g_encoders;
 #define DELTA_D_DEF(member) #member, offsetof(delta_description_s, member)
 #define DELTA_DEF(structname, member) { #member, offsetof(structname, member) }
 
-VAR(delta_registry_t *, g_deltaregistry, 0x325BD);
-VAR(delta_definition_list_t *, g_defs, 0x31F76);
+#ifdef SHARED_GAME_DATA
+delta_definition_list_t** sp_g_defs = ADDRESS_OF_DATA(delta_definition_list_t **, 0x31F76);
+delta_definition_list_t*& g_defs = *sp_g_defs;
+
+delta_registry_t ** sp_g_deltaregistry = ADDRESS_OF_DATA(delta_registry_t* *, 0x325BD);
+delta_registry_t*& g_deltaregistry = *sp_g_deltaregistry; 
+#else
+delta_registry_t *g_deltaregistry;
+delta_definition_list_t *g_defs;
+#endif
 
 static delta_definition_t g_DeltaDataDefinition[] =
 {

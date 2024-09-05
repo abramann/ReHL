@@ -30,16 +30,49 @@
 #include "cdll_int.h"
 
 // Complete arguments string
-VAR(sizebuf_t, cmd_text, 0x272E7);
-VAR(sizebuf_t, filteredcmd_text, 0x27581);
-SVVAR(qboolean, s_bCurrentCommandIsPrivileged, 0x28A81, true);
-VAR(cmd_source_t, cmd_source, 0x284D0);
-VAR(cmd_function_t*, cmd_functions, 0x284EC);
-VAR(cmdalias_t*, cmd_alias, 0x28513);
-VAR(int, cmd_argc, 0x27EE7);
-ARRAY(char *, cmd_argv, [80], 0x284F9);
-VAR(char *, cmd_args, 0x27F68);
-VAR(qboolean, cmd_wait, 0x2755E);
+
+#ifdef SHARED_GAME_DATA
+sizebuf_t* sp_cmd_text = ADDRESS_OF_DATA(sizebuf_t*, 0x272E7);
+sizebuf_t& cmd_text = *sp_cmd_text;
+
+sizebuf_t* sp_filteredcmd_text = ADDRESS_OF_DATA(sizebuf_t*, 0x27581);
+sizebuf_t& filteredcmd_text = *sp_filteredcmd_text;
+
+qboolean* sp_s_bCurrentCommandIsPrivileged = ADDRESS_OF_DATA(qboolean*, 0x28A81);
+qboolean& s_bCurrentCommandIsPrivileged = *sp_s_bCurrentCommandIsPrivileged;
+
+cmd_source_t* sp_cmd_source = ADDRESS_OF_DATA(cmd_source_t*, 0x284D0);
+cmd_source_t& cmd_source = *sp_cmd_source;
+
+cmd_function_t** sp_cmd_functions = ADDRESS_OF_DATA(cmd_function_t**, 0x284EC);
+cmd_function_t*& cmd_functions = *sp_cmd_functions;
+
+cmdalias_t** sp_cmd_alias = ADDRESS_OF_DATA(cmdalias_t**, 0x28513);
+cmdalias_t* & cmd_alias = *sp_cmd_alias;
+
+qboolean* sp_cmd_argc = ADDRESS_OF_DATA(qboolean*, 0x27EE7);
+qboolean& cmd_argc = *sp_cmd_argc;
+
+char** sp_cmd_argv = ADDRESS_OF_DATA(char**, 0x284F9);
+char**& cmd_argv = sp_cmd_argv;
+
+char ** sp_cmd_args = ADDRESS_OF_DATA(char **, 0x27F68);
+char *& cmd_args = *sp_cmd_args; 
+
+qboolean* sp_cmd_wait = ADDRESS_OF_DATA(qboolean*, 0x2755E);
+qboolean& cmd_wait = *sp_cmd_wait;
+#else
+sizebuf_t cmd_text;
+sizebuf_t filteredcmd_text;
+static qboolean s_bCurrentCommandIsPrivileged = true;
+cmd_source_t cmd_source;
+cmd_function_t* cmd_functions;
+cmdalias_t* cmd_alias;
+int cmd_argc;
+char *cmd_argv[80];
+char *cmd_args;
+qboolean cmd_wait;
+#endif
 
 //int trashtest;
 //int *trashspot;

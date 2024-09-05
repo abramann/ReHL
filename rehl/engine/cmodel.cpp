@@ -28,10 +28,14 @@
 
 #include "precompiled.h"
 
-ARRAY(uchar, mod_novis, [MAX_MAP_LEAFS / 8], 0x28A9B);
+#ifdef SHARED_GAME_DATA
+uchar* mod_novis = ADDRESS_OF_DATA(uchar*, 0x28A9B);
+#else
+unsigned char mod_novis[MAX_MAP_LEAFS / 8];
+#endif
 
-uchar *gPAS;
-uchar *gPVS;
+unsigned char *gPAS;
+unsigned char *gPVS;
 int gPVSRowBytes;
 
 void Mod_Init(void)

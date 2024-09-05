@@ -107,48 +107,24 @@ void S_Init()
 }
 
 void S_AmbientOff() { NOT_IMPLEMENTED; }
-
 void S_AmbientOn() { NOT_IMPLEMENTED; }
-
 void S_Shutdown() { NOT_IMPLEMENTED; }
-
 void S_TouchSound(char *sample) { NOT_IMPLEMENTED; }
-
 void S_ClearBuffer() { NOT_IMPLEMENTED; }
-
 void S_StartStaticSound(int entnum, int entchannel, sfx_t *sfx, vec_t *origin, float vol, float attenuation, int flags, int pitch) { NOT_IMPLEMENTED; }
-
 void S_StartDynamicSound(int entnum, int entchannel, sfx_t *sfx, vec_t *origin, float fvol, float attenuation, int flags, int pitch) { NOT_IMPLEMENTED; }
-
 void S_StopSound(int entnum, int entchannel) { NOT_IMPLEMENTED; }
-
 sfx_t *S_PrecacheSound(char *sample) { return NULL; }
-
 void S_ClearPrecache() { NOT_IMPLEMENTED; }
-
 void S_Update(vec_t *origin, vec_t *v_forward, vec_t *v_right, vec_t *v_up) { NOT_IMPLEMENTED; }
-
 void S_StopAllSounds(qboolean clear) { NOT_IMPLEMENTED; }
-
 void S_BeginPrecaching() { NOT_IMPLEMENTED; }
-
 void S_EndPrecaching() { NOT_IMPLEMENTED; }
-
-void S_ExtraUpdate() 
-{ 
-	return Call_Function<void>(0x8CC80);
-}
-
+void S_ExtraUpdate() { NOT_IMPLEMENTED; }
 void S_LocalSound(char *s) { NOT_IMPLEMENTED; }
-
 void S_BlockSound() { NOT_IMPLEMENTED; }
-
 void S_PrintStats() { NOT_IMPLEMENTED; }
-
 qboolean Voice_RecordStart(const char *pUncompressedFile, const char *pDecompressedFile, const char *pMicInputFile) { return FALSE; }
-
 qboolean Voice_IsRecording() { return FALSE; }
-
 void Voice_Idle(float frametime) { NOT_IMPLEMENTED; }
-
 qboolean Voice_RecordStop() { return TRUE; }

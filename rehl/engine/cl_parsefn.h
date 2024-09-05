@@ -3,6 +3,10 @@
 #include "cvar.h"
 
 
+extern int msg_buckets[64];
+
+extern int total_data[64];
+
 typedef struct event_hook_s
 {
 	event_hook_s* next;
@@ -10,12 +14,11 @@ typedef struct event_hook_s
 	void(*pfnEvent)(event_args_s*);
 } event_hook_t;
 
-
-extern int msg_buckets[64];
-
-extern int total_data[64];
-
-EXTERN_VAR(event_hook_t*, g_pEventHooks);
+#ifdef SHARED_GAME_DATA
+extern event_hook_t* & g_pEventHooks;
+#else
+extern event_hook_t* g_pEventHooks;
+#endif
 
 void CL_InitEventSystem();
 

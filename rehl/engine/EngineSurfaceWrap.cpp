@@ -19,12 +19,32 @@ namespace vgui
 
 vgui::MouseCode CSWTCH_59[4] = { vgui::MOUSE_MIDDLE, vgui::MOUSE_LEFT, vgui::MOUSE_RIGHT, vgui::MOUSE_LEFT };
 
-SVVAR(vgui::Font*, staticFont, 0xB8F77, nullptr);
-SVVAR(FontInfoVGUI*, staticFontInfoVGUI, 0xB8F7D, nullptr);
-SVAR(vgui::Dar<FontInfoVGUI*>, staticFontInfoVGUIDar, 0xB8F85);
-SVAR(int, staticContextCount, 0xB8F96);
-ARRAY(SDL_Cursor*, staticDefaultCursor, [20], 0xB9001);
-VVAR(SDL_Cursor*, staticCurrentCursor, 0xB909C, nullptr);
+#ifdef SHARED_GAME_DATA
+vgui::Font* * sp_staticFont = ADDRESS_OF_DATA(vgui::Font* *, 0xB8F77);
+vgui::Font* & staticFont = *sp_staticFont; 
+
+FontInfoVGUI* * sp_staticFontInfoVGUI = ADDRESS_OF_DATA(FontInfoVGUI* *, 0xB8F7D);
+FontInfoVGUI* & staticFontInfoVGUI = *sp_staticFontInfoVGUI; 
+
+vgui::Dar<FontInfoVGUI*> * sp_staticFontInfoVGUIDar = ADDRESS_OF_DATA(vgui::Dar<FontInfoVGUI*> *, 0xB8F85);
+vgui::Dar<FontInfoVGUI*> & staticFontInfoVGUIDar = *sp_staticFontInfoVGUIDar;
+
+int * sp_staticContextCount = ADDRESS_OF_DATA(int *, 0xB8F96);
+int & staticContextCount = *sp_staticContextCount;
+
+SDL_Cursor*(*sp_staticDefaultCursor)[20] = ADDRESS_OF_DATA(SDL_Cursor*(*)[20],0xB9001);
+SDL_Cursor*(&staticDefaultCursor)[20] = *sp_staticDefaultCursor;
+
+SDL_Cursor* * sp_staticCurrentCursor = ADDRESS_OF_DATA(SDL_Cursor**, 0xB909C);
+SDL_Cursor* & staticCurrentCursor = *sp_staticCurrentCursor;
+#else
+static vgui::Font* staticFont;
+static FontInfoVGUI* staticFontInfoVGUI;
+static vgui::Dar<FontInfoVGUI*> staticFontInfoVGUIDar;
+static int staticContextCount;
+static SDL_Cursor* staticDefaultCursor[20];
+static SDL_Cursor* staticCurrentCursor;
+#endif
 
 void EngineSurfaceWrap::AppHandler(void * event, void * userData)
 {

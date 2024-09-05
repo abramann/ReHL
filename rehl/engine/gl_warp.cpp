@@ -3,7 +3,12 @@
 #include "renderer.h"
 
 
-VAR(TargaHeader, targa_header, 0x4F497);
+#ifdef SHARED_GAME_DATA
+TargaHeader* sp_targa_header = ADDRESS_OF_DATA(TargaHeader*, 0x4F497);
+TargaHeader& targa_header = *sp_targa_header;
+#else
+TargaHeader targa_header;
+#endif
 
 int fgetLittleShort(byte** ppBuffer)
 {

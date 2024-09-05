@@ -3,10 +3,23 @@
 #include "qgl.h"
 #include "gl_vidnt.h"
 
-VVAR(bool, detTexSupported, 0x33057, false);
-VVAR(cvar_t, r_detailtextures, 0x32FD1, { "r_detailtextures" COMMA  "0" COMMA  FCVAR_ARCHIVE });
-VVAR(cvar_t, r_detailtexturessupported, 0x32FDB, { "r_detailtexturessupported" COMMA  "1" COMMA  FCVAR_SPONLY });
 
+
+#ifdef SHARED_GAME_DATA
+bool * sp_detTexSupported = ADDRESS_OF_DATA(bool *, 0x33057);
+bool & detTexSupported = *sp_detTexSupported;
+
+cvar_t * sp_r_detailtextures = ADDRESS_OF_DATA(cvar_t *, 0x32FD1);
+cvar_t & r_detailtextures = *sp_r_detailtextures;
+
+cvar_t * sp_r_detailtexturessupported = ADDRESS_OF_DATA(cvar_t *, 0x32FDB);
+cvar_t & r_detailtexturessupported = *sp_r_detailtexturessupported;
+#else
+bool detTexSupported = false;
+
+cvar_t r_detailtextures = { "r_detailtextures", "0", FCVAR_ARCHIVE };
+cvar_t r_detailtexturessupported = { "r_detailtexturessupported", "1", FCVAR_SPONLY };
+#endif
 
 void DT_Initialize()
 {

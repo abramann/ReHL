@@ -29,8 +29,7 @@
 #include "precompiled.h"
 
 #ifdef SHARED_GAME_DATA
-IEngine** sp_eng = ADDRESS_OF_DATA(IEngine**, 0xAC6C4);
-IEngine*& eng = *sp_eng;
+IEngine* eng = ADDRESS_OF_DATAPTR(IEngine*, 0xAC6C4);
 #else
 CEngine g_Engine;
 IEngine *eng = &g_Engine;

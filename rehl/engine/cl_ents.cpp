@@ -7,9 +7,18 @@ void CL_LinkPacketEntities();
 void CL_FireEvents();
 long double CL_LerpPoint();
 
-VAR(particle_t*, free_particles, 0x134A4);
-VAR(particle_t *, active_particles, 0x13513);
+#ifdef SHARED_GAME_DATA
+particle_t ** sp_free_particles = ADDRESS_OF_DATA(particle_t **, 0x134A4);
+particle_t *& free_particles = *sp_free_particles;
 
+particle_t ** sp_active_particles = ADDRESS_OF_DATA(particle_t **, 0x13513);
+particle_t *& active_particles = *sp_active_particles; 
+#else
+particle_t  *free_particles;
+particle_t *active_particles
+#endif
+
+extern double parsecounttime;
 double g_flLatency;
 int last_incoming_sequence = 0;
 int cl_numvisedicts;

@@ -30,9 +30,19 @@
 
 #include "maintypes.h"
 
+extern int r_pixbytes;
+extern float scr_con_current;
 
 void D_FlushCaches(void);
-
+void R_SetStackBase(void);
+void SCR_UpdateScreen(void);
+void R_Init(void);
+void R_ForceCVars(qboolean multiplayer);
+void SCR_BeginLoadingPlaque(qboolean reconnect);
+void SCR_EndLoadingPlaque(void);
+void R_InitSky(void);
+void R_MarkLeaves(void);
+void R_InitTextures(void);
 void StartLoadingProgressBar(const char *loadingType, int numProgressPoints);
 void ContinueLoadingProgressBar(const char *loadingType, int progressPoint, float progressFraction);
 void SetLoadingProgressBarStatusText(const char *statusText);

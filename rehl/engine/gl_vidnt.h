@@ -2,27 +2,45 @@
 #include "vmodes.h"
 #include <SDL.h>
 
-EXTERN_VAR(SDL_Window**, pmainwindow);
-EXTERN_VAR(int, window_center_x);
-EXTERN_VAR(int, window_center_y);
+#ifdef SHARED_GAME_DATA
 
-EXTERN_VAR(const char*, gl_extensions);
-EXTERN_VAR(qboolean, g_bSupportsNPOTTextures);
+extern SDL_Window**& pmainwindow;
+extern int& window_center_x;
+extern int& window_center_y;
 
-EXTERN_VAR(int, TEXTURE0_SGIS);
-EXTERN_VAR(int, TEXTURE1_SGIS);
-EXTERN_VAR(int, TEXTURE2_SGIS);
+extern const char*& gl_extensions;
+extern qboolean& g_bSupportsNPOTTextures;
 
-EXTERN_VAR(int, gl_mtexable);
+extern int& TEXTURE0_SGIS;
+extern int& TEXTURE1_SGIS;
+extern int& TEXTURE2_SGIS;
 
-EXTERN_VAR(const char*, gl_vendor);
-EXTERN_VAR(const char*, gl_renderer);
-EXTERN_VAR(const char*, gl_version);
+extern int& gl_mtexable;
 
-EXTERN_VAR(const char*, gl_renderer);
+extern const char*& gl_vendor;
+extern const char*& gl_renderer;
+extern const char*& gl_version;
 
-EXTERN_VAR(qboolean, bDoScaledFBO);
-EXTERN_VAR(rect_t, window_rect);
+extern const char*& gl_renderer;
+#else
+extern SDL_Window** pmainwindow;
+extern int window_center_x;
+extern int window_center_y;
+extern const char* gl_extensions;
+extern qboolean g_bSupportsNPOTTextures;
+
+extern int TEXTURE0_SGIS;
+extern int TEXTURE1_SGIS;
+extern int TEXTURE2_SGIS;
+
+extern int gl_mtexable;
+
+extern const char* gl_vendor;
+extern const char* gl_renderer;
+extern const char* gl_version;
+
+extern const char* gl_renderer;
+#endif
 
 // Multitexture
 #define QGL_TEXTURE0_SGIS 0x835E

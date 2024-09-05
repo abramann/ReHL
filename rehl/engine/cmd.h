@@ -61,16 +61,27 @@ not apropriate.
 
 */
 
-EXTERN_VAR(sizebuf_t, cmd_text);
-EXTERN_VAR(sizebuf_t, filteredcmd_text);
-EXTERN_VAR(cmd_source_t, cmd_source);
-EXTERN_VAR(cmd_function_t*, cmd_functions);
-EXTERN_VAR(cmdalias_t*, cmd_alias);
-EXTERN_VAR(int, cmd_argc);
-EXTERN_ARRAY(char*, cmd_argv, [80]);
-EXTERN_VAR(char*, cmd_args);
-EXTERN_VAR(qboolean, cmd_wait);
-
+#ifdef SHARED_GAME_DATA
+extern sizebuf_t& cmd_text;
+extern sizebuf_t& filteredcmd_text;
+extern cmd_source_t& cmd_source;
+extern cmd_function_t*& cmd_functions;
+extern cmdalias_t*& cmd_alias;
+extern int& cmd_argc;
+extern char**& cmd_argv;
+extern char*& cmd_args;
+extern qboolean& cmd_wait;
+#else
+extern sizebuf_t cmd_text;
+extern sizebuf_t filteredcmd_text;
+extern cmd_source_t cmd_source;
+extern cmd_function_t *cmd_functions;
+extern cmdalias_t *cmd_alias;
+extern int cmd_argc;
+extern char *cmd_argv[80];
+extern char *cmd_args;
+extern qboolean cmd_wait;
+#endif
 
 void Cmd_Wait_f(void);
 void Cbuf_Init(void);

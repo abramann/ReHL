@@ -14,12 +14,20 @@
 #include "VClientVGUI.h"
 #include "IHTMLChromeController.h"
 
-
-VAR(IGameConsole*, staticGameConsole, 0x7472)
-VAR(ICareerUI*, staticCareerUI, 0x7861)
-
 static bool m_bConsoleShowing;
 
+#ifdef SHARED_GAME_DATA
+IGameConsole** sp_staticGameConsole = ADDRESS_OF_DATA(IGameConsole**, 0x7472);
+IGameConsole*& staticGameConsole = *sp_staticGameConsole;
+
+
+ICareerUI** sp_staticCareerUI = ADDRESS_OF_DATA(ICareerUI**, 0x7861);
+ICareerUI*& staticCareerUI = *sp_staticCareerUI;
+
+#else
+IGameConsole* staticGameConsole = nullptr;
+ICareerUI* staticCareerUI = nullptr;
+#endif
 IMouseControl* mousecontrol = nullptr;
 
 cl_enginefunc_t gEngfuncs;
