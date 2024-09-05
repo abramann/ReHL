@@ -67,9 +67,13 @@ typedef struct hash_pack_header_s
 	int nDirectoryOffset;
 } hash_pack_header_t;
 
-EXTERN_VAR(hash_pack_queue_t*, gp_hpak_queue);
-EXTERN_VAR(hash_pack_header_t, hash_pack_header);
-
+#ifdef SHARED_GAME_DATA
+extern hash_pack_queue_t*& gp_hpak_queue;
+extern hash_pack_header_t& hash_pack_header;
+#else
+extern hash_pack_queue_t *gp_hpak_queue;
+extern hash_pack_header_t hash_pack_header;
+#endif
 // TODO: used only in hashpak
 extern hash_pack_directory_t hash_pack_dir;
 

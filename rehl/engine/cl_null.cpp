@@ -31,9 +31,22 @@
 #include "cl_pred.h"
 #include "cl_ents.h"
 
-VVAR(cl_enginefunc_dst_t, g_engdstAddrs, 0x635C4, k_engdstNull);
-VAR(client_state_t, g_pcl, 0x16F02);
-VAR(client_static_t, g_pcls, 0x15ECD);
+
+#ifdef SHARED_GAME_DATA
+
+cl_enginefunc_dst_t * sp_g_engdstAddrs = ADDRESS_OF_DATA(cl_enginefunc_dst_t *, 0x635C4);
+cl_enginefunc_dst_t & g_engdstAddrs = *sp_g_engdstAddrs;
+
+client_state_t* sp_g_pcl = ADDRESS_OF_DATA(client_state_t*, 0x16F02);
+client_state_t& g_pcl = *sp_g_pcl;
+
+client_static_t * sp_g_pcls = ADDRESS_OF_DATA(client_static_t *, 0x15ECD);
+client_static_t & g_pcls = *sp_g_pcls;
+#else
+cl_enginefunc_dst_t g_engdstAddrs = k_engdstNull;
+client_state_t g_pcl;
+client_static_t g_pcls;
+#endif
 
 double g_clockdelta = 0;
 

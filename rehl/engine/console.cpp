@@ -1,22 +1,71 @@
 #include "precompiled.h"
 #include "console.h"
 
-VAR(char*, con_text, 0x2C837, nullptr);
-VVAR(int, con_linewidth, 0x2C7A6, 1);
-VVAR(void *, con_notifypos, 0x2C9A6, nullptr);
-VVAR(int, con_num_times, 0x2C9B2, 4);
-VVAR(float *, con_times, 0x2CC6A, nullptr);
-VAR(int, con_totallines, 0x2C8B9);
-VVAR(int, con_current, 0x2C8C9, 0);
-VAR(int, con_backscroll, 0x2C8BF);
-VVAR(cvar_t, con_fastmode, 0x2C9D4, { "con_fastmode" COMMA "1" });
-VVAR(cvar_t, con_notifytime, 0x2C9DE, { "con_notifytime" COMMA "4" } );
-VVAR(cvar_t, con_color, 0x2C9E8, { "con_color" COMMA "255 180 30" COMMA FCVAR_ARCHIVE });
-VAR(cvar_t, con_shifttoggleconsole, 0x2C9F2, { "con_shifttoggleconsole" COMMA "0" });
-VVAR(cvar_t, con_mono, 0x2C9FC, { "con_mono" COMMA "0" COMMA FCVAR_ARCHIVE });
-VVAR(qboolean, message_type_is_privileged, 0x2C719, true);
 
+#ifdef SHARED_GAME_DATA
+char **sp_Con_text = ADDRESS_OF_DATA(char**, 0x2C837);
+char *&con_text = *sp_Con_text;
+
+int * sp_con_linewidth = ADDRESS_OF_DATA(int *, 0x2C7A6);
+int & con_linewidth = *sp_con_linewidth;
+
+void ** sp_con_notifypos = ADDRESS_OF_DATA(void **, 0x2C9A6);
+void *& con_notifypos = *sp_con_notifypos;
+
+int * sp_con_num_times = ADDRESS_OF_DATA(int *, 0x2C9B2);
+int & con_num_times = *sp_con_num_times;
+
+float** sp_con_times = ADDRESS_OF_DATA(float**, 0x2CC6A);
+float*& con_times = *sp_con_times;
+
+int* sp_con_totallines = ADDRESS_OF_DATA(int*, 0x2C8B9);
+int& con_totallines = *sp_con_totallines;
+
+int* sp_con_current = ADDRESS_OF_DATA(int*, 0x2C8C9);
+int con_current = *sp_con_current;
+
+int* sp_con_backscroll = ADDRESS_OF_DATA(int*, 0x2C8BF);
+int& con_backscroll = *sp_con_backscroll;
+
+
+cvar_t* sp_con_fastmode = ADDRESS_OF_DATA(cvar_t*, 0x2C9D4);
+cvar_t& con_fastmode = *sp_con_fastmode;
+
+cvar_t* sp_con_notifytime = ADDRESS_OF_DATA(cvar_t*, 0x2C9DE);
+cvar_t& con_notifytime = *sp_con_notifytime;
+
+
+cvar_t* sp_con_color = ADDRESS_OF_DATA(cvar_t*, 0x2C9E8);
+cvar_t& con_color = *sp_con_color;
+
+cvar_t* sp_con_shifttoggleconsole = ADDRESS_OF_DATA(cvar_t*, 0x2C9F2);
+cvar_t& con_shifttoggleconsole = *sp_con_shifttoggleconsole;
+
+cvar_t* sp_con_mono = ADDRESS_OF_DATA(cvar_t*, 0x2C9FC);
+cvar_t& con_mono = *sp_con_mono;
+
+qboolean* sp_message_type_is_privileged = ADDRESS_OF_DATA(qboolean*, 0x2C719);
+qboolean& message_type_is_privileged = *sp_message_type_is_privileged;
+#else
+char* con_text;
+int con_linewidth = 1;
+void *con_notifypos;
+int con_num_times = 4;
+float *con_times;
+int con_totallines;
+int con_current = 0;
+int con_backscroll;
+
+cvar_t con_fastmode = { "con_fastmode", "1" };
+cvar_t con_notifytime = { "con_notifytime", "4" };
+cvar_t con_color = { "con_color", "255 180 30", FCVAR_ARCHIVE };
+cvar_t con_shifttoggleconsole = { "con_shifttoggleconsole", "0" };
+cvar_t con_mono = { "con_mono", "0", FCVAR_ARCHIVE };
+
+qboolean message_type_is_privileged = true;
+#endif
 bool con_forcedup = false; // because no entities to refresh
+
 
 
 void Con_CheckResize()

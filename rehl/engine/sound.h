@@ -29,7 +29,6 @@
 #pragma once
 
 #include "quakedef.h"
-#include "sys_dll.h"
 
 // max number of sentences in game. NOTE: this must match CVOXFILESENTENCEMAX in dlls\util.h!!!
 const int CVOXFILESENTENCEMAX = 1536;
@@ -60,7 +59,6 @@ void S_ExtraUpdate();
 void S_LocalSound(char * s);
 void S_BlockSound();
 void S_PrintStats();
-
 qboolean Voice_RecordStart(const char  * pUncompressedFile, const char  * pDecompressedFile, const char  * pMicInputFile);
 qboolean Voice_IsRecording();
 void Voice_RegisterCvars();

@@ -29,8 +29,7 @@
 #include "precompiled.h"
 
 #ifdef SHARED_GAME_DATA
-wadlist_t(*sp_wads)[NUM_WADS] = ADDRESS_OF_DATA(wadlist_t(*)[NUM_WADS], 0xC56CD);
-wadlist_t(&wads)[NUM_WADS] = *sp_wads;
+wadlist_t* wads = ADDRESS_OF_DATA(wadlist_t*, 0xC56CD);
 #else
 wadlist_t wads[NUM_WADS];
 #endif

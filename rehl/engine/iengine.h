@@ -29,7 +29,6 @@
 #pragma once
 
 #include "maintypes.h"
-#include "hooker.h"
 
 class IEngine
 {
@@ -65,4 +64,4 @@ public:
 	virtual void SetQuitting(int quittype) = 0;
 };
 
-EXTERN_VAR(IEngine*, eng);
+extern IEngine *eng;

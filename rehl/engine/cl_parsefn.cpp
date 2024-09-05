@@ -3,8 +3,17 @@
 int msg_buckets[64];
 int total_data[64];
 
-VAR(event_hook_t*, g_pEventHooks, 0x1EF42);
-VAR(UserMsg*, gClientUserMsgs, 0x1A8C1);
+#ifdef SHARED_GAME_DATA
+event_hook_t* * sp_g_pEventHooks = ADDRESS_OF_DATA(event_hook_t* *, 0x1EF42);
+event_hook_t* & g_pEventHooks = *sp_g_pEventHooks;
+
+UserMsg** sp_gClientUserMsgs = ADDRESS_OF_DATA(UserMsg**, 0x1A8C1);
+UserMsg* & gClientUserMsgs = *sp_gClientUserMsgs;
+#else
+event_hook_t*  g_pEventHooks;
+UserMsg* gClientUserMsgs = nullptr;
+#endif
+
 
 void CL_InitEventSystem(void)
 {

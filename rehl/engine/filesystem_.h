@@ -35,9 +35,19 @@
 extern CUtlVector<char *> g_fallbackLocalizationFiles;
 extern char s_pBaseDir[512];
 
-EXTERN_VAR(CreateInterfaceFn, g_FileSystemFactory);
-EXTERN_VAR(CSysModule*, g_pFileSystemModule);
-EXTERN_VAR(bool, bLowViolenceBuild);
+#ifdef SHARED_GAME_DATA
+extern CreateInterfaceFn* sp_g_FileSystemFactory;
+extern CreateInterfaceFn& g_FileSystemFactory;
+
+extern CSysModule ** sp_g_pFileSystemModule;
+extern CSysModule*& g_pFileSystemModule;
+
+extern bool& bLowViolenceBuild;
+#else
+extern CSysModule *g_pFileSystemModule;
+extern CreateInterfaceFn g_FileSystemFactory; 
+extern bool bLowViolenceBuild;
+#endif
 
 const char *GetBaseDirectory(void);
 void *GetFileSystemFactory(void);

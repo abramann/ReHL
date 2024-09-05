@@ -30,10 +30,19 @@
 
 CUtlVector<char *> g_fallbackLocalizationFiles;
 char s_pBaseDir[512];
+#ifdef SHARED_GAME_DATA
+CreateInterfaceFn* 	sp_g_FileSystemFactory = ADDRESS_OF_DATA(CreateInterfaceFn*, 0x3B98B);
+CreateInterfaceFn& g_FileSystemFactory = *sp_g_FileSystemFactory;
 
-VAR(CreateInterfaceFn, g_FileSystemFactory, 0x3B98B);
-VVAR(CSysModule*, g_pFileSystemModule, 0x3B975, g_FileSystemFactory);
-VAR(bool, bLowViolenceBuild, 0x3B1AE);
+CSysModule ** sp_g_pFileSystemModule = ADDRESS_OF_DATA(CSysModule**, 0x3B975);
+CSysModule*& g_pFileSystemModule = *sp_g_pFileSystemModule;
+
+bool& bLowViolenceBuild = *ADDRESS_OF_DATA(bool*, 0x3B1AE);
+#else
+CreateInterfaceFn*& g_FileSystemFactory;
+CSysModule *g_pFileSystemModule;
+bool bLowViolenceBuild;
+#endif
 
 const char *GetBaseDirectory(void)
 {
