@@ -31,12 +31,7 @@
 #include "maintypes.h"
 #include "FileSystem.h"
 
-#ifdef SHARED_GAME_DATA
-extern IFileSystem** sp_g_pFileSystem;
-extern IFileSystem*& g_pFileSystem;
-#else
-extern IFileSystem *g_pFileSystem;
-#endif
+EXTERN_VAR(IFileSystem *,g_pFileSystem);
 
 void FS_RemoveAllSearchPaths(void);
 void FS_AddSearchPath(const char *pPath, const char *pathID);

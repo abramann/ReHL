@@ -15,116 +15,42 @@ struct FBO_Container_t
 	GLuint s_hBackBufferTex;
 };
 
+VVAR(SDL_Window**, pmainwindow, 0x4E5B8, nullptr);
+SVVAR(qboolean, gfMiniDriver, 0x4DA25, false);
+VVAR(rect_t, window_rect, 0x4E59E, {});
+VVAR(int, window_center_x, 0x4E615, 0);
+VVAR(int, window_center_y, 0x4E625, 0);
+SVVAR(qboolean, s_bEnforceAspect, 0x4DACD, false);
+SVVAR(qboolean, bDoScaledFBO, 0x4DB05, true);
+SVAR(FBO_Container_t, s_MSAAFBO, 0x4DCBD);
+SVAR(FBO_Container_t, s_BackBufferFBO, 0x4DCB7);
+VVAR(const char*, gl_extensions, 0x4DBF9, nullptr);
+SVVAR(qboolean, s_bSupportsBlitTexturing, 0x4DC1E, false);
+VVAR(const char*, gl_vendor, 0x4D005, nullptr);
+VVAR(const char*, gl_renderer, 0x4D03F, nullptr);
+VVAR(const char*, gl_version, 0x4D05D, nullptr);
+VVAR(bool, atismoothing, 0x4CBB2, false);
+VVAR(int, gGLHardwareType, 0x4CC21, 0);
+VVAR(cvar_t, gl_ztrick, 0x4E121, { "gl_ztrick" COMMA "0" });
+VVAR(cvar_t, gl_vsync, 0x4E12B, { "gl_vsync" COMMA "1" COMMA FCVAR_ARCHIVE });
+VVAR(int, currenttexture, 0x3C148, -1); // to avoid unnecessary texture sets
+VARRAY(int, cnttextures, [2], 0x3C142, { -1 COMMA - 1 }); // cached
+VAR(qboolean, g_bSupportsNPOTTextures, 0x4D1B7);
+VVAR(int, gl_mtexable, 0x3C104, 0);
+VVAR(int, TEXTURE0_SGIS, 0x4CB69, GL_ASYNC_READ_PIXELS_SGIX);
+VVAR(int, TEXTURE1_SGIS, 0x4CB6F, GL_MAX_ASYNC_TEX_IMAGE_SGIX);
+VVAR(int, TEXTURE2_SGIS, 0x4CB79, GL_MAX_ASYNC_DRAW_PIXELS_SGIX);
+
 #ifdef SHARED_GAME_DATA
-SDL_Window*** sp_pmainwindow = ADDRESS_OF_DATA(SDL_Window***, 0x4E5B8);
-SDL_Window**& pmainwindow = *sp_pmainwindow;
-
-rect_t* sp_window_rect = ADDRESS_OF_DATA(rect_t*, 0x4E59E);
-rect_t& window_rect = *sp_window_rect;
-
-int* sp_window_center_x = ADDRESS_OF_DATA(int*, 0x4E615);
-int& window_center_x = *sp_window_center_x;
-
-int* sp_window_center_y = ADDRESS_OF_DATA(int*, 0x4E625);
-int& window_center_y = *sp_window_center_y;
-
-qboolean*  sp_gfMiniDriver = ADDRESS_OF_DATA(qboolean*, 0x4DA25);
-qboolean& gfMiniDriver = *sp_gfMiniDriver;
-
-qboolean* sp_s_bEnforceAspect = ADDRESS_OF_DATA(qboolean*, 0x4DACD);
-qboolean& s_bEnforceAspect = *sp_s_bEnforceAspect;
-
-qboolean* sp_bDoScaledFBO = ADDRESS_OF_DATA(qboolean*, 0x4DB05);
-qboolean& bDoScaledFBO = *sp_bDoScaledFBO;
-
-FBO_Container_t* sp_s_MSAAFBO = ADDRESS_OF_DATA(FBO_Container_t*, 0x4DCBD);
-FBO_Container_t* sp_s_BackBufferFBO = ADDRESS_OF_DATA(FBO_Container_t*, 0x4DCB7);
-
-FBO_Container_t& s_MSAAFBO = *sp_s_MSAAFBO;
-FBO_Container_t& s_BackBufferFBO = *sp_s_BackBufferFBO;
-
 extern void(*&VID_FlipScreen)(void);
 extern int(*&D_SurfaceCacheForRes)(int width, int height);
-
-const char** sp_gl_extensions = ADDRESS_OF_DATA(const char**, 0x4DBF9);
-const char*& gl_extensions = *sp_gl_extensions;
-
-qboolean* sp_s_bSupportsBlitTexturing = ADDRESS_OF_DATA(qboolean*, 0x4DC1E);
-qboolean& s_bSupportsBlitTexturing = *sp_s_bSupportsBlitTexturing;
-
-qboolean * sp_g_bSupportsNPOTTextures = ADDRESS_OF_DATA(qboolean *, 0x4D1B7);
-qboolean & g_bSupportsNPOTTextures = *sp_g_bSupportsNPOTTextures;
-
-int * sp_gl_mtexable = ADDRESS_OF_DATA(int *, 0x4CB88);
-int & gl_mtexable = *sp_gl_mtexable;
-
-int * sp_TEXTURE0_SGIS = ADDRESS_OF_DATA(int *, 0x4CB69);
-int & TEXTURE0_SGIS = *sp_TEXTURE0_SGIS; 
-
-int * sp_TEXTURE1_SGIS = ADDRESS_OF_DATA(int *, 0x4CB6F);
-int & TEXTURE1_SGIS = *sp_TEXTURE1_SGIS; 
-
-int * sp_TEXTURE2_SGIS = ADDRESS_OF_DATA(int *, 0x4CB79);
-int & TEXTURE2_SGIS = *sp_TEXTURE2_SGIS; 
-
-const char** sp_gl_vendor = ADDRESS_OF_DATA(const char**, 0x4D005);
-const char*& gl_vendor = *sp_gl_vendor;
-
-const char** sp_gl_renderer = ADDRESS_OF_DATA(const char**, 0x4D03F);
-const char*& gl_renderer = *sp_gl_vendor;
-
-const char** sp_gl_version = ADDRESS_OF_DATA(const char**, 0x4D05D);
-const char*& gl_version = *sp_gl_vendor;
-
-qboolean * sp_atismoothing = ADDRESS_OF_DATA(qboolean *, 0x4CBB2);
-qboolean & atismoothing = *sp_atismoothing; 
-
-int * sp_gGLHardwareType = ADDRESS_OF_DATA(int *, 0x4CC21);
-int & gGLHardwareType = *sp_gGLHardwareType;
-
-cvar_t * sp_gl_ztrick = ADDRESS_OF_DATA(cvar_t *, 0x4E121);
-cvar_t & gl_ztrick = *sp_gl_ztrick; 
-
-cvar_t * sp_gl_vsync = ADDRESS_OF_DATA(cvar_t *, 0x4E12B);
-cvar_t & gl_vsync = *sp_gl_vsync;
 #else
-SDL_Window** pmainwindow = nullptr;
-static qboolean gfMiniDriver = false;
-
-rect_t window_rect = {};
-int window_center_x = 0;
-int window_center_y = 0;
-
 extern void(*VID_FlipScreen)(void);
+extern int(*D_SurfaceCacheForRes)(int width, int height);
 
-static qboolean s_bEnforceAspect = false;
-static qboolean bDoScaledFBO = true;
-static FBO_Container_t s_MSAAFBO;
-static FBO_Container_t s_BackBufferFBO;
-const char* gl_extensions = nullptr;
-static qboolean s_bSupportsBlitTexturing = false;
-
-qboolean g_bSupportsNPOTTextures = false;
-int gl_mtexable = 0;
-
-int TEXTURE0_SGIS = GL_ASYNC_READ_PIXELS_SGIX;
-int TEXTURE1_SGIS = GL_MAX_ASYNC_TEX_IMAGE_SGIX;
-int TEXTURE2_SGIS = GL_MAX_ASYNC_DRAW_PIXELS_SGIX;
-
-const char* gl_vendor = nullptr;
-const char* gl_renderer = nullptr;
-const char* gl_version = nullptr;
-
-bool atismoothing = false;
-
-int gGLHardwareType = 0;
-cvar_t gl_ztrick = { "gl_ztrick", "0" };
-cvar_t gl_vsync = { "gl_vsync", "1", FCVAR_ARCHIVE };
 #endif
 
 void GLimp_LogNewFrame();
-
-extern cvar_t  gl_clear;
 
 qboolean vsync = false;
 
@@ -324,7 +250,6 @@ void GL_EndRendering()
 
 bool GL_SetMode(SDL_Window* mainwindow, HDC* pmaindc, HGLRC* pbaseRC, int fD3D, const char* pszDriver, const char* pszCmdLine)
 {
-	//MessageBoxA(0, "GL_SetMode executing", "ReHL", MB_OK);
 	static qboolean bDoMSAAFBO = true;
 	gfMiniDriver = false;
 

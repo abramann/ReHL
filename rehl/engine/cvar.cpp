@@ -32,16 +32,9 @@
 	All cvar names are case insensitive! Values not.
 */
 
-#ifdef SHARED_GAME_DATA
-cvar_t** sp_cvar_vars = ADDRESS_OF_DATA(cvar_t**, 0x2E9DC);
-cvar_t* & cvar_vars = *sp_cvar_vars;
+VVAR(cvar_t*, cvar_vars, 0x2E9DC, NULL);
+VVAR(cvarhook_t *, cvar_hooks, 0x2F12D, NULL);
 
-cvarhook_t ** sp_cvar_hooks = ADDRESS_OF_DATA(cvarhook_t **, 0x2F12D);
-cvarhook_t*& cvar_hooks = *sp_cvar_hooks;
-#else
-cvar_t* cvar_vars = NULL;
-cvarhook_t *cvar_hooks = NULL;
-#endif
 char cvar_null_string[] = "";
 
 void Cvar_Init(void)

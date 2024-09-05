@@ -26,3 +26,6 @@ void V_SetRefParams(ref_params_t *pparams);
 void V_GetRefParams(ref_params_t *pparams);
 void FilterLightParams();
 void BuildGammaTable(float g);
+
+EXTERN_VAR(cvar_t, v_lambert);
+EXTERN_VAR(cvar_t, v_lightgamma);

@@ -8,6 +8,8 @@ const int CL_UPDATE_MASK = 63;
 
 const int CL_UPDATE_BACKUP = 64;
 
+extern double parsecounttime;
+
 qboolean CL_IsPlayerIndex(int index);
 
 void CL_ResetFrameStats(frame_t* frame);

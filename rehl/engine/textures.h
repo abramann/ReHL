@@ -55,8 +55,6 @@ extern int nTexFiles;
 extern int nummiptex;
 extern char miptex[512][64];
 
-extern cvar_t r_wadtextures;
-
 void SafeRead(FileHandle_t f, void *buffer, int count);
 void CleanupName(char *in, char *out);
 int lump_sorter(const void *lump1, const void *lump2);

@@ -15,6 +15,7 @@ float oldbrightness_25914;
 vec3_t r_soundOrigin;
 vec3_t r_playerViewportAngles;
 
+
 #ifdef SHARED_GAME_DATA
 cvar_t * sp_v_texgamma = ADDRESS_OF_DATA(cvar_t *, 0xC2819);
 cvar_t & v_texgamma = *sp_v_texgamma;
@@ -46,9 +47,11 @@ cvar_t & v_lambert = *sp_v_lambert;
 
 cvar_t * sp_v_direct = ADDRESS_OF_DATA(cvar_t *, 0xC2837);
 cvar_t & v_direct = *sp_v_direct;
+
 #else
 cvar_t v_texgamma = { "texgamma", "2.0" };
 cvar_t v_brightness = { "brightness", "0.0", FCVAR_ARCHIVE };
+cvar_t v_lambert = { "v_lambert", "1.5" };
 unsigned char texgammatable[256];
 int lineargammatable[1024]
 int screengammatable[1024];
