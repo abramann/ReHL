@@ -27,52 +27,20 @@
 */
 
 #include "precompiled.h"
+EXTERN_ARRAY(byte, mod_novis, [1024]);
 
-#ifdef SHARED_GAME_DATA
-extern uchar* mod_novis;
-
-mod_known_info_t (*sp_mod_known_info) [MAX_KNOWN_MODELS] = ADDRESS_OF_DATA(mod_known_info_t(*)[MAX_KNOWN_MODELS], 0x401CF);
-mod_known_info_t(&mod_known_info)[MAX_KNOWN_MODELS] = *sp_mod_known_info;
-
-model_t ** sp_loadmodel = ADDRESS_OF_DATA(model_t **, 0x402C1);
-model_t*& loadmodel = *sp_loadmodel;
-
-char (*sp_loadname)[MAX_MODEL_NAME] = ADDRESS_OF_DATA(char(*)[MAX_MODEL_NAME], 0x402B3);
-char (&loadname)[MAX_MODEL_NAME] = *sp_loadname;
-
-model_t (*sp_mod_known)[MAX_KNOWN_MODELS] = ADDRESS_OF_DATA(model_t(*)[MAX_KNOWN_MODELS], 0x3FE48);
-model_t (&mod_known)[MAX_KNOWN_MODELS] = *sp_mod_known;
-
-int * sp_mod_numknown = ADDRESS_OF_DATA(int *, 0x3FE3F);
-int & mod_numknown = *sp_mod_numknown; 
-
-int * sp_gSpriteTextureFormat = ADDRESS_OF_DATA(int *, 0x42A62);
-int & gSpriteTextureFormat = *sp_gSpriteTextureFormat;
-
-uchar ** sp_pspritepal = ADDRESS_OF_DATA(uchar **, 0x42B04);
-uchar*& pspritepal = *sp_pspritepal; 
-
-qboolean* sp_gSpriteMipMap = ADDRESS_OF_DATA(qboolean *, 0x42828);
-qboolean gSpriteMipMap = *sp_gSpriteMipMap;
-
-uchar** sp_mod_base = ADDRESS_OF_DATA(uchar**, 0x41C0C);
-uchar* & mod_base = *sp_mod_base;
-
-char ** sp_wadpath = ADDRESS_OF_DATA(char**, 0x40AC5);
-char*& wadpath = *sp_wadpath;
-#else
-extern byte mod_novis[1024];
-mod_known_info_t mod_known_info[MAX_KNOWN_MODELS];
-model_t *loadmodel;
-char loadname[MAX_MODEL_NAME]; 
-model_t mod_known[MAX_KNOWN_MODELS];
-int mod_numknown;
-int gSpriteTextureFormat;
-uchar *pspritepal;
-qboolean gSpriteMipMap = false;
-uchar* mod_base;
-char *wadpath;
-#endif
+//VAR(char *, g_pPostRestartCmdLineArgs, 0xAC69E);
+//VAR(int, gHostSpawnCount, 0x9BC45);
+ARRAY(mod_known_info_t, mod_known_info, [MAX_KNOWN_MODELS], 0x401CF);
+VAR(model_t *, loadmodel, 0x402C1);
+ARRAY(char, loadname, [MAX_MODEL_NAME], 0x402B3);
+ARRAY(model_t, mod_known, [MAX_KNOWN_MODELS], 0x3FE48);
+VAR(int, mod_numknown, 0x3FE3F);
+VAR(int, gSpriteTextureFormat, 0x42A62);
+VAR(uchar *, pspritepal, 0x42B04);
+VVAR(qboolean, gSpriteMipMap, 0x42828, false);
+VAR(uchar*, mod_base, 0x41C0C);
+VAR(char *, wadpath, 0x40AC5);
 
 int tested;
 int ad_enabled;
@@ -119,13 +87,29 @@ void* EXT_FUNC Mod_Extradata(model_t *mod)
 
 mleaf_t *Mod_PointInLeaf(vec_t *p, model_t *model)
 {
+#ifndef REHLDS
 	mnode_t *node;
 	float d;
 	mplane_t *plane;
 
 	if (!model || !model->nodes)
 		Sys_Error("%s: bad model", __func__);
+	
+	mleaf_t* leaf = (mleaf_t*)model->nodes;
 
+	while (leaf->contents >= 0)
+	{
+		float* vis = (float*)leaf->compressed_vis;
+		double d = _DotProduct(vis, p) - vis[3];
+		if (d <= 0)
+		{
+			leaf = (mleaf_t*)leaf->firstmarksurface;
+			continue;
+		}
+		leaf = (mleaf_t*)leaf->efrags;
+	}
+	return leaf;
+#else
 	node = model->nodes;
 	while (node->contents >= 0)
 	{
@@ -141,6 +125,7 @@ mleaf_t *Mod_PointInLeaf(vec_t *p, model_t *model)
 			node = node->children[0];
 	}
 	return (mleaf_t *)node;
+#endif
 }
 
 void Mod_ClearAll(void)
@@ -285,7 +270,8 @@ qboolean IsCZPlayerModel(uint32 crc, const char  * filename)
 
 model_t *Mod_LoadModel(model_t *mod, qboolean crash, qboolean trackCRC)
 {
-	unsigned char *buf;
+	NOT_IMPLEMENTED;
+	uchar *buf;
 	char tmpName[MAX_PATH];
 	int length;
 	CRC32_t currentCRC;
@@ -1287,7 +1273,6 @@ float RadiusFromBounds(vec_t *mins, vec_t *maxs)
 void Mod_LoadBrushModel(model_t *mod, void *buffer)
 {
 	return Call_Function<void, model_t*, void*>(0x41BB0, mod, buffer);
-	
 	dmodel_t *bm;
 	dheader_t *header;
 
@@ -1908,7 +1893,7 @@ void *Mod_LoadSpriteGroup(void *pin, mspriteframe_t **ppframe, int framenum)
 
 void Mod_LoadSpriteModel(model_t *mod, void *buffer)
 {
-	//return Call_Function<void, model_t*, void*>(0x429E0, mod, buffer);
+	return Call_Function<void, model_t*, void*>(0x429E0, mod, buffer);
 	int					i;
 	int					version;
 	dsprite_t			*pin;

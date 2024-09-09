@@ -30,18 +30,9 @@
 
 int g_contentsresult;
 
-#ifdef SHARED_GAME_DATA
-hull_t * sp_box_hull_0 = ADDRESS_OF_DATA(hull_t *, 0x6B7FD);
-hull_t & box_hull_0 = *sp_box_hull_0;
-
-dclipnode_t * box_clipnodes_0 = ADDRESS_OF_DATA(dclipnode_t *, 0x6B765);
-
-mplane_t * box_planes_0 = ADDRESS_OF_DATA(mplane_t *, 0x6B7B3);
-#else
-hull_t  box_hull_0;
-dclipnode_t box_clipnodes_0[6];
-mplane_t box_planes_0[6];
-#endif
+VAR(hull_t, box_hull_0, 0x6B7FD);
+ARRAY(dclipnode_t, box_clipnodes_0, [6], 0x6B765);
+ARRAY(mplane_t, box_planes_0, [6], 0x6B7B3);
 
 float EXT_FUNC PM_TraceModel(physent_t *pEnt, vec_t *start, vec_t *end, trace_t *trace)
 {

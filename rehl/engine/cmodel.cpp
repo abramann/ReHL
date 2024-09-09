@@ -28,15 +28,11 @@
 
 #include "precompiled.h"
 
-#ifdef SHARED_GAME_DATA
-uchar* mod_novis = ADDRESS_OF_DATA(uchar*, 0x28A9B);
-#else
-unsigned char mod_novis[MAX_MAP_LEAFS / 8];
-#endif
+ARRAY(uchar, mod_novis, [MAX_MAP_LEAFS / 8], 0x28B0D);
 
-unsigned char *gPAS;
-unsigned char *gPVS;
-int gPVSRowBytes;
+uchar *gPAS;
+VVAR(uchar*, gPVS, 0x28B0D, nullptr);
+VAR(int, gPVSRowBytes, 0x28BD5);
 
 void Mod_Init(void)
 {
@@ -46,7 +42,7 @@ void Mod_Init(void)
 
 unsigned char *Mod_DecompressVis(unsigned char *in, model_t *model)
 {
-	static unsigned char decompressed[MAX_MAP_LEAFS / 8];
+	static uchar decompressed[MAX_MAP_LEAFS / 8];
 
 	if (in == NULL)
 	{
@@ -59,6 +55,7 @@ unsigned char *Mod_DecompressVis(unsigned char *in, model_t *model)
 
 unsigned char *Mod_LeafPVS(mleaf_t *leaf, model_t *model)
 {
+	//return Call_Function<uchar*, mleaf_t*, model_t*>(0x28af0, leaf, model);
 	if (leaf == model->leafs)
 	{
 		return mod_novis;
@@ -73,7 +70,7 @@ unsigned char *Mod_LeafPVS(mleaf_t *leaf, model_t *model)
 	return CM_LeafPVS(leafnum);
 }
 
-void CM_DecompressPVS(unsigned char *in, unsigned char *decompressed, int byteCount)
+void CM_DecompressPVS(unsigned char* in, unsigned char* decompressed, int byteCount)
 {
 	int c;
 	unsigned char *out;

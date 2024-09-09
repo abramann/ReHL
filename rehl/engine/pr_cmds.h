@@ -37,11 +37,8 @@
 
 #define MAX_RANDOM_RANGE 0x7FFFFFFFUL
 
-#ifdef SHARED_GAME_DATA
-extern int& idum;
-#else
-extern int idum;
-#endif
+EXTERN_VAR(int, idum);
+
 // Ambient sound flags
 enum
 {
@@ -67,7 +64,7 @@ extern unsigned char checkpvs[1024];
 extern int c_invis;
 extern int c_notvis;
 extern vec3_t vec_origin;
-extern int r_visframecount;
+EXTERN_VAR(int, r_visframecount);
 
 enum
 {

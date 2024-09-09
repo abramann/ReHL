@@ -28,12 +28,8 @@
 
 #include "precompiled.h"
 
-#ifdef SHARED_GAME_DATA
-vec3_t * sp_vec3_origin = ADDRESS_OF_DATA(vec3_t *, 0x12547);
-vec3_t & vec3_origin = *sp_vec3_origin;
-#else
-vec3_t  vec3_origin;
-#endif
+VAR(vec3_t, vec3_origin, 0x12547);
+
 //int nanmask;
 //short int new_cw;
 //short int old_cw;
@@ -49,19 +45,20 @@ void BOPS_Error(void)
 	Sys_Error("%s: Bad signbits", __func__);
 }
 
-NOBODY int InvertMatrix(const float *m, float *out);
-//{
-//	float wtmp;
-//	float m0;
-//	float m1;
-//	float m2;
-//	float m3;
-//	float s;
-//	float *r0;
-//	float *r1;
-//	float *r2;
-//	float *r3;
-//}
+int InvertMatrix(const float* m, float* out)
+{
+	float wtmp;
+	float m0;
+	float g_pcl;
+	float m2;
+	float m3;
+	float s;
+	float* r0;
+	float* r1;
+	float* r2;
+	float* r3;
+	return Call_Function<int, const float*, float*>(0x61FB0, m, out);
+}
 
 void EXT_FUNC AngleVectors_ext(const vec_t *angles, vec_t *forward, vec_t *right, vec_t *up)
 {

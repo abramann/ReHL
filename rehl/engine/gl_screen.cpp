@@ -3,11 +3,27 @@
 
 
 #define SCR_CENTERSTRING_MAX 40
-#ifdef SHARED_GAME_DATA
-extern cvar_t& crosshair;
-#else
-extern cvar_t crosshair;
-#endif
+
+EXTERN_VAR(cvar_t, crosshair);
+
+VAR(GLsizei, glwidth, 0x3D54D);
+VAR(GLsizei, glheight, 0x3D547);
+VVAR(int, glx, 0x45955, 0);
+VVAR(int, gly, 0x4595D, 0);
+VVAR(qpic_t*, scr_paused, 0x4BE6B, nullptr);
+VVAR(qboolean, scr_initialized, 0x4BE71, false);
+VVAR(float, scr_fov_value, 0x4527D, 90.0f);
+
+
+VVAR(cvar_t, scr_viewsize, 0x4BDE1, { "viewsize" COMMA  "120" COMMA  FCVAR_ARCHIVE });
+VVAR(cvar_t, scr_showpause, 0x4BDEB, { "showpause" COMMA  "1" });
+VVAR(cvar_t, scr_centertime, 0x4BDF5, { "scr_centertime" COMMA  "2" });
+VVAR(cvar_t, scr_printspeed, 0x4BDFF, { "scr_printspeed" COMMA  "8" });
+VVAR(cvar_t, scr_graphheight, 0x4BE09, { "graphheight" COMMA  "64.0" });
+VVAR(cvar_t, scr_connectmsg, 0x4BE13, { "scr_connectmsg" COMMA  "0" });
+VVAR(cvar_t, scr_connectmsg1, 0x4BE1D, { "scr_connectmsg1" COMMA  "0" });
+VVAR(cvar_t, scr_connectmsg2, 0x4BE27, { "scr_connectmsg2" COMMA  "0" });
+
 			  // TODO: check which ones are boolean - Solokiller
 int clearnotify = 0;
 int scr_center_lines = 0;
@@ -15,7 +31,6 @@ int scr_erase_lines = 0;
 int scr_erase_center = 0;
 int scr_fullupdate = 0;
 
-float scr_fov_value = 90.0f;
 float scr_centertime_start = 0;
 
 float gWorldToScreen[16] = { 0 };
@@ -26,30 +41,12 @@ bool recursionGuard = false;
 
 bool scr_copytop = false;
 bool scr_copyeverything = false;
-bool scr_initialized = false;
 bool scr_drawloading = false;
 qboolean scr_skiponeupdate = false;
 
-int glx = 0;
-int gly = 0;
-GLsizei glwidth;
-GLsizei glheight;
 int giHudLevel = 1;
 
-qpic_t* scr_paused = nullptr;
-
 vrect_t scr_vrect = {};
-
-cvar_t scr_viewsize = { "viewsize", "120", FCVAR_ARCHIVE };
-cvar_t scr_showpause = { "showpause", "1" };
-
-cvar_t scr_centertime = { "scr_centertime", "2" };
-cvar_t scr_printspeed = { "scr_printspeed", "8" };
-cvar_t scr_graphheight = { "graphheight", "64.0" };
-
-cvar_t scr_connectmsg = { "scr_connectmsg", "0" };
-cvar_t scr_connectmsg1 = { "scr_connectmsg1", "0" };
-cvar_t scr_connectmsg2 = { "scr_connectmsg2", "0" };
 
 extern cvar_t cl_showfps;
 extern double rolling_fps;
@@ -523,7 +520,7 @@ void Sbar_Draw()
 		float x = scr_vrect.x + scr_vrect.width / 2.0f;
 		float y = scr_vrect.y + scr_vrect.height / 2.0f;
 
-		VectorAdd(r_refdef.viewangles, m1.crosshairangle, angles);
+		VectorAdd(r_refdef.viewangles, g_pcl.crosshairangle, angles);
 		AngleVectors(angles, forward, 0, 0);
 		VectorAdd(r_origin, forward, point);
 
@@ -553,25 +550,109 @@ int ScreenTransform(vec_t * point, vec_t * screen)
 	return 0;
 }
 
+void HudSizeUp()
+{
+	float value;
+	float viewsize = scr_viewsize.value;
+
+	if (viewsize < 120.0)
+	{
+		value = viewsize + 10.0;
+		Cvar_SetValue("viewsize", value);
+	}
+}
+
 void SCR_SizeUp_f()
 {
-	NOT_IMPLEMENTED;
-
-	//HudSizeUp();
+	HudSizeUp();
 	vid.recalc_refdef = true;
+}
+
+void HudSizeDown()
+{
+	float value; 
+	float viewsize = scr_viewsize.value;
+
+	if (viewsize > 30.0)
+	{
+		value = viewsize - 10.0;
+		Cvar_SetValue("viewsize", value);
+	}
 }
 
 void SCR_SizeDown_f()
 {
-	NOT_IMPLEMENTED;
-
-	//HudSizeDown();
+	HudSizeDown();
 	vid.recalc_refdef = true;
 }
 
 void SCR_ScreenShot_f()
 {
-	NOT_IMPLEMENTED;
+	int width, height;
+	int imageSize;
+	char tganame[80];
+	TargaHeader targa_header;
+
+	if (bDoScaledFBO > 0 && VideoMode_IsWindowed())
+	{
+		width = abs(window_rect.top - window_rect.left);
+		height = abs(window_rect.bottom - window_rect.right);
+	}
+	else
+	{
+		width = vid.height;
+		height = vid.height;
+	}
+
+	Q_strcpy(tganame, "HalfLife__.tga");
+	for (int i = 0; i < 100; i++)
+	{
+		tganame[8] = i / 10 + 48;
+		tganame[9] = i % 10 + 48;
+		if (!FS_FileExists(tganame))
+			break;
+		if (i == 99)
+		{
+			Con_Printf("SCR_ScreenShot_f: Couldn't create a TGA file\n");
+			return;
+		}
+	}
+	imageSize = 3 * width * height;
+	auto file = FS_OpenPathID(tganame, "wb", "GAMECONFIG");
+	if(!file)
+		Sys_Error("Couldn't create file for snapshot.\n");
+
+	memset(&targa_header, 0, sizeof(TargaHeader));
+	auto y = &targa_header;
+	targa_header.image_type = 2;
+	// No alignment in header but the compiler do
+	targa_header.y_origin = width;	// height
+	targa_header.width = height;	// width
+	targa_header.height = 24; // pixel_size
+	
+	if (FS_Write(&targa_header, 18, 1, file) != 18)
+		Sys_Error("Couldn't write tga header screenshot.\n");
+
+	char* buffer = (char*)Mem_Malloc(imageSize);
+	if (!buffer)
+		Sys_Error("Couldn't allocate bitmap header to snapshot.\n");
+
+	qglPixelStorei(GL_PACK_ALIGNMENT, 1);
+	qglReadPixels(0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, buffer);
+
+
+	for (char* pixcol = buffer; pixcol != buffer + imageSize; pixcol += 3)
+	{
+		char tmp = *pixcol;
+		pixcol[0] = pixcol[2];
+		pixcol[2] = tmp;
+	}
+	if (FS_Write(buffer, imageSize, 1, file) != imageSize)
+		Sys_Error("Couldn't write bitmap data screenshot.\n");
+
+	Mem_Free(buffer);
+	FS_Close(file);
+	Con_Printf("Wrote %s\n", tganame);
 }
 
 qpic_t* Draw_PicFromWad(char *name)

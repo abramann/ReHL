@@ -20,25 +20,20 @@ struct startup_timing_t
 
 const int MAX_STARTUP_TIMINGS = 32;
 
-#ifdef SHARED_GAME_DATA
-extern qboolean  & g_bCS_CZ_Flags_Initialized;
-extern qboolean  & g_bIsCStrike;
-extern qboolean  & g_bIsCZero;
-extern qboolean  & g_bIsCZeroRitual;
-extern qboolean  & g_bIsTerrorStrike;
-extern qboolean  & g_bIsTFC;
-extern qboolean  & g_bIsHL1;
-#else
-extern qboolean& g_bIsCStrike;
-extern qboolean& g_bIsCZero;
-#endif
-
+EXTERN_VAR(qboolean, g_bCS_CZ_Flags_Initialized);	
+EXTERN_VAR(qboolean, g_bIsCStrike);
+EXTERN_VAR(qboolean, g_bIsCZero);
+EXTERN_VAR(qboolean, g_bIsCZeroRitual);
+EXTERN_VAR(qboolean, g_bIsTerrorStrike);
+EXTERN_VAR(qboolean, g_bIsTFC);
+EXTERN_VAR(qboolean, g_bIsHL1);
+EXTERN_VAR(cvar_t, fs_perf_warnings);
 extern cl_entity_t* cl_entities;
 
 extern efrag_t cl_efrags[MAX_EFRAGS];
 extern dlight_t cl_dlights[MAX_DLIGHTS];
 extern dlight_t cl_elights[MAX_ELIGHTS];
-extern lightstyle_t cl_lightstyle[MAX_LIGHTSTYLES];
+EXTERN_ARRAY(lightstyle_t, cl_lightstyle, [MAX_LIGHTSTYLES]);
 
 extern int g_iCurrentTiming;
 extern startup_timing_t g_StartupTimings[32];
@@ -47,7 +42,6 @@ extern float g_LastScreenUpdateTime;
 
 extern cvar_t cl_lw;
 extern cvar_t cl_nointerp;
-extern cvar_t fs_perf_warnings;
 extern cvar_t show_fps;
 extern cvar_t ex_interp;
 extern cvar_t cl_name;

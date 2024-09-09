@@ -28,24 +28,10 @@
 
 #include "precompiled.h"
 
-#ifdef SHARED_GAME_DATA
-cachewad_t** sp_decal_wad = ADDRESS_OF_DATA(cachewad_t**, 0x2FB50);
-cachewad_t*& decal_wad = *sp_decal_wad;
-
-qboolean * sp_m_bDrawInitialized = ADDRESS_OF_DATA(qboolean *, 0x3C342);
-qboolean & m_bDrawInitialized = *sp_m_bDrawInitialized;
-
-cachewad_t ** sp_menu_wad = ADDRESS_OF_DATA(cachewad_t **, 0x3C3E2);
-cachewad_t*& menu_wad = *sp_menu_wad;
-
-char (*sp_decal_names)[MAX_DECALS][16] = ADDRESS_OF_DATA(char(*)[MAX_DECALS][16], 0x3C43B);
-char(&decal_names)[MAX_DECALS][16] = *sp_decal_names;
-#else
-cachewad_t *decal_wad;
-qboolean m_bDrawInitialized;
-cachewad_t *menu_wad;
-char decal_names[MAX_DECALS][16];
-#endif
+VAR(cachewad_t *, decal_wad, 0x2FB50);
+VAR(qboolean, m_bDrawInitialized, 0x3C342);
+VAR(cachewad_t *, menu_wad, 0x3C3E2);
+ARRAY(char, decal_names, [MAX_DECALS][16], 0x3C43B);
 
 char szCustName[10];
 

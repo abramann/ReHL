@@ -16,11 +16,11 @@ typedef struct overviewInfo_s
 extern overviewInfo_t gDevOverview;
 extern local_state_t spectatorState;
 
-extern cvar_t dev_overview;
+EXTERN_VAR(cvar_t, dev_overview);
 
 int CL_IsSpectateOnly();
 
-bool CL_IsDevOverviewMode();
+qboolean CL_IsDevOverviewMode();
 
 bool CL_AddEntityToPhysList(int entIndex);
 

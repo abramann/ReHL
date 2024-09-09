@@ -9,7 +9,7 @@
 overviewInfo_t gDevOverview = {};
 local_state_t spectatorState = {};
 
-cvar_t dev_overview = { "dev_overview", "0" };
+VVAR(cvar_t, dev_overview, 0x1A018, { "dev_overview", "0" });
 
 int CL_IsSpectateOnly()
 {
@@ -18,10 +18,13 @@ int CL_IsSpectateOnly()
 	return g_pcls.spectator;
 }
 
-bool CL_IsDevOverviewMode()
+qboolean CL_IsDevOverviewMode()
 {
-	NOT_IMPLEMENTED;
-	return false;
+	if (dev_overview.value == 0)
+		return FALSE;
+	if (sv_cheats.value == 0)
+		return g_pcls.spectator;
+	return true;
 }
 
 void CL_CalculateDevOverviewParameters()
@@ -45,17 +48,17 @@ void CL_MoveSpectatorCamera()
 	if (g_pcls.state != ca_active && !g_pcls.spectator)
 		return;
 
-	double time = m1.time;
+	double time = g_pcl.time;
 
 	CL_SetUpPlayerPrediction(false, true);
-	CL_SetSolidPlayers(m1.playernum);
-	CL_RunUsercmd(&spectatorState, &spectatorState, &m1.cmd, true, &time, 100.0 * time);
+	CL_SetSolidPlayers(g_pcl.playernum);
+	CL_RunUsercmd(&spectatorState, &spectatorState, &g_pcl.cmd, true, &time, 100.0 * time);
 
-	VectorCopy(spectatorState.client.velocity, m1.simvel);
-	VectorCopy(spectatorState.playerstate.origin, m1.simorg);
-	VectorCopy(spectatorState.client.punchangle, m1.punchangle);
-	VectorCopy(spectatorState.client.velocity, m1.simvel);
-	VectorCopy(spectatorState.client.view_ofs, m1.viewheight);
+	VectorCopy(spectatorState.client.velocity, g_pcl.simvel);
+	VectorCopy(spectatorState.playerstate.origin, g_pcl.simorg);
+	VectorCopy(spectatorState.client.punchangle, g_pcl.punchangle);
+	VectorCopy(spectatorState.client.velocity, g_pcl.simvel);
+	VectorCopy(spectatorState.client.view_ofs, g_pcl.viewheight);
 }
 
 void CL_SetDevOverView(refdef_t* refdef)

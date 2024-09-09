@@ -46,52 +46,27 @@ void(*Launcher_MP3subsys_Resume_Audio)(void);
 //const char g_szBaseDllName;
 
 char gszExtendedDisconnectReason[MAX_DISCONNECT_REASON];
-
-
 int giSubState;
+
+
+VAR(qboolean, g_bIsDedicatedServer, 0xAC4AF);
+VAR(int, giActive, 0xAA997);
+VAR(modinfo_t, gmodinfo, 0xAC4D3);
+VAR(qboolean, con_debuglog, 0x2C92E);
+VVAR(qboolean, con_initialized, 0x2CA76, false);
+SARRAY(char, g_szNotifyAreaString, [256], 0x2CC59);
+//SVVAR(float*, con_times, 0x2C989, nullptr);
+VAR(DLL_FUNCTIONS, gEntityInterface, 0xAB71D);
+ARRAY(char, gszDisconnectReason, [MAX_DISCONNECT_REASON], 0x29A95);
+VAR(qboolean, gfExtendedError, 0x29AAE);
+
 #ifdef SHARED_GAME_DATA
-int* sp_giActive = ADDRESS_OF_DATA(int*,0xAA997);
-int& giActive = *sp_giActive;
-
-qboolean* sp_g_bIsDedicatedServer = ADDRESS_OF_DATA(qboolean*, 0xAC4AF);
-qboolean& g_bIsDedicatedServer = *sp_g_bIsDedicatedServer;
-
-modinfo_t* sp_gmodinfo = ADDRESS_OF_DATA(modinfo_t*, 0xAC4D3);
-modinfo_t& gmodinfo = *sp_gmodinfo;
-
 void(**sp_Launcher_ConsolePrintf)(char *, ...) = ADDRESS_OF_DATA(void(**)(char *, ...), 0xABF46);
 void(*&Launcher_ConsolePrintf)(char *, ...) = *sp_Launcher_ConsolePrintf;
-
-qboolean * sp_con_debuglog = ADDRESS_OF_DATA(qboolean *, 0x2C92E);
-qboolean & con_debuglog = *sp_con_debuglog;
-
-char * g_szNotifyAreaString = ADDRESS_OF_DATA(char *, 0x2CC59);
-
-qboolean * sp_con_initialized = ADDRESS_OF_DATA(qboolean *, 0x2CA76);
-qboolean & con_initialized = *sp_con_initialized;
-
-DLL_FUNCTIONS * sp_gEntityInterface = ADDRESS_OF_DATA(DLL_FUNCTIONS *, 0xAB71D);
-DLL_FUNCTIONS & gEntityInterface = *sp_gEntityInterface;
-
-char (*sp_gszDisconnectReason)[MAX_DISCONNECT_REASON] = ADDRESS_OF_DATA(char(*)[MAX_DISCONNECT_REASON], 0x0);
-char (&gszDisconnectReason)[MAX_DISCONNECT_REASON] = *sp_gszDisconnectReason;
-
-qboolean * sp_gfExtendedError = ADDRESS_OF_DATA(qboolean *, 0x29AAE);
-qboolean & gfExtendedError = *sp_gfExtendedError; 
 #else
-int giActive;
-modinfo_t gmodinfo;
 void(*Launcher_ConsolePrintf)(char *, ...);
-qboolean con_debuglog;
-
-qboolean con_initialized = false;
-static char g_szNotifyAreaString[256] = { 0 };
-static float* con_times = nullptr;
-DLL_FUNCTIONS gEntityInterface;
-char sp_gszDisconnectReason[MAX_DISCONNECT_REASON];
-qboolean gfExtendedError;
-
 #endif
+
 int giStateInfo;
 NEW_DLL_FUNCTIONS gNewDLLFunctions;
 
@@ -117,46 +92,17 @@ char g_szFindFirstFileName[MAX_PATH];
 
 #ifdef _WIN32
 
-#ifdef SHARED_GAME_DATA
-double* sp_curtime = ADDRESS_OF_DATA(double*, 0xAA907);
-double& curtime = *sp_curtime;
 
-double* sp_lastcurtime = ADDRESS_OF_DATA(double*, 0xAA91D);
-double& lastcurtime = *sp_lastcurtime;
+VAR(double, curtime, 0xAA907);
+VAR(int, g_PerfCounterShiftRightAmount, 0xAA7C9);
+VAR(double, g_PerfCounterSlice, 0xAA83F);
+VAR(double, lastcurtime, 0xAA91D);
+VAR(int, g_PerfCounterInitialized, 0xAA797);
+VAR(CRITICAL_SECTION, g_PerfCounterMutex, 0xAA7AE);
+VAR(int, g_WinNTOrHigher, 0xAA907);
+//SVVAR(qboolean, bInitialized_14534, 0x, false);
+VVAR(FileFindHandle_t, g_hfind, 0xAA257, FILESYSTEM_INVALID_FIND_HANDLE);
 
-int* sp_g_PerfCounterShiftRightAmount = ADDRESS_OF_DATA(int*, 0xAA7C9);
-int& g_PerfCounterShiftRightAmount = *sp_g_PerfCounterShiftRightAmount;
-
-double* sp_g_PerfCounterSlice = ADDRESS_OF_DATA(double*, 0xAA83F);
-double& g_PerfCounterSlice = *sp_g_PerfCounterSlice;
-
-int* sp_g_PerfCounterInitialized = ADDRESS_OF_DATA(int*, 0xAA797);
-int& g_PerfCounterInitialized = *sp_g_PerfCounterInitialized;
-
-CRITICAL_SECTION* sp_g_PerfCounterMutex = ADDRESS_OF_DATA(CRITICAL_SECTION*, 0xAA7AE);
-CRITICAL_SECTION& g_PerfCounterMutex = *sp_g_PerfCounterMutex;
-
-int* sp_g_WinNTOrHigher = ADDRESS_OF_DATA(int*, 0xAA907);
-int& g_WinNTOrHigher = *sp_g_WinNTOrHigher;
-
-FileFindHandle_t * sp_g_hfind = ADDRESS_OF_DATA(FileFindHandle_t *, 0xAA257);
-FileFindHandle_t & g_hfind = *sp_g_hfind;
-#else
-double curtime;
-int g_PerfCounterShiftRightAmount;
-double g_PerfCounterSlice;
-double lastcurtime;
-int g_PerfCounterInitialized;
-CRITICAL_SECTION g_PerfCounterMutex;
-int g_WinNTOrHigher;
-
-static qboolean bInitialized_14534 = false;
-static float curtime = 0.0;
-static float lastcurtime = 0.0;
-
-FileFindHandle_t g_hfind = FILESYSTEM_INVALID_FIND_HANDLE;
-
-#endif
 
 #endif // _WIN32
 

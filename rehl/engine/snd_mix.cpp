@@ -1,6 +1,7 @@
 #include "precompiled.h"
 #include "snd_mix.h"
 
+VVAR(cvar_t, snd_show, 0x4544B, { "snd_show", "0", FCVAR_ARCHIVE });
 
 char rgrgvoxword[18432] = { 0 };
 char* rgpszrawsentence[CVOXFILESENTENCEMAX] = { 0 };

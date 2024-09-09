@@ -45,22 +45,12 @@
 #include "bspfile.h"
 #include "crc.h"
 
-#ifdef SHARED_GAME_DATA
-extern mod_known_info_t(&mod_known_info)[MAX_KNOWN_MODELS];
-extern model_t*& loadmodel;
-extern char(&loadname)[MAX_MODEL_NAME];
-extern model_t(&mod_known)[MAX_KNOWN_MODELS];
-extern int& mod_numknown;
-extern uchar*& mod_base;
-#else
-extern mod_known_info_t mod_known_info[MAX_KNOWN_MODELS];
-extern model_t* loadmodel;
-extern char loadname[MAX_MODEL_NAME];
-extern model_t mod_known[MAX_KNOWN_MODELS];
-extern int mod_numknown; 
-extern uchar* mod_base;
-#endif
-
+EXTERN_VAR(model_t*, loadmodel);
+EXTERN_VAR(int, mod_numknown);
+EXTERN_VAR(uchar*, mod_base);
+EXTERN_ARRAY(char, loadname, [MAX_MODEL_NAME]);
+EXTERN_ARRAY(model_t, mod_known, [MAX_KNOWN_MODELS]);
+EXTERN_ARRAY(mod_known_info_t, mod_known_info, [MAX_KNOWN_MODELS]);
 
 extern int tested;
 extern int ad_enabled;

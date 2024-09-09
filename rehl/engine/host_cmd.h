@@ -78,12 +78,14 @@ typedef struct TITLECOMMENT_s
 	char *pTitleName;
 } TITLECOMMENT;
 
+EXTERN_VAR(char*, g_pPostRestartCmdLineArgs);
+EXTERN_VAR(int, gHostSpawnCount);
+EXTERN_VAR(vec3_t, r_origin);
+
 extern int r_dointerp;
-extern vec3_t r_origin;
 extern double cpuPercent;
 extern int32 startTime;
 extern int current_skill;
-extern int gHostSpawnCount;
 extern CareerStateType g_careerState;
 extern SV_SAVEGAMECOMMENT_FUNC g_pSaveGameCommentFunc;
 extern qboolean g_bMajorMapChange;
@@ -97,11 +99,6 @@ extern TYPEDESCRIPTION gEntityTableDescription[5];
 extern TYPEDESCRIPTION gLightstyleDescription[2];
 extern cvar_t gHostMap;
 extern int g_iQuitCommandIssued;
-#ifdef SHARE_GAME_DATA
-extern char* &g_pPostRestartCmdLineArgs;
-#else
-extern char* g_pPostRestartCmdLineArgs;
-#endif
 void SV_GetPlayerHulls(void);
 void Host_InitializeGameDLL(void);
 void Host_Motd_f(void);

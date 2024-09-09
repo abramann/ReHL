@@ -28,16 +28,9 @@
 
 #include "precompiled.h"
 
-#ifdef SHARED_GAME_DATA
-hash_pack_queue_t** sp_gp_hpak_queue = ADDRESS_OF_DATA(hash_pack_queue_t**, 0x52EA1);
-hash_pack_queue_t*& gp_hpak_queue = *sp_gp_hpak_queue;
+VVAR(hash_pack_queue_t *, gp_hpak_queue, 0x52EA1, NULL);
+VVAR(hash_pack_header_t, hash_pack_header, 0x51527, { { 0 COMMA  0 COMMA  0 COMMA  0 } COMMA  0 COMMA  0 });
 
-hash_pack_header_t * sp_hash_pack_header = ADDRESS_OF_DATA(hash_pack_header_t *, 0x51527);
-hash_pack_header_t & hash_pack_header = *sp_hash_pack_header; 
-#else
-hash_pack_queue_t *gp_hpak_queue = NULL;
-hash_pack_header_t hash_pack_header = { { 0, 0, 0, 0 }, 0, 0 };
-#endif
 hash_pack_directory_t hash_pack_dir = { 0, NULL };
 
 qboolean HPAK_GetDataPointer(char *pakname, struct resource_s *pResource, unsigned char **pbuffer, int *bufsize)

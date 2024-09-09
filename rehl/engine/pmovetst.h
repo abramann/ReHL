@@ -33,15 +33,9 @@
 #include "model.h"
 #include "world.h"
 
-#ifdef SHARED_GAME_DATA
-extern hull_t &box_hull_0;
-extern dclipnode_t* box_clipnodes_0;
-extern mplane_t* box_planes_0;
-#else
-extern hull_t box_hull_0;
-extern box_clipnodes_t box_clipnodes_0;
-extern box_planes_t box_planes_0; #endif
-#endif
+EXTERN_VAR(hull_t, box_hull_0);
+EXTERN_ARRAY(dclipnode_t, box_clipnodes_0, [6]);
+EXTERN_ARRAY(mplane_t, box_planes_0, [6]);
 
 extern int g_contentsresult;
 

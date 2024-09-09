@@ -7,20 +7,17 @@ extern playermove_t ** sp_pmove;
 
 void SetupHooks()
 {
-	DirectHook(0x70750, ran1);
-
 	// One time call functions hook removed after implement caller function.
 	
+	DirectHook(0x70750, ran1);
 	DirectHook(0x27570, Cbuf_Execute); // TODO Cbuf_ExecuteCommandsFromBuffer
 	
 	//Sys_InitGame
 	DirectHook(0xAA790, Sys_FloatTime);
 	DirectHook(0x96EB0, SV_ResetModInfo);
-	//DirectHook(0xAC000, Sys_InitFloatTime);
-	//DirectHook(0xAC1D0, Sys_InitMemory);
-	//DirectHook(0x4DA10, GL_SetMode);
-	
+
 	// Host_Init
+	
 	DirectHook(0xC8970, Memory_Init);
 	DirectHook(0x2E960, Cvar_RegisterVariable);
 	DirectHook(0x2E530, Cvar_DirectSet);
@@ -39,7 +36,7 @@ void SetupHooks()
 
 	DirectHook(0x2C790, Con_CheckResize);	// Check implement
 	DirectHook(0x2C920, Con_Init);
-	//DirectHook(0x2FD70, Decal_Init); // Correct the wrong implement
+	//DirectHook(0x2FD70, Decal_Init); // Correct wrong implement
 	DirectHook(0x2FB20, Decal_MergeInDecals);
 	DirectHook(0x2F360, Draw_CacheWadInitFromFile);
 	DirectHook(0x28A90, Mod_Init);
@@ -58,50 +55,61 @@ void SetupHooks()
 	DirectHook(0x4CFF0, GL_Init);	// Game crashed one time during testing after added this function
 	DirectHook(0x4CBC0, GL_Config);
 	DirectHook(0x3C100, GL_SelectTexture);
-
-	DirectHook(0x6B2F0, PM_Init);
-	// PM_Init functions
-
-	DirectHook(0x6BBD0, _PM_TestPlayerPosition);
-	DirectHook(0x6BF00, _PM_PlayerTrace);
-	DirectHook(0x6C830, PM_RecursiveHullCheck);
-	DirectHook(0x6BAA0, PM_HullForStudioModel);
-	DirectHook(0x810C0, R_StudioHull);
 	
-	DirectHook(0x6B290, PM_StuckTouch);
+	DirectHook(0x6B2F0, PM_Init);
 
-	DirectHook(0x6B970, PM_PointContents);
-	DirectHook(0x6B8B0, PM_LinkContents);
-	DirectHook(0x6BA70, PM_TruePointContents);
-	DirectHook(0x6B810, PM_HullPointContents);
-	DirectHook(0x6C680, PM_TraceLine);
-	DirectHook(0x6B650, PM_TraceModel);
+	// PM_Init functions
+	//DirectHook(0x6BBD0, _PM_TestPlayerPosition);
+	DirectHook(0x6BF00, _PM_PlayerTrace);	// *
+	//DirectHook(0x6C830, PM_RecursiveHullCheck);
+	//DirectHook(0x6BAA0, PM_HullForStudioModel);
+	DirectHook(0x810C0, R_StudioHull);	// *
+	//DirectHook(0x6B290, PM_StuckTouch);
+	DirectHook(0x6B970, PM_PointContents);	// *
+	DirectHook(0x6B8B0, PM_LinkContents);	// *
+	//DirectHook(0x6BA70, PM_TruePointContents);
+	DirectHook(0x6B810, PM_HullPointContents);	// *
+	DirectHook(0x6C680, PM_TraceLine);	// *
+	//DirectHook(0x6B650, PM_TraceModel);
 	DirectHook(0xC90F8, SV_HullPointContents); // *
 	DirectHook(0xC6A90, SV_RecursiveHullCheck);	// *
-
-	DirectHook(0x5DFD0, Info_ValueForKey);
-
-	DirectHook(0x134A0, CL_Particle);
+	DirectHook(0x5DFD0, Info_ValueForKey);	// *
+	DirectHook(0x134A0, CL_Particle);	// *
 	DirectHook(0x58190, SV_GetPlayerHulls);
-	// End PM_Init
-
+	
+	//Host_Init
 	DirectHook(0xB180, ClientDLL_Init);
 	DirectHook(0x1A830, HookServerMsg); // *
-
+	
 	//VGui_Startup
 	//DirectHook(0xC1340, VGuiWrap_Startup); // Correct wrong implement around EngineSurfaceWrap
 	DirectHook(0x70D0, VGuiWrap2_Startup);
-	// End VGui_Startup
-
+	
+	// Host_Init
 	DirectHook(0x4E120, VID_Init);
+	DirectHook(0x3C340, Draw_Init); // Check from LoadTransBMP
+	DirectHook(0x4BDE0, SCR_Init);	// Fix alignment in TargaHeader & Check from Draw_PicFromWad
+	DirectHook(0x46B80, R_Init);
 	
-	//DirectHook(0x70D0, Draw_Init); // When hooked, Scheme object null, why?
-	DirectHook(0x69E0, VGUI2_Draw_Init);
-	
-	DirectHook(0x40030, Mod_LoadModel);
+	// R_Init
+	DirectHook(0x3EC60, GL_LoadTexture2);	// *
+	//(0x3E320, GL_Upload32);	// * Correct implement
+	DirectHook(0x3E630, GL_Upload16);	// *
+
+	//DirectHook(0x46440, R_RenderView);	// *
+	//R_RenderView functions
+	//DirectHook(0x49BC0, GL_BuildLightmaps); // Correct implement
+	DirectHook(0x46350, R_RenderScene);
+	DirectHook(0x45640, R_SetupFrame);	// Correct R_AnimateLight
+	DirectHook(0x45270, R_SetFrustum);
+
+	// Mod
+	//DirectHook(0x40030, Mod_LoadModel);
+	//DirectHook(0x3FD50, Mod_PointInLeaf);
 	//DirectHook(0x2D1D0, CRC32_ProcessBuffer);
+	DirectHook(0x28AB0, Mod_DecompressVis);	// static
+
 	DirectHook(0x29A70, COM_ExplainDisconnection);
-	
 }
 
 uintptr_t AddBase(uintptr_t offset)

@@ -35,64 +35,6 @@ struct GL_PALETTE
 	unsigned __int8 colors[768];
 };
 
-#ifdef SHARED_GAME_DATA
-GLenum * sp_oldtarget = ADDRESS_OF_DATA(GLenum *, 0x4CB82);
-GLenum & oldtarget = *sp_oldtarget;
-
-cvar_t * sp_gl_ansio = ADDRESS_OF_DATA(cvar_t *, 0x3C391);
-cvar_t & gl_ansio = *sp_gl_ansio;
-
-int * sp_texels = ADDRESS_OF_DATA(int *, 0x3C0E1);
-int & texels = *sp_texels;
-
-cvar_t * sp_gl_max_size = ADDRESS_OF_DATA(cvar_t *, 0x3C35F);
-cvar_t & gl_max_size = *sp_gl_max_size; 
-
-cvar_t * sp_gl_round_down = ADDRESS_OF_DATA(cvar_t *, 0x3C369);
-cvar_t & gl_round_down = *sp_gl_round_down; 
-
-cvar_t * sp_gl_picmip = ADDRESS_OF_DATA(cvar_t *, 0x3C373);
-cvar_t & gl_picmip = *sp_gl_picmip; 
-
-cvar_t * sp_gl_palette_tex = ADDRESS_OF_DATA(cvar_t *, 0x3C37D);
-cvar_t & gl_palette_tex = *sp_gl_palette_tex; 
-
-cvar_t * sp_gl_texturemode = ADDRESS_OF_DATA(cvar_t *, 0x3C387);
-cvar_t & gl_texturemode = *sp_gl_texturemode; 
-
-cvarhook_t * sp_gl_texturemode_hook = ADDRESS_OF_DATA(cvarhook_t *, 0x3C3A0);
-cvarhook_t & gl_texturemode_hook = *sp_gl_texturemode_hook;
-
-GL_PALETTE(*sp_gGLPalette)[350] = ADDRESS_OF_DATA(GL_PALETTE(*)[350], 0x2);
-GL_PALETTE (&gGLPalette)[350] = *sp_gGLPalette;
-
-qpic_t* * sp_draw_disc = ADDRESS_OF_DATA(qpic_t**, 0x3C465);
-qpic_t* & draw_disc = *sp_draw_disc; 
-#else
-GLenum oldtarget = GL_ASYNC_READ_PIXELS_SGIX;
-cvar_t gl_ansio = { "gl_ansio", "16" };
-cvar_t gl_max_size = { "gl_max_size", "256", FCVAR_ARCHIVE };
-cvar_t gl_round_down = { "gl_round_down", "3" , FCVAR_ARCHIVE };
-cvar_t gl_picmip = { "gl_picmip", "0", FCVAR_ARCHIVE };
-cvar_t gl_palette_tex = { "gl_palette_tex", "1" };
-cvar_t gl_texturemode = { "gl_texturemode", "GL_LINEAR_MIPMAP_LINEAR", FCVAR_ARCHIVE };
-cvarhook_t gl_texturemode_hook = { gl_texturemode_hook_callback };
-static int texels = 0;
-GL_PALETTE gGLPalette[350];
-qpic_t* draw_disc = nullptr;
-#endif
-
-unsigned int scaled_25071[524288] = { 0 }; //
-int g_currentpalette;
-int giTotalTextures = 0;
-
-int gl_filter_max = GL_LINEAR;
-int gl_filter_min = GL_LINEAR_MIPMAP_LINEAR;
-
-cvar_t gl_spriteblend = { "gl_spriteblend", "1", FCVAR_ARCHIVE };
-cvar_t gl_dither = { "gl_dither", "1", FCVAR_ARCHIVE };
-
-
 #define MAX_CACHED_PICS 128
 
 typedef struct gltexture_s
@@ -106,27 +48,46 @@ typedef struct gltexture_s
 	char identifier[64];
 } gltexture_t;
 
+
+VVAR(GLenum, oldtarget, 0x4CB82, GL_ASYNC_READ_PIXELS_SGIX);
+VVAR(cvar_t, gl_ansio, 0x3C391, { "gl_ansio" COMMA "16" });
+VAR(cvar_t, gl_max_size, 0x3C35F, { "gl_max_size" COMMA  "256" COMMA  FCVAR_ARCHIVE });
+VAR(cvar_t, gl_round_down, 0x3C369, { "gl_round_down" COMMA  "3"  COMMA  FCVAR_ARCHIVE });
+VAR(cvar_t, gl_picmip, 0x3C373, { "gl_picmip" COMMA  "0" COMMA  FCVAR_ARCHIVE });
+VAR(cvar_t, gl_palette_tex, 0x3C37D, { "gl_palette_tex" CO / MMA  "1" });
+VAR(cvar_t, gl_texturemode, 0x3C387, { "gl_texturemode" COMMA  "GL_LINEAR_MIPMAP_LINEAR" COMMA  FCVAR_ARCHIVE });
+SVAR(int, texels, 0x3C0E1);
+VVAR(cvarhook_t, gl_texturemode_hook, 0x3C3A0, { gl_texturemode_hook_callback });
+ARRAY(GL_PALETTE, gGLPalette, [350], 0x3EA0F);
+VAR(qpic_t*, draw_disc, 0x3C465, nullptr);
+SARRAY(gltexture_t, gltextures, [MAX_GLTEXTURES], 0x3EC81);
+
+ARRAY(uint, trans_25102, [307202], 0x3E7E3);
+ARRAY(uint, scaled_25071, [524288], 0x3E51D);
+
+VVAR(int, giTotalTextures, 0x3E375, 0);
+VVAR(int, gl_filter_max, 0x3C2C6, GL_LINEAR);
+VAR(int, gl_filter_min, 0x3C2BE, GL_LINEAR_MIPMAP_LINEAR);
+SVVAR(int, numgltextures, 0x3C2B8, 0);
+
+int g_currentpalette;
+
 void GL_Texels_f();
 
 qpic_t * LoadTransBMP(char *pszName);
 
 qpic_t * LoadTransPic(char *pszName, qpic_t *ppic);
 
-static gltexture_t gltextures[MAX_GLTEXTURES];
-
 void BoxFilter3x3(unsigned char *out, unsigned char *in, int w, int h, int x, int y);
 
 void ComputeScaledSize(int *wscale, int *hscale, int width, int height);
 
 void GL_ResampleAlphaTexture(unsigned char *in, int inwidth, int inheight, unsigned char *out, int outwidth, int outheight);
-void GL_ResampleTexture(unsigned int *in, int inwidth, int inheight, unsigned int *out, int outwidth, int outheight);
+void GL_ResampleTexture(uint *in, int inwidth, int inheight, uint *out, int outwidth, int outheight);
 short GL_PaletteAdd(unsigned char *pPal, qboolean isSky);
 void GL_PaletteInit();
 void ApplyScale(unsigned char* data, int width, int height, unsigned char* scaledData, int scaled_width, int scaled_height);
 
-unsigned int trans_25102[307202] = { 0 };
-
-static int numgltextures = 0;
 
 static int scissor_x = 0, scissor_y = 0, scissor_width = 0, scissor_height = 0;
 static qboolean giScissorTest = false;
@@ -218,7 +179,7 @@ void Draw_Init()
 
 	GL_PaletteInit();
 
-	static cachewad_t custom_wad = { 0 };
+	static cachewad_t custom_wad = { 0 }; // Not needed?
 
 	menu_wad = (cachewad_t *)Mem_ZeroMalloc(sizeof(cachewad_t));
 
@@ -229,16 +190,14 @@ void Draw_Init()
 	Draw_CacheWadHandler(&custom_wad, Draw_MiptexTexture, 32);
 
 	if (qglColorTableEXT && gl_palette_tex.value != 0.0)
-	{
 		qglEnable(GL_SHARED_TEXTURE_PALETTE_EXT);
-	}
 
 	Q_memset(decal_names, 0, 0x2000);
 
 	for (int i = 0; i < ARRAYSIZE(texgammatable); i++)
 		texgammatable[i] = i;
 
-	draw_disc = LoadTransBMP("lambda");
+	//draw_disc = LoadTransBMP("lambda");
 	Draw_ResetTextColor();
 }
 
@@ -270,12 +229,12 @@ void Draw_TileClear(int x, int y, int w, int h)
 	Draw_FillRGBA(x, y, w, h, 0, 0, 0, 255);
 }
 
-int Draw_Character(int x, int y, int num, unsigned int font)
+int Draw_Character(int x, int y, int num, uint font)
 {
 	return VGUI2_Draw_Character(x, y, num, font);
 }
 
-int Draw_MessageCharacterAdd(int x, int y, int num, int rr, int gg, int bb, unsigned int font)
+int Draw_MessageCharacterAdd(int x, int y, int num, int rr, int gg, int bb, uint font)
 {
 	return VGUI2_Draw_CharacterAdd(x, y, num, rr, gg, bb, font);
 }
@@ -288,7 +247,7 @@ int Draw_String(int x, int y, char* str)
 	return width + x;
 }
 
-int Draw_StringLen(const char* psz, unsigned int font)
+int Draw_StringLen(const char* psz, uint font)
 {
 	return VGUI2_Draw_StringLen(psz, font);
 }
@@ -638,7 +597,7 @@ int GL_LoadTexture(char * identifier, GL_TEXTURETYPE textureType, int width, int
 
 int GL_LoadTexture2(char * identifier, GL_TEXTURETYPE textureType, int width, int height, unsigned char * data, qboolean mipmap, int iType, unsigned char * pPal, int filter)
 {
-	return Call_Function<int, char *, GL_TEXTURETYPE, int, int, uchar *, qboolean, int, uchar *, int>(0x3EC60, identifier, textureType, width, height, data, mipmap, iType, pPal, filter);
+	//return Call_Function<int, char *, GL_TEXTURETYPE, int, int, uchar *, qboolean, int, uchar *, int>(0x3EC60, identifier, textureType, width, height, data, mipmap, iType, pPal, filter);
 	gltexture_t* slot = nullptr;
 
 	if (identifier[0] == '\0')
@@ -652,7 +611,7 @@ int GL_LoadTexture2(char * identifier, GL_TEXTURETYPE textureType, int width, in
 		{
 			gltexture_t * loaded = &gltextures[i];
 			slot = &gltextures[i];
-
+			
 			if (Q_strcasecmp(identifier, loaded->identifier) == 0 && width == loaded->width && height == loaded->height)
 			{
 				if (loaded->servercount > 0)
@@ -709,21 +668,17 @@ int GL_LoadTexture2(char * identifier, GL_TEXTURETYPE textureType, int width, in
 		scaled_height = height;
 	}
 	else
-	{
 		ComputeScaledSize(&scaled_width, &scaled_height, width, height);
-	}
 
-	unsigned char* textureData = data;
+	uchar* textureData = data;
 
-	unsigned char scaledData[16384] = { 0 };
+	uchar scaledData[16384] = { 0 };
 
 	if (scaled_width != width && scaled_height != height &&
 		scaled_width <= 128 && scaled_height < 128 && !mipmap)
 	{
 		if (fs_perf_warnings.value != 0.0)
-		{
 			Con_DPrintf("fs_perf_warnings: resampling non-power-of-2 texture %s (%dx%d)", identifier, width, height);
-		}
 
 		ApplyScale(data, width, height, scaledData, scaled_width, scaled_height);
 		textureData = scaledData;
@@ -738,7 +693,7 @@ int GL_LoadTexture2(char * identifier, GL_TEXTURETYPE textureType, int width, in
 		if (g_modfuncs.m_pfnTextureLoad)
 			g_modfuncs.m_pfnTextureLoad(identifier, width, height, (char*)data);
 		if (textureType == GLT_SPRITE && iType == GLT_WORLD)
-			GL_Upload32((unsigned int*)data, width, height, mipmap, 4, filter);
+			GL_Upload32((uint*)data, width, height, mipmap, 4, filter);
 		else
 			GL_Upload16(data, width, height, mipmap, iType, pPal, filter);
 	}
@@ -823,7 +778,7 @@ qpic_t * LoadTransPic(char *pszName, qpic_t *ppic)
 		pImageData[i] = (pOriginalData[3 * i] & 0xFFFFFF) | 0xFF000000; // Set alpha to 255 for non-transparent pixels
 	}
 
-	GL_Upload32((unsigned int*)pImageData, width, height, false, (int)GLT_DECAL, gl_filter_max);
+	GL_Upload32((uint*)pImageData, width, height, false, (int)GLT_DECAL, gl_filter_max);
 
 	CHECK_REQUIRED;
 
@@ -839,8 +794,9 @@ qpic_t * LoadTransPic(char *pszName, qpic_t *ppic)
 	return pNewPic;
 }
 
-void GL_Upload32(unsigned int *data, int width, int height, qboolean mipmap, int iType, int filter)
+void GL_Upload32(uint *data, int width, int height, qboolean mipmap, int iType, int filter)
 {
+	return Call_Function<void, uint*, int, int, qboolean, int, int>(0x3E320, data, width, height, mipmap, iType, filter);
 	int w;
 	int h;
 	int bpp;
@@ -861,39 +817,27 @@ void GL_Upload32(unsigned int *data, int width, int height, qboolean mipmap, int
 	int scaled_height;
 
 	float blend = gl_spriteblend.value;
-	if (blend == 0.0 || iType != GLT_STUDIO && iType != GLT_DECAL && iType != GLT_WORLD || size <= 0)
-	{
-	}
-	else
+	if (blend != 0.0 && (iType == GLT_STUDIO || iType == GLT_DECAL || iType == GLT_WORLD) && size > 0)
 	{
 		int size = width * height;
 		for (int i = 0; i < size; i++)
 		{
-			if (data[i] == 0)
+			if (data[i])
+			{
+				continue;
+			}
+			else
 			{
 				i++;
 				BoxFilter3x3((uchar*)&data[i], (uchar*)data, width, height, i % width, i / width);
 			}
-			else
-			{
-				data[i]++;
-			}
 		}
 	}
 
-	if (g_bSupportsNPOTTextures)
-	{
-		scaled_width = width;
-		scaled_height = height;
-	}
-	else
-	{
-		ComputeScaledSize(&scaled_width, &scaled_height, width, height);
-	}
+	ComputeScaledSize(&scaled_width, &scaled_height, width, height);
+
 	if (scaled_width * scaled_height > MAX_TEXELS)
-	{
-		Sys_Error("GL_LoadTexture: too big");
-	}
+		Sys_Error("%s: too big", __func__);
 
 	int iFormat;
 	int iComponent;
@@ -953,7 +897,7 @@ void GL_Upload32(unsigned int *data, int width, int height, qboolean mipmap, int
 	{
 		for (int i = 1; scaled_width > 1 || scaled_height > 1; i++)
 		{
-			Call_Function<void, unsigned int*, int, int>(0x3E0F0, scaled_25071, scaled_width, scaled_height);
+			Call_Function<void, uint*, int, int>(0x3E0F0, scaled_25071, scaled_width, scaled_height);
 
 			scaled_width /= 2;
 			scaled_height /= 2;
@@ -974,6 +918,10 @@ void GL_Upload32(unsigned int *data, int width, int height, qboolean mipmap, int
 
 void GL_Upload16(unsigned char *data, int width, int height, qboolean mipmap, int iType, unsigned char *pPal, int filter)
 {
+	g_pcl.model_precache;
+	g_pcl.model_precache_count;
+	//return Call_Function<void, uchar*, int, int, qboolean, int, uchar*, int>(0x3E630, data, width, height, mipmap, iType, pPal, filter);
+
 	int count = height * width;
 	if (count > 1228800)
 	{
@@ -991,7 +939,7 @@ void GL_Upload16(unsigned char *data, int width, int height, qboolean mipmap, in
 	if (!pPal)
 		return;
 
-	for (int i = 1; i < 768; i++)
+	for (int i = 0; i < 768; i++)
 		pPal[i] = texgammatable[pPal[i]];
 
 	if (iType != GLT_STUDIO && iType != GLT_DECAL && iType != GLT_WORLD)
@@ -1021,57 +969,52 @@ void GL_Upload16(unsigned char *data, int width, int height, qboolean mipmap, in
 			memset(trans_25102, 0, sizeof(int) * 307202);
 			for (int i = 0; i < count; i++)
 			{
-				unsigned char* p = &pPal[3 * data[i]];
-				unsigned char r = p[0] | p[0] >> 6;
-				unsigned char g = p[1] | p[1] >> 6;
-				unsigned char b = p[2] | p[2] >> 6;
+				uchar* p = &pPal[3 * data[i]];
+				uchar r = p[0] | p[0] >> 6;
+				uchar g = p[1] | p[1] >> 6;
+				uchar b = p[2] | p[2] >> 6;
 				trans_25102[i] = b << 16 | (g << 8) | r | 0xFF000000;
 			}
 		}
 		GL_Upload32(trans_25102, width, height, mipmap, iType, filter);
 	}
-	else if (count)
+	else
 	{
 		switch (iType)
 		{
 		case GLT_STUDIO:
-			for (int j = 1; j < count; j++)
-				trans_25102[j] = pPal[765] & 0xFFFFFF | (data[j] << 24);
+			for (int j = 0; j < count; ++j)
+				trans_25102[j] = (*(uint*)&pPal[765]) & 0xFFFFFF | (data[j] << 24);
 
 			GL_Upload32(trans_25102, width, height, mipmap, iType, filter);
 			break;
 
 		case GLT_WORLD:
-			for (int k = 0; k != count; ++k)
-				trans_25102[k] = (data[k] << 24) | pPal[3 * data[k]] & 0xFFFFFF;
+			for (int k = 0; k < count; ++k)
+				trans_25102[k] = (data[k] << 24) | (*(uint*)&pPal[3 * data[k]]) & 0xFFFFFF;
+
 			GL_Upload32(trans_25102, width, height, mipmap, iType, filter);
 			break;
 
 		default:
-			bool systemType = true;
-
-			for (int l = 1; l < count; l++)
+			if (count > 0)
 			{
-				while (1)
+				for (int i = 0; i < count; i++)
 				{
-					if (data[l] == 255)
-						break;
-
-					trans_25102[l++] = pPal[3 * data[l]] | 0xFF000000;
-					if (l == count)
-						break;
+					if (data[i] == 255)
+					{
+						trans_25102[i] = 0;
+					}
+					else
+					{
+						trans_25102[i] = *(uint*)&pPal[3 * data[i]] | 0xFF000000;
+					}
 				}
-
-				if (l == 255)
-					break;
-
-				systemType = false;
-				trans_25102[l] = 0;
+				if (data[count - 1] != 255)
+					iType = GLT_SYSTEM;
 			}
-
-			if (systemType)
+			else
 				iType = GLT_SYSTEM;
-
 			GL_Upload32(trans_25102, width, height, mipmap, iType, filter);
 		}
 	}
@@ -1079,6 +1022,7 @@ void GL_Upload16(unsigned char *data, int width, int height, qboolean mipmap, in
 
 void BoxFilter3x3(unsigned char * out, unsigned char * in, int w, int h, int x, int y)
 {
+	return Call_Function<void, uchar*, uchar*, int, int, int, int>(0x3E240, out, in, w, h, x, y);
 	int r = 0;
 	int g = 0;
 	int b = 0;
@@ -1121,6 +1065,7 @@ void BoxFilter3x3(unsigned char * out, unsigned char * in, int w, int h, int x, 
 
 void ComputeScaledSize(int *wscale, int *hscale, int width, int height)
 {
+	return Call_Function<void, int*, int*, int, int>(0x3DB50, wscale, hscale, width, height);
 	if (g_bSupportsNPOTTextures)
 	{
 		if (wscale)
@@ -1201,7 +1146,7 @@ void GL_ResampleAlphaTexture(unsigned char *in, int inwidth, int inheight, unsig
 		{
 			p1[i] =
 		}
-		v10 = 3 * ((unsigned int)((inwidth << 16) / outwidth) >> 2);
+		v10 = 3 * ((uint)((inwidth << 16) / outwidth) >> 2);
 		for (j = 0; j != outwidth; ++j)
 		{
 			v12 = BYTE2(v10);
@@ -1212,15 +1157,15 @@ void GL_ResampleAlphaTexture(unsigned char *in, int inwidth, int inheight, unsig
 	*/
 }
 
-void GL_ResampleTexture(unsigned int *in, int inwidth, int inheight, unsigned int *out, int outwidth, int outheight)
+void GL_ResampleTexture(uint *in, int inwidth, int inheight, uint *out, int outwidth, int outheight)
 {
-	Call_Function<void, unsigned int *, int, int, unsigned int *, int, int>(0x3DCD0, in, inwidth, inheight, out, outwidth, outheight);
+	Call_Function<void, uint *, int, int, uint *, int, int>(0x3DCD0, in, inwidth, inheight, out, outwidth, outheight);
 
 	/*
-	void GL_ResampleTexture(unsigned int* in, int inWidth, int inHeight, unsigned int* out, int outWidth, int outHeight) {
+	void GL_ResampleTexture(uint* in, int inWidth, int inHeight, uint* out, int outWidth, int outHeight) {
   // Pre-calculate scaling factors (assuming fixed-point representation)
-  unsigned int xScale = 0;
-  unsigned int yScale = 0;
+  uint xScale = 0;
+  uint yScale = 0;
   if (outWidth > 0) {
 	xScale = (inWidth << 16) / outWidth; // 16.16 fixed-point format
 	for (int i = 0; i < outWidth; ++i) {
@@ -1237,8 +1182,8 @@ void GL_ResampleTexture(unsigned int *in, int inwidth, int inheight, unsigned in
 
   // Resample each output pixel
   for (int y = 0; y < outHeight; ++y) {
-	unsigned int* inRow1;  // Pointer to source row with 0.25 weight
-	unsigned int* inRow2;  // Pointer to source row with 0.75 weight
+	uint* inRow1;  // Pointer to source row with 0.25 weight
+	uint* inRow2;  // Pointer to source row with 0.75 weight
 
 	// Calculate source row indices based on scaling and rounding
 	double yFactor = (y + 0.25) * ((double)inHeight / outHeight);
@@ -1247,10 +1192,10 @@ void GL_ResampleTexture(unsigned int *in, int inwidth, int inheight, unsigned in
 	inRow2 = in + inWidth * (int)yFactor;
 
 	if (outWidth > 0) {
-	  unsigned int* outputPixel = out;
+	  uint* outputPixel = out;
 	  for (int x = 0; x < outWidth; ++x) {
 		// Bilinear interpolation using pre-calculated weights
-		unsigned int sumR = 0, sumG = 0, sumB = 0, sumA = 0;
+		uint sumR = 0, sumG = 0, sumB = 0, sumA = 0;
 		sumR += *(inRow1 + p1[x]) & 0xFF;
 		sumG += *(inRow1 + p1[x] + 1) & 0xFF;
 		sumB += *(inRow1 + p1[x] + 2) & 0xFF;
@@ -1287,8 +1232,8 @@ void ApplyScale(unsigned char* data, int width, int height, unsigned char* scale
 	NOT_IMPLEMENTED;
 	/*
 	 // Calculate scaling factors (fixed point 16.16)
-  unsigned int widthScale = (width << 16) / scaledWidth;
-  unsigned int heightScale = (height << 16) / scaledHeight;
+  uint widthScale = (width << 16) / scaledWidth;
+  uint heightScale = (height << 16) / scaledHeight;
 
   // Check for invalid scaled height
   if (scaledHeight <= 0) {
@@ -1304,7 +1249,7 @@ void ApplyScale(unsigned char* data, int width, int height, unsigned char* scale
 
 	// Loop through scaled width
 	for (int x = 0; x < scaledWidth; x += (widthScale >> 2)) {
-	  // Calculate source pixel index (avoid overflow with unsigned int)
+	  // Calculate source pixel index (avoid overflow with uint)
 	  int sourceIndex = y * width + x;
 
 	  // Copy pixel from source image to output

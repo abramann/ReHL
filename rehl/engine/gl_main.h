@@ -1,10 +1,9 @@
 #pragma once
+#include "hooker.h"
 
-#ifdef SHARED_GAME_DATA
-extern int& currenttexture;
-extern int* cnttextures;
-#else
-extern int currenttexture;
+EXTERN_VAR(int, currenttexture)
+EXTERN_ARRAY(int, cnttextures, [2])
+EXTERN_VAR(GLenum, gl_lightmap_format);
 
-extern int cnttextures[2];
-#endif
+void GL_BuildLightmaps();
+

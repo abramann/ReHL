@@ -31,8 +31,8 @@
 #include "maintypes.h"
 
 extern unsigned char *gPAS;
-extern unsigned char *gPVS;
-extern int gPVSRowBytes;
+EXTERN_VAR(uchar*, gPVS);
+EXTERN_VAR(int, gPVSRowBytes);
 
 void Mod_Init(void);
 unsigned char *Mod_DecompressVis(unsigned char *in, model_t *model);

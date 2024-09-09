@@ -591,21 +591,6 @@ void VGui_ViewportPaintBackground(int* extents)
 	GLBeginHud();
 }
 
-void AllowFog(int allowed)
-{
-	GL_BLEND;
-	if (allowed && isFogEnabled)
-	{
-		qglEnable(GL_FOG);
-	}
-	else
-	{
-		isFogEnabled = qglIsEnabled(GL_FOG);
-		if (isFogEnabled)
-			qglDisable(GL_FOG);
-	}
-}
-
 int EXT_FUNC VGuiWrap2_GetLocalizedStringLength(const char * label)
 {
 	NOT_IMPLEMENTED;

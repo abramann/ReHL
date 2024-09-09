@@ -15,57 +15,25 @@ float oldbrightness_25914;
 vec3_t r_soundOrigin;
 vec3_t r_playerViewportAngles;
 
-#ifdef SHARED_GAME_DATA
-cvar_t * sp_v_texgamma = ADDRESS_OF_DATA(cvar_t *, 0xC2819);
-cvar_t & v_texgamma = *sp_v_texgamma;
+ARRAY(int, lineargammatable, [1024], 0xC197A);
+ARRAY(int, screengammatable, [1024], 0xC1999);
+ARRAY(int, lightgammatable, [1024], 0xC1919);
+ARRAY(uchar, texgammatable, [256], 0xC1847);
+ARRAY(float, v_blend, [4], 0xC1A53);
 
-cvar_t* sp_v_brightness = ADDRESS_OF_DATA(cvar_t*, 0xC164F);
-cvar_t& v_brightness = *sp_v_brightness;
-
-uchar(*sp_texgammatable)[256] = ADDRESS_OF_DATA(uchar(*)[256], 0xC1847);
-uchar(&texgammatable)[256] = *sp_texgammatable;
-
-int * lineargammatable = ADDRESS_OF_DATA(int *, 0xC197A);
-int* screengammatable = ADDRESS_OF_DATA(int*, 0xC1999);
-int* lightgammatable = ADDRESS_OF_DATA(int*, 0xC1919);
-
-cvar_t * sp_v_gamma = ADDRESS_OF_DATA(cvar_t *, 0xC2805);
-cvar_t & v_gamma = *sp_v_gamma;
-
-cvar_t * sp_v_lightgamma = ADDRESS_OF_DATA(cvar_t *, 0xC160F);
-cvar_t & v_lightgamma = *sp_v_lightgamma;
-
-cvar_t * sp_v_dark = ADDRESS_OF_DATA(cvar_t *, 0xC27F1);
-cvar_t & v_dark = *sp_v_dark;
-
-cvar_t * sp_crosshair = ADDRESS_OF_DATA(cvar_t *, 0xC27FB);
-cvar_t & crosshair = *sp_crosshair;
-
-cvar_t * sp_v_lambert = ADDRESS_OF_DATA(cvar_t *, 0xC282D);
-cvar_t & v_lambert = *sp_v_lambert;
-
-cvar_t * sp_v_direct = ADDRESS_OF_DATA(cvar_t *, 0xC2837);
-cvar_t & v_direct = *sp_v_direct;
-#else
-cvar_t v_texgamma = { "texgamma", "2.0" };
-cvar_t v_brightness = { "brightness", "0.0", FCVAR_ARCHIVE };
-unsigned char texgammatable[256];
-int lineargammatable[1024]
-int screengammatable[1024];
-int lightgammatable[1024];
-cvar_t v_gamma = { "gamma", "2.5", FCVAR_ARCHIVE };
-cvar_t v_lightgamma = { "lightgamma", "2.5" };
-cvar_t v_dark = { "v_dark", "0" };
-cvar_t crosshair = { "crosshair", "0", FCVAR_ARCHIVE };
-cvar_t v_lambert = { "lambert", "1.5" };
-cvar_t v_direct = { "direct", "0.9" };
-#endif
+VVAR(cvar_t, v_texgamma, 0xC2819, { "texgamma" COMMA "2.0" });
+VVAR(cvar_t, v_brightness, 0xC164F, { "brightness" COMMA "0.0" COMMA FCVAR_ARCHIVE });
+VVAR(cvar_t, v_gamma, 0xC2805, { "gamma" COMMA "2.5" COMMA FCVAR_ARCHIVE });
+VVAR(cvar_t, v_lightgamma, 0xC160F, { "lightgamma" COMMA "2.5" });
+VVAR(cvar_t, v_dark, 0xC27F1, { "v_dark" COMMA "0" });
+VVAR(cvar_t, crosshair, 0xC27FB, { "crosshair" COMMA "0" COMMA FCVAR_ARCHIVE });
+VVAR(cvar_t, v_lambert, 0xC282D, { "lambert" COMMA "1.5" });
+VVAR(cvar_t, v_direct, 0xC2837, { "direct" COMMA "0.9" });
 
 vec3_t forward;
 vec3_t right;
 vec3_t up;
 
-float v_blend[4];
 
 uchar ramps[3][256];
 
@@ -272,11 +240,11 @@ void V_RenderView()
 
 	ref_params_s angles;
 
-	m1.viewent.curstate.frame = 0.0;
-	m1.viewent.model = CL_GetModelByIndex(m1.stats[2]);
-	m1.viewent.curstate.modelindex = m1.stats[2];
-	m1.viewent.curstate.colormap = 0;
-	m1.viewent.index = m1.playernum + 1;
+	g_pcl.viewent.curstate.frame = 0.0;
+	g_pcl.viewent.model = CL_GetModelByIndex(g_pcl.stats[2]);
+	g_pcl.viewent.curstate.modelindex = g_pcl.stats[2];
+	g_pcl.viewent.curstate.colormap = 0;
+	g_pcl.viewent.index = g_pcl.playernum + 1;
 
 	V_SetRefParams(&angles);
 
@@ -284,20 +252,20 @@ void V_RenderView()
 	{
 		if (viewnum == 0)
 		{
-			if (g_pcls.demoplayback || (CL_SetDemoViewInfo(&angles, m1.viewent.origin, m1.stats[2]), g_pcls.demoplayback))
+			if (g_pcls.demoplayback || (CL_SetDemoViewInfo(&angles, g_pcl.viewent.origin, g_pcl.stats[2]), g_pcls.demoplayback))
 			{
 				if (!g_pcls.spectator)
 				{
-					CL_GetDemoViewInfo(&angles, m1.viewent.origin, &m1.stats[2]);
+					CL_GetDemoViewInfo(&angles, g_pcl.viewent.origin, &g_pcl.stats[2]);
 
 					vec3_t clearview;
 					VectorCopy(angles.viewangles, clearview);
 					clearview[2] *= -1;
 
-					VectorCopy(clearview, m1.viewent.curstate.angles);
-					VectorCopy(clearview, m1.viewent.angles);
-					VectorCopy(clearview, m1.viewent.latched.prevangles);
-					VectorCopy(clearview, m1.viewent.latched.prevangles);
+					VectorCopy(clearview, g_pcl.viewent.curstate.angles);
+					VectorCopy(clearview, g_pcl.viewent.angles);
+					VectorCopy(clearview, g_pcl.viewent.latched.prevangles);
+					VectorCopy(clearview, g_pcl.viewent.latched.prevangles);
 
 					angles.nextView = 0;
 				}
@@ -307,7 +275,7 @@ void V_RenderView()
 		V_GetRefParams(&angles);
 		if (angles.intermission)
 		{
-			m1.viewent.model = 0;
+			g_pcl.viewent.model = 0;
 		}
 		else if (!angles.paused && chase_active.value != 0.0)
 		{
@@ -334,32 +302,32 @@ void V_SetRefParams(ref_params_t *pparams)
 	VectorCopy(forward, pparams->forward);
 	VectorCopy(right, pparams->right);
 	VectorCopy(up, pparams->up);
-	VectorCopy(m1.simvel, pparams->simvel);
-	VectorCopy(m1.simorg, pparams->simorg);
-	VectorCopy(m1.viewheight, pparams->viewheight);
-	VectorCopy(m1.viewangles, pparams->cl_viewangles);
-	VectorCopy(m1.crosshairangle, pparams->crosshairangle);
-	VectorCopy(m1.punchangle, pparams->punchangle);
-	VectorCopy(m1.crosshairangle, pparams->crosshairangle);
+	VectorCopy(g_pcl.simvel, pparams->simvel);
+	VectorCopy(g_pcl.simorg, pparams->simorg);
+	VectorCopy(g_pcl.viewheight, pparams->viewheight);
+	VectorCopy(g_pcl.viewangles, pparams->cl_viewangles);
+	VectorCopy(g_pcl.crosshairangle, pparams->crosshairangle);
+	VectorCopy(g_pcl.punchangle, pparams->punchangle);
+	VectorCopy(g_pcl.crosshairangle, pparams->crosshairangle);
 
-	pparams->time = m1.time;
+	pparams->time = g_pcl.time;
 	pparams->frametime = host_frametime;
-	pparams->intermission = m1.intermission != 0;
-	pparams->paused = m1.paused != false;
+	pparams->intermission = g_pcl.intermission != 0;
+	pparams->paused = g_pcl.paused != false;
 	pparams->spectator = g_pcls.spectator != false;
-	pparams->onground = m1.onground != -1;
-	pparams->waterlevel = m1.waterlevel;
-	pparams->health = m1.stats[0];
+	pparams->onground = g_pcl.onground != -1;
+	pparams->waterlevel = g_pcl.waterlevel;
+	pparams->health = g_pcl.stats[0];
 	pparams->viewsize = scr_viewsize.value;
-	pparams->maxclients = m1.maxclients;
-	pparams->viewentity = m1.viewentity;
-	pparams->playernum = m1.playernum;
-	pparams->max_entities = m1.max_edicts;
-	pparams->cmd = &m1.cmd;
+	pparams->maxclients = g_pcl.maxclients;
+	pparams->viewentity = g_pcl.viewentity;
+	pparams->playernum = g_pcl.playernum;
+	pparams->max_entities = g_pcl.max_edicts;
+	pparams->cmd = &g_pcl.cmd;
 	pparams->demoplayback = g_pcls.demoplayback;
 	pparams->movevars = &movevars;
 	pparams->hardware = 1;
-	pparams->smoothing = m1.pushmsec;
+	pparams->smoothing = g_pcl.pushmsec;
 	pparams->viewport[0] = 0;
 	pparams->viewport[1] = 0;
 	pparams->viewport[2] = vid.width;
@@ -375,12 +343,12 @@ void V_GetRefParams(ref_params_t *pparams)
 	VectorCopy(pparams->forward, forward);
 	VectorCopy(pparams->right, right);
 	VectorCopy(pparams->up, up);
-	VectorCopy(pparams->simvel, m1.simvel);
-	VectorCopy(pparams->simorg, m1.simorg);
-	VectorCopy(pparams->cl_viewangles, m1.viewangles);
-	VectorCopy(pparams->crosshairangle, m1.crosshairangle);
-	VectorCopy(pparams->punchangle, m1.punchangle);
-	VectorCopy(pparams->viewheight, m1.viewheight);
+	VectorCopy(pparams->simvel, g_pcl.simvel);
+	VectorCopy(pparams->simorg, g_pcl.simorg);
+	VectorCopy(pparams->cl_viewangles, g_pcl.viewangles);
+	VectorCopy(pparams->crosshairangle, g_pcl.crosshairangle);
+	VectorCopy(pparams->punchangle, g_pcl.punchangle);
+	VectorCopy(pparams->viewheight, g_pcl.viewheight);
 
 	r_refdef.vrect.x = pparams->viewport[0];
 	r_refdef.vrect.y = pparams->viewport[1];
@@ -388,4 +356,10 @@ void V_GetRefParams(ref_params_t *pparams)
 	r_refdef.vrect.height = pparams->viewport[3];
 
 	r_refdef.onlyClientDraws = pparams->onlyClientDraw;
+}
+
+void V_CalcBlend()
+{
+	for (int i = 0; i < ARRAYSIZE(v_blend); i++)
+		v_blend[i] = 0;
 }

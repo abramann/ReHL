@@ -49,60 +49,36 @@ extern int giStateInfo;
 extern NEW_DLL_FUNCTIONS gNewDLLFunctions;
 extern extensiondll_t g_rgextdll[50];
 
+EXTERN_ARRAY(char, g_szNotifyAreaString, [256]);
+EXTERN_VAR(int, giActive);
+EXTERN_VAR(int, giActive);
+EXTERN_VAR(qboolean, g_bIsDedicatedServer);
+EXTERN_VAR(modinfo_t, gmodinfo);
+EXTERN_VAR(double, curtime);
+EXTERN_VAR(double, lastcurtime);
+EXTERN_VAR(qboolean, g_bIsDedicatedServer);
+EXTERN_VAR(DLL_FUNCTIONS, gEntityInterface);
+EXTERN_ARRAY(qboolean, con_debuglog);
+EXTERN_ARRAY(char, gszDisconnectReason, [MAX_DISCONNECT_REASON]);
+#ifdef _WIN32
+EXTERN_VAR(int, g_PerfCounterInitialized);
+EXTERN_VAR(CRITICAL_SECTION, g_PerfCounterMutex);
+EXTERN_VAR(int, g_PerfCounterShiftRightAmount);
+EXTERN_VAR(double, g_PerfCounterSlice);
+EXTERN_VAR(int, g_WinNTOrHigher);
+EXTERN_VAR(FileFindHandle_t, g_hfind);
+EXTERN_VAR(qboolean, gfExtendedError);
+#endif
 #ifdef SHARED_GAME_DATA
-extern int& giActive;
-extern int& giActive;
-extern qboolean& g_bIsDedicatedServer;
-extern modinfo_t& gmodinfo;
-
-extern double& curtime;
-extern double& lastcurtime;
-extern qboolean& g_bIsDedicatedServer;
-extern char * g_szNotifyAreaString;
-extern DLL_FUNCTIONS& gEntityInterface;
-#ifdef _WIN32
-extern int& g_PerfCounterInitialized;
-extern CRITICAL_SECTION& g_PerfCounterMutex;
-extern int& g_PerfCounterShiftRightAmount;
-extern double& g_PerfCounterSlice;
-extern int& g_WinNTOrHigher;
-
 extern void(*&Launcher_ConsolePrintf)(char *, ...);
-
-extern FileFindHandle_t& g_hfind;
-
-extern qboolean& con_debuglog;
-extern char (&gszDisconnectReason)[MAX_DISCONNECT_REASON];
-extern qboolean& gfExtendedError;
-#endif
 #else
-extern qboolean gfExtendedError;
-extern int giActive;
-extern qboolean g_bIsDedicatedServer;
-extern modinfo_t gmodinfo;
-extern double curtime;
-extern double lastcurtime;
-extern modinfo_t gmodinfo;
-extern qboolean g_bIsDedicatedServer;
-extern DLL_FUNCTIONS gEntityInterface;
-#ifdef _WIN32
-extern int g_PerfCounterInitialized;
-extern CRITICAL_SECTION g_PerfCounterMutex;
-extern int g_PerfCounterShiftRightAmount;
-extern double g_PerfCounterSlice;
-extern int g_WinNTOrHigher;
 extern void(*Launcher_ConsolePrintf)(char *, ...);
-extern FileFindHandle_t g_hfind;
-extern qboolean con_debuglog;
-extern char g_szNotifyAreaString[256];
-extern char gszDisconnectReason[MAX_DISCONNECT_REASON];
 #endif
-#endif
+
 extern int g_iextdllMac;
 extern qboolean gfBackground;
 
 #ifndef _WIN32
-extern qboolean gHasMMXTechnology;
 #endif
 extern qboolean g_bPrintingKeepAliveDots;
 

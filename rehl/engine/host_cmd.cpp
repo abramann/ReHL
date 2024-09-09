@@ -30,24 +30,20 @@
 
 typedef int(*SV_BLENDING_INTERFACE_FUNC)(int, struct sv_blending_interface_s **, struct server_studio_api_s *, float *, float *);
 
-vec3_t r_origin;
+VAR(char *, g_pPostRestartCmdLineArgs, 0x588E9);
+VAR(int, gHostSpawnCount, 0x1C679);
+VAR(vec3_t, r_origin, 0xAD5A);
+
 double cpuPercent;
 int32 startTime;
 int current_skill;
 CareerStateType g_careerState;
-int gHostSpawnCount;
 
 //qboolean noclip_anglehack;
 qboolean g_bMajorMapChange;
 
 int g_iQuitCommandIssued;
 
-#ifdef SHARE_GAME_DATA
-char** p_g_pPostRestartCmdLineArgs = (char**)ADDRESS_OF_DATA(588E9);
-char*& g_pPostRestartCmdLineArgs = *p_g_pPostRestartCmdLineArgs;
-#else
-char *g_pPostRestartCmdLineArgs;
-#endif
 int r_dointerp = 1;
 
 SV_SAVEGAMECOMMENT_FUNC g_pSaveGameCommentFunc = &Host_SavegameComment;

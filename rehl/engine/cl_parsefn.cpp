@@ -3,17 +3,8 @@
 int msg_buckets[64];
 int total_data[64];
 
-#ifdef SHARED_GAME_DATA
-event_hook_t* * sp_g_pEventHooks = ADDRESS_OF_DATA(event_hook_t* *, 0x1EF42);
-event_hook_t* & g_pEventHooks = *sp_g_pEventHooks;
-
-UserMsg** sp_gClientUserMsgs = ADDRESS_OF_DATA(UserMsg**, 0x1A8C1);
-UserMsg* & gClientUserMsgs = *sp_gClientUserMsgs;
-#else
-event_hook_t*  g_pEventHooks;
-UserMsg* gClientUserMsgs = nullptr;
-#endif
-
+VAR(event_hook_t*, g_pEventHooks, 0x1EF42);
+VAR(UserMsg*, gClientUserMsgs, 0x1A8C1);
 
 void CL_InitEventSystem(void)
 {
@@ -127,8 +118,8 @@ qboolean CL_RequestMissingResources(void)
 	if (g_pcls.dl.doneregistering || g_pcls.dl.custom == false && g_pcls.state != ca_uninitialized)
 		return false;
 
-	resource_t* p = m1.resourcesneeded.pNext;
-	if (p == &m1.resourcesneeded)
+	resource_t* p = g_pcl.resourcesneeded.pNext;
+	if (p == &g_pcl.resourcesneeded)
 	{
 		g_pcls.dl.custom = false;
 		g_pcls.dl.doneregistering = true;

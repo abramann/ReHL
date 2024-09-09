@@ -50,5 +50,4 @@ public:
 	virtual void PlayStartupVideos() = 0;
 	virtual void PlayAVIAndWait(const char *aviFile) = 0;
 	virtual void SetCursorVisible(bool bState) = 0;
-
 };

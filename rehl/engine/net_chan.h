@@ -32,23 +32,14 @@
 #include "cvar.h"
 #include "net.h"
 
-#ifdef SHARED_GAME_DATA
-extern cvar_t& net_log;
-extern cvar_t& net_showpackets;
-extern cvar_t& net_showdrop;
-extern cvar_t& net_drawslider;
-extern cvar_t& net_chokeloopback;
-extern cvar_t& sv_filetransfercompression;
-extern cvar_t& sv_filetransfermaxsize;
-#else
-extern cvar_t net_log;
-extern cvar_t net_showpackets;
-extern cvar_t net_showdrop;
-extern cvar_t net_drawslider;
-extern cvar_t net_chokeloopback;
-extern cvar_t sv_filetransfercompression;
-extern cvar_t sv_filetransfermaxsize;
-#endif
+EXTERN_VAR(cvar_t, net_log);
+EXTERN_VAR(cvar_t, net_showpackets);
+EXTERN_VAR(cvar_t, net_showdrop);
+EXTERN_VAR(cvar_t, net_drawslider);
+EXTERN_VAR(cvar_t, net_chokeloopback);
+EXTERN_VAR(cvar_t, sv_filetransfercompression);
+EXTERN_VAR(cvar_t, sv_filetransfermaxsize);
+
 extern char gDownloadFile[256];
 
 extern int net_drop;

@@ -35,11 +35,9 @@
 const int MAX_CVAR_VALUE     = 1024;
 const int MAX_CVARLIST_FILES = 100;
 
-#ifdef SHARED_GAME_DATA
-extern cvar_t*& cvar_vars;
-#else
-extern cvar_t* cvar_vars;
-#endif
+EXTERN_VAR(cvar_t*, cvars);
+EXTERN_VAR(cvar_t*, cvar_vars);
+
 void Cvar_Init(void);
 void Cvar_Shutdown(void);
 cvar_t *Cvar_FindVar(const char *var_name);

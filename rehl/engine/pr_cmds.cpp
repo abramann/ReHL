@@ -42,14 +42,9 @@ vec_t gHullMaxs[4][3] = {
 		{ 16.0f,  16.0f,  18.0f },
 };
 
-unsigned char gMsgData[512];
+uchar gMsgData[512];
 
-#ifdef SHARED_GAME_DATA
-int* sp_idum = ADDRESS_OF_DATA(int*, 0x70722);
-int& idum = *sp_idum;
-#else
-int32 idum;
-#endif
+VAR(int, idum, 0x70722);
 
 edict_t *gMsgEntity;
 int gMsgDest;
@@ -64,7 +59,7 @@ int c_notvis;
 
 // TODO: Move to sv_phys.cpp
 vec3_t vec_origin;
-int r_visframecount;
+VVAR(int, r_visframecount, 0x4961A, 0);
 
 sizebuf_t gMsgBuffer = { "MessageBegin/End", 0, gMsgData, sizeof(gMsgData), 0 };
 

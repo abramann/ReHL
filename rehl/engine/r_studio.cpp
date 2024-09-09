@@ -47,71 +47,20 @@ typedef struct r_studiocache_s
 //auxvert_t auxverts[2048];
 //vec_t lightvalues[2048][3];
 
-#ifdef SHARED_GAME_DATA
-
-int * sp_nCurrentHull = ADDRESS_OF_DATA(int *, 0x80120);
-int & nCurrentHull = *sp_nCurrentHull;
-
-int * sp_nCurrentPlane = ADDRESS_OF_DATA(int *, 0x80126);
-int & nCurrentPlane = *sp_nCurrentPlane;
-
-studiohdr_t ** sp_pstudiohdr = ADDRESS_OF_DATA(studiohdr_t **, 0x8119D);
-studiohdr_t *& pstudiohdr = *sp_pstudiohdr;
-
-cvar_t * sp_r_cachestudio = ADDRESS_OF_DATA(cvar_t *, 0x46BD4);
-cvar_t & r_cachestudio = *sp_r_cachestudio;
-
-rgStudioCache_t * sp_rgStudioCache = ADDRESS_OF_DATA(rgStudioCache_t *, 0x81718);
-rgStudioCache_t & rgStudioCache = *sp_rgStudioCache;
-
-int * sp_r_cachecurrent = ADDRESS_OF_DATA(int *, 0x7FFBC);
-int & r_cachecurrent = *sp_r_cachecurrent;
-
-studio_hull_t * sp_studio_hull = ADDRESS_OF_DATA(studio_hull_t *, 0x81151);
-studio_hull_t & studio_hull = *sp_studio_hull;
-
-studio_planes_t * sp_studio_planes = ADDRESS_OF_DATA(studio_planes_t *, 0x80161);
-studio_planes_t & studio_planes = *sp_studio_planes;
-
-studio_clipnodes_t * sp_studio_clipnodes = ADDRESS_OF_DATA(studio_clipnodes_t *, 0x7FF3B);
-studio_clipnodes_t & studio_clipnodes = *sp_studio_clipnodes;
-
-studio_planes_t * sp_cache_planes = ADDRESS_OF_DATA(studio_planes_t *, 0x80168);
-studio_planes_t & cache_planes = *sp_cache_planes; 
-
-studio_hull_t * sp_cache_hull = ADDRESS_OF_DATA(studio_hull_t *, 0x80144);
-studio_hull_t & cache_hull = *sp_cache_hull;
-
-studio_hull_hitgroup_t * sp_cache_hull_hitgroup = ADDRESS_OF_DATA(studio_hull_hitgroup_t *, 0x80188);
-studio_hull_hitgroup_t & cache_hull_hitgroup = *sp_cache_hull_hitgroup;
-
-studio_hull_hitgroup_t * sp_studio_hull_hitgroup = ADDRESS_OF_DATA(studio_hull_hitgroup_t *, 0x80181);
-studio_hull_hitgroup_t & studio_hull_hitgroup = *sp_studio_hull_hitgroup;
-
-sv_blending_interface_t * sp_svBlending = ADDRESS_OF_DATA(sv_blending_interface_t *, 0x885E6);
-sv_blending_interface_t & svBlending = *sp_svBlending;
-
-bonetransform_t * sp_bonetransform = ADDRESS_OF_DATA(bonetransform_t *, 0x880B1);
-bonetransform_t & bonetransform = *sp_bonetransform;
-#else
-studiohdr_t *pstudiohdr;
-studio_hull_t  studio_hull;
-studio_clipnodes_t studio_clipnodes;
-studio_planes_t studio_planes;
-cvar_t r_cachestudio = { "r_cachestudio", "1", 0, 0.0f, nullptr };
-int r_cachecurrent;
-rgStudioCache_t rgStudioCache;
-studio_hull_hitgroup_t cache_hull_hitgroup;
-studio_hull_t cache_hull;
-studio_planes_t cache_planes;
-studio_hull_hitgroup_t studio_hull_hitgroup;
-sv_blending_interface_t svBlending = { 1, SV_StudioSetupBones };
-int nCurrentHull;
-int nCurrentPlane;
-bonetransform_t bonetransform;
-
-#endif
-
+VAR(studiohdr_t *, pstudiohdr, 0x8119D);
+VAR(studio_hull_t, studio_hull, 0x81151);
+VAR(studio_clipnodes_t, studio_clipnodes, 0x7FF3B);
+VAR(studio_planes_t, studio_planes, 0x80161);
+VAR(int, r_cachecurrent, 0x7FFBC);
+VAR(rgStudioCache_t, rgStudioCache, 0x81718);
+VAR(studio_hull_hitgroup_t, cache_hull_hitgroup, 0x80188);
+VAR(studio_hull_t, cache_hull, 0x80144);
+VAR(studio_planes_t, cache_planes, 0x80168);
+VAR(studio_hull_hitgroup_t, studio_hull_hitgroup, 0x80181);
+VVAR(sv_blending_interface_t, svBlending, 0x885E6, { 1, SV_StudioSetupBones });
+VAR(int, nCurrentHull, 0x80120);
+VAR(int, nCurrentPlane, 0x80126);
+VAR(bonetransform_t, bonetransform, 0x880B1);
 
 float rotationmatrix[3][4];
 

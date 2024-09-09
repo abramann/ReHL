@@ -44,7 +44,7 @@ cl_entity_t* cl_entities = nullptr;
 efrag_t cl_efrags[MAX_EFRAGS] = {};
 dlight_t cl_dlights[MAX_DLIGHTS] = {};
 dlight_t cl_elights[MAX_ELIGHTS] = {};
-lightstyle_t cl_lightstyle[MAX_LIGHTSTYLES] = {};
+VARRAY(lightstyle_t, cl_lightstyle, [MAX_LIGHTSTYLES], 0x17812, {});
 
 int g_bRedirectedToProxy = 0;
 int g_iCurrentTiming = 0;
@@ -92,18 +92,12 @@ cvar_t cl_lc = { "cl_lc", "1", FCVAR_ARCHIVE | FCVAR_USERINFO };
 cvar_t cl_dlmax = { "cl_dlmax", "512", FCVAR_ARCHIVE | FCVAR_USERINFO };
 cvar_t fs_lazy_precache = { "fs_lazy_precache", "0" };
 cvar_t fs_precache_timings = { "fs_precache_timings", "0" };
-cvar_t fs_perf_warnings = { "fs_perf_warnings", "0" };
 cvar_t fs_startup_timings = { "fs_startup_timings", "0" };
-#ifdef SHARED_GAME_DATA
-cvar_t* sp_cl_mousegrab = ADDRESS_OF_DATA(cvar_t*, 0x1A036);
-cvar_t& cl_mousegrab = *sp_cl_mousegrab;
 
-playermove_t * sp_g_clmove = ADDRESS_OF_DATA(playermove_t *, 0xB240);
-playermove_t & g_clmove = *sp_g_clmove;
-#else
-cvar_t cl_mousegrab = { "cl_mousegrab", "1", FCVAR_ARCHIVE };
-playermove_t g_clmove;
-#endif
+VVAR(cvar_t, fs_perf_warnings, 0x19F40, { "fs_perf_warnings" COMMA "0" }); 
+VVAR(cvar_t, cl_mousegrab, 0x1A036, { "cl_mousegrab", "1", FCVAR_ARCHIVE });
+VAR(playermove_t, g_clmove, 0xB240);
+
 cvar_t m_rawinput = { "m_rawinput", "0", FCVAR_ARCHIVE };
 cvar_t cl_filterstuffcmd = { "cl_filterstuffcmd", "0", FCVAR_ARCHIVE | FCVAR_PRIVILEGED };
 
@@ -1098,6 +1092,8 @@ dlight_t* CL_AllocElight(int key) // - TODO: improve - ScriptedSnark
 
 model_t* CL_GetModelByIndex(int index)
 {
+	return Call_Function<model_t*, int>(0x1A3E0, index);
+
 	NOT_IMPLEMENTED;
 	
 	/*

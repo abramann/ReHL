@@ -31,7 +31,7 @@ struct refdef_t
 
 	color24 ambientlight;
 
-	bool onlyClientDraws;
+	qboolean onlyClientDraws;
 };
 
 

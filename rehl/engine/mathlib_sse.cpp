@@ -186,6 +186,54 @@ qboolean VectorCompare(const vec_t *v1, const vec_t *v2)
 	return !(_mm_movemask_ps(cmp) & (1|2|4));
 }
 
+void SinCos(float radians, float *sine, float *cosine)
+{
+	_asm
+	{
+		fld	dword ptr[radians]
+		fsincos
+
+			mov edx, dword ptr[cosine]
+			mov eax, dword ptr[sine]
+
+			fstp dword ptr[edx]
+			fstp dword ptr[eax]
+	}
+}
+
+void AngleVectors(const vec3_t angles, vec3_t forward, vec3_t right, vec3_t up)
+{
+#ifndef SWDS
+	g_engdstAddrs.pfnAngleVectors(&angles, &forward, &right, &up);
+#endif // SWDS
+	float	sr, sp, sy, cr, cp, cy;
+
+	SinCos(DEG2RAD(angles[YAW]), &sy, &cy);
+	SinCos(DEG2RAD(angles[PITCH]), &sp, &cp);
+	SinCos(DEG2RAD(angles[ROLL]), &sr, &cr);
+
+	if (forward)
+	{
+		forward[0] = cp * cy;
+		forward[1] = cp * sy;
+		forward[2] = -sp;
+	}
+
+	if (right)
+	{
+		right[0] = (-1.0f * sr * sp * cy + -1.0f * cr * -sy);
+		right[1] = (-1.0f * sr * sp * sy + -1.0f * cr * cy);
+		right[2] = (-1.0f * sr * cp);
+	}
+
+	if (up)
+	{
+		up[0] = (cr * sp * cy + -sr * -sy);
+		up[1] = (cr * sp * sy + -sr * cy);
+		up[2] = (cr * cp);
+	}
+}
+/*
 void AngleVectors(const vec_t *angles, vec_t *forward, vec_t *right, vec_t *up)
 {
 #ifndef SWDS
@@ -195,24 +243,24 @@ void AngleVectors(const vec_t *angles, vec_t *forward, vec_t *right, vec_t *up)
 	__m128 s, c;
 	sincos_ps(_mm_mul_ps(_mm_loadu_ps(angles), _mm_load_ps(deg2rad)), &s, &c);
 
-	__m128 m1 = _mm_shuffle_ps(c, s, 0x90); // [cp][cp][sy][sr]
+	__m128 g_pcl = _mm_shuffle_ps(c, s, 0x90); // [cp][cp][sy][sr]
 	__m128 m2 = _mm_shuffle_ps(c, c, 0x09); // [cy][cr][cp][cp]
-	__m128 cp_mults = _mm_mul_ps(m1, m2); // [cp * cy][cp * cr][cp * sy][cp * sr];
+	__m128 cp_mults = _mm_mul_ps(g_pcl, m2); // [cp * cy][cp * cr][cp * sy][cp * sr];
 
-	m1 = _mm_shuffle_ps(c, s, 0x15); // [cy][cy][sy][sp]
+	g_pcl = _mm_shuffle_ps(c, s, 0x15); // [cy][cy][sy][sp]
 	m2 = _mm_shuffle_ps(s, c, 0xA0); // [sp][sp][cr][cr]
-	m1 = _mm_shuffle_ps(m1, m1, 0xC8); // [cy][sy][cy][sp]
+	g_pcl = _mm_shuffle_ps(g_pcl, g_pcl, 0xC8); // [cy][sy][cy][sp]
 
 	__m128 m3 = _mm_shuffle_ps(s, s, 0x4A); // [sr][sr][sp][sy];
-	m3 = _mm_mul_ps(m3, _mm_mul_ps(m1, m2)); // [sp*cy*sr][sp*sy*sr][cr*cy*sp][cr*sp*sy]
+	m3 = _mm_mul_ps(m3, _mm_mul_ps(g_pcl, m2)); // [sp*cy*sr][sp*sy*sr][cr*cy*sp][cr*sp*sy]
 
 	m2 = _mm_shuffle_ps(s, c, 0x65); // [sy][sy][cr][cy]
-	m1 = _mm_shuffle_ps(c, s, 0xA6); // [cr][cy][sr][sr]
+	g_pcl = _mm_shuffle_ps(c, s, 0xA6); // [cr][cy][sr][sr]
 	m2 = _mm_shuffle_ps(m2, m2, 0xD8); // [sy][cr][sy][cy]
-	m1 = _mm_xor_ps(m1, _mm_load_ps((float *)&negmask_1001)); // [-cr][cy][sr][-sr]
-	m1 = _mm_mul_ps(m1, m2); // [-cr*sy][cy*cr][sr*sy][-sr*cy]
+	g_pcl = _mm_xor_ps(g_pcl, _mm_load_ps((float *)&negmask_1001)); // [-cr][cy][sr][-sr]
+	g_pcl = _mm_mul_ps(g_pcl, m2); // [-cr*sy][cy*cr][sr*sy][-sr*cy]
 
-	m3 = _mm_add_ps(m3, m1);
+	m3 = _mm_add_ps(m3, g_pcl);
 
 	if (forward)
 	{
@@ -229,32 +277,32 @@ void AngleVectors(const vec_t *angles, vec_t *forward, vec_t *right, vec_t *up)
 		_mm_storel_pi((__m64 *)up, _mm_shuffle_ps(m3, m3, 0x0E));
 		up[2] = _mm_cvtss_f32(_mm_shuffle_ps(cp_mults, cp_mults, 0x01));
 	}
-}
+}*/
 
 void AngleVectorsTranspose(const vec_t *angles, vec_t *forward, vec_t *right, vec_t *up)
 {
 	__m128 s, c;
 	sincos_ps(_mm_mul_ps(_mm_loadu_ps(angles), _mm_load_ps(deg2rad)), &s, &c);
 
-	__m128 m1 = _mm_shuffle_ps(c, s, 0x90); // [cp][cp][sy][sr]
+	__m128 g_pcl = _mm_shuffle_ps(c, s, 0x90); // [cp][cp][sy][sr]
 	__m128 m2 = _mm_shuffle_ps(c, c, 0x09); // [cy][cr][cp][cp]
-	__m128 cp_mults = _mm_mul_ps(m1, m2); // [cp * cy][cp * cr][cp * sy][cp * sr];
+	__m128 cp_mults = _mm_mul_ps(g_pcl, m2); // [cp * cy][cp * cr][cp * sy][cp * sr];
 
-	m1 = _mm_shuffle_ps(s, s, 0x50); // [sp][sp][sy][sy]
+	g_pcl = _mm_shuffle_ps(s, s, 0x50); // [sp][sp][sy][sy]
 	m2 = _mm_shuffle_ps(c, s, 0x05); // [cy][cy][sp][sp]
 
 	__m128 m3 = _mm_shuffle_ps(s, c, 0xAA); // [sr][sr][cr][cr]
-	m1 = _mm_mul_ps(m1, m2);
+	g_pcl = _mm_mul_ps(g_pcl, m2);
 	m3 = _mm_shuffle_ps(m3, m3, 0xD8); // [sr][cr][sr][cr]
-	m3 = _mm_mul_ps(m3, m1); // [sp*cy*sr][sp*cy*cr][sy*sp*sr][sy*sp*cr]
+	m3 = _mm_mul_ps(m3, g_pcl); // [sp*cy*sr][sp*cy*cr][sy*sp*sr][sy*sp*cr]
 
 	m2 = _mm_shuffle_ps(c, s, 0xA6); // [cr][cy][sr][sr]
-	m1 = _mm_shuffle_ps(s, c, 0x65); // [sy][sy][cr][cy]
+	g_pcl = _mm_shuffle_ps(s, c, 0x65); // [sy][sy][cr][cy]
 	m2 = _mm_shuffle_ps(m2, m2, 0xD8); // [cr][sr][cy][sr]
-	m1 = _mm_xor_ps(m1, _mm_load_ps((float *)&negmask_1001)); // [-cr][cy][sr][-sr]
-	m1 = _mm_mul_ps(m1, m2); // [-cr*sy][sr*sy][cy*cr][-sr*cy]
+	g_pcl = _mm_xor_ps(g_pcl, _mm_load_ps((float *)&negmask_1001)); // [-cr][cy][sr][-sr]
+	g_pcl = _mm_mul_ps(g_pcl, m2); // [-cr*sy][sr*sy][cy*cr][-sr*cy]
 
-	m3 = _mm_add_ps(m3, m1);
+	m3 = _mm_add_ps(m3, g_pcl);
 
 	if (forward)
 	{
@@ -284,20 +332,20 @@ void AngleMatrix(const vec_t *angles, float(*matrix)[4])
 	matrix[0][2] = cr * sp * cy + sr * sy;
 	matrix[1][2] = cr * sp * sy - sr * cy;
 	*/
-	__m128 m1;
+	__m128 g_pcl;
 	__m128 m2 = _mm_shuffle_ps(s, c, 0x00); // [sp][sp][cp][cp]
 	__m128 m3 = _mm_shuffle_ps(c, s, 0x55); // [cy][cy][sy][sy]
 
-	m1 = _mm_shuffle_ps(s, c, 0xAA);   // [sr][sr][cr][cr]
+	g_pcl = _mm_shuffle_ps(s, c, 0xAA);   // [sr][sr][cr][cr]
 	m2 = _mm_shuffle_ps(m2, m2, 0x00); // [sp][sp][sp][sp]
 	m3 = _mm_shuffle_ps(m3, m3, 0xD8); // [cy][sy][cy][sy]
 
-	m2 = _mm_mul_ps(m2, _mm_mul_ps(m1, m3)); // m1*m2*m3
+	m2 = _mm_mul_ps(m2, _mm_mul_ps(g_pcl, m3)); // g_pcl*m2*m3
 
-	m1 = _mm_shuffle_ps(m1, m1, 0x1B); // [cr][cr][sr][sr]
+	g_pcl = _mm_shuffle_ps(g_pcl, g_pcl, 0x1B); // [cr][cr][sr][sr]
 	m3 = _mm_shuffle_ps(m3, m3, 0xB1); // [sy][cy][sy][cy]
 	m3 = _mm_xor_ps(m3, _mm_load_ps((float *)&negmask_1001));
-	m3 = _mm_mul_ps(m3, m1);
+	m3 = _mm_mul_ps(m3, g_pcl);
 
 	m2 = _mm_add_ps(m2, m3);
 
@@ -307,24 +355,24 @@ void AngleMatrix(const vec_t *angles, float(*matrix)[4])
 	matrix[2][1] = sr * cp;
 	matrix[2][2] = cr * cp;
 	*/
-	m1 = _mm_shuffle_ps(s, c, 0x29); // [sy][sr][cr][cp]
+	g_pcl = _mm_shuffle_ps(s, c, 0x29); // [sy][sr][cr][cp]
 	c = _mm_shuffle_ps(c, c, 0x40);  // [cp][cp][cp][cy]
-	m1 = _mm_mul_ps(m1, c);
+	g_pcl = _mm_mul_ps(g_pcl, c);
 
 	// matrix[0]
 	m3 = _mm_shuffle_ps(m2, m2, 0xE1);
 	_mm_storeu_ps(&matrix[0][0], m3);
-	matrix[0][0] = _mm_cvtss_f32(_mm_shuffle_ps(m1, m1, 0x03));
+	matrix[0][0] = _mm_cvtss_f32(_mm_shuffle_ps(g_pcl, g_pcl, 0x03));
 	*(int *)&matrix[0][3] = 0;
 
 	// matrix[1]
 	m2 = _mm_shuffle_ps(m2, m2, 0xB4);
 	_mm_storeu_ps(&matrix[1][0], m2);
-	matrix[1][0] = _mm_cvtss_f32(m1);
+	matrix[1][0] = _mm_cvtss_f32(g_pcl);
 	*(int *)&matrix[1][3] = 0;
 
 	// matrix[2]
-	_mm_storeu_ps(&matrix[2][0], m1);
+	_mm_storeu_ps(&matrix[2][0], g_pcl);
 	matrix[2][0] = -_mm_cvtss_f32(s);
 	*(int *)&matrix[2][3] = 0;
 }

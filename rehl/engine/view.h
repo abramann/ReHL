@@ -24,5 +24,10 @@ void V_UpdatePalette();
 void V_RenderView();
 void V_SetRefParams(ref_params_t *pparams);
 void V_GetRefParams(ref_params_t *pparams);
+void V_CalcBlend();
 void FilterLightParams();
 void BuildGammaTable(float g);
+
+EXTERN_VAR(cvar_t, v_lambert);
+EXTERN_VAR(cvar_t, v_lightgamma);
+EXTERN_ARRAY(float, v_blend, [4]);

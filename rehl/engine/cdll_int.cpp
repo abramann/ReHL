@@ -1,33 +1,14 @@
 #include "precompiled.h"
 
+SVVAR(qboolean, fClientLoaded, 0xBCE4, false);
+VAR(cldll_func_t, cl_funcs, 0xBDEC);
+ARRAY(char, g_szfullClientName, [512], 0xB1D4);
+SVVAR(cldll_func_dst_t, g_cldstAddrs, 0x635B9, k_cldstNull);
+VVAR(CSysModule*, hClientDLL, 0x11F5, nullptr);
 
-cvar_t* cl_righthand;
 
-
-
-#ifdef SHARED_GAME_DATA
-qboolean* sp_fClientLoaded = ADDRESS_OF_DATA(qboolean*, 0xBCE4);
-qboolean& fClientLoaded = *sp_fClientLoaded;
-
-cldll_func_t* sp_cl_funcs = ADDRESS_OF_DATA(cldll_func_t*, 0xBDEC);
-cldll_func_t& cl_funcs = *sp_cl_funcs;
-
-char(*sp_g_szfullClientName)[512] = ADDRESS_OF_DATA(char(*)[512], 0xB1D4);
-char(&g_szfullClientName)[512] = *sp_g_szfullClientName;
-
-cldll_func_dst_t * sp_g_cldstAddrs = ADDRESS_OF_DATA(cldll_func_dst_t *, 0x635B9);
-cldll_func_dst_t & g_cldstAddrs = *sp_g_cldstAddrs;
-
-CSysModule** sp_hClientDLL = ADDRESS_OF_DATA(CSysModule**, 0x11F5);
-CSysModule*& hClientDLL = *sp_hClientDLL;
-#else
-static qboolean fClientLoaded = false;
-cldll_func_t sp_cl_funcs = { 0 };
-char g_szfullClientName[512];
-static cldll_func_dst_t g_cldstAddrs = k_cldstNull;
-CSysModule* hClientDLL = nullptr;
-#endif
 static BlobFootprint_t g_blobfootprintClient = {};
+cvar_t* cl_righthand;
 
 
 bool LoadSecureClient(const char* pszDllName);
@@ -325,18 +306,18 @@ void ClientDLL_UpdateClientData()
 
 		Q_memset(&cdat, 0, 32);
 
-		cdat.viewangles[0] = m1.viewangles[0];
-		cdat.viewangles[1] = m1.viewangles[1];
-		cdat.viewangles[2] = m1.viewangles[2];
+		cdat.viewangles[0] = g_pcl.viewangles[0];
+		cdat.viewangles[1] = g_pcl.viewangles[1];
+		cdat.viewangles[2] = g_pcl.viewangles[2];
 
-		entity = &cl_entities[m1.viewentity];
+		entity = &cl_entities[g_pcl.viewentity];
 
 		cdat.origin[0] = entity->origin[0];
 		cdat.origin[1] = entity->origin[1];
 		cdat.origin[2] = entity->origin[2];
 
 		cdat.fov = scr_fov_value;
-		cdat.iWeaponBits = m1.weapons;
+		cdat.iWeaponBits = g_pcl.weapons;
 
 		qboolean demorecording = g_pcls.demorecording;
 
@@ -347,12 +328,12 @@ void ClientDLL_UpdateClientData()
 		}
 		if (cl_funcs.pHudUpdateClientDataFunc)
 		{
-			float fill = m1.time;
+			float fill = g_pcl.time;
 			if (cl_funcs.pHudUpdateClientDataFunc(&cdat, fill))
 			{
-				m1.viewangles[0] = cdat.viewangles[0];
-				m1.viewangles[1] = cdat.viewangles[1];
-				m1.viewangles[2] = cdat.viewangles[2];
+				g_pcl.viewangles[0] = cdat.viewangles[0];
+				g_pcl.viewangles[1] = cdat.viewangles[1];
+				g_pcl.viewangles[2] = cdat.viewangles[2];
 
 				scr_fov_value = cdat.fov;
 			}
@@ -695,7 +676,7 @@ cl_entity_t* hudGetEntityByIndex(int idx)
 {
 	g_engdstAddrs.GetEntityByIndex(&idx);
 
-	if (idx >= 0 && idx < m1.max_edicts)
+	if (idx >= 0 && idx < g_pcl.max_edicts)
 		return &cl_entities[idx];
 
 	return nullptr;
