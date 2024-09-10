@@ -5,15 +5,17 @@
 #include "vgui2\IScheme.h"
 
 
-static vgui2::HFont _consoleFont = NULL;
-static vgui2::HFont _creditsFont = NULL;
+SVVAR(vgui2::HFont, _consoleFont, 0x6A03, nullptr);
+SVVAR(vgui2::HFont, _creditsFont, 0x6A1F, nullptr);
+SVVAR(Color, _col, 0x6DED, Color(255 COMMA 255 COMMA 255 COMMA 255));
 
 using namespace vgui2;
 
-static Color _col(255, 255, 255, 255);
 
 void VGUI2_Draw_Init()
 {
+	//return Call_Function<void>(0x69E0);
+
 	auto pSchemeManager = vgui2::scheme();
 	auto defScheme = pSchemeManager->GetDefaultScheme();
 	auto pScheme = pSchemeManager->GetIScheme(defScheme);

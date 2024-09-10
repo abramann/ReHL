@@ -94,7 +94,6 @@
 #include "FontManager.h"
 #include "gl_screen.h"
 #include "gl_vidnt.h"
-#include "gl_rmisc.h"
 #include "IThread.h"
 #include "snd_mix.h"
 #include "IMixerControls.h"
@@ -105,3 +104,5 @@
 #include "server_static.h"
 #include "host.h"
 #include "detail_texture.h"
+#include "render_api.h"
+#include "gl_main.h"
