@@ -78,8 +78,6 @@ void CDummyApp::platTick()
 // App for VGUI programs, globally accessed through vgui::App::getInstance().
 CDummyApp theApp;
 
-void AllowFog(int allowed);
-
 
 #ifdef SHARED_GAME_DATA
 IBaseUI** sp_staticUIFuncs = ADDRESS_OF_DATA(IBaseUI**, 0x70D7);

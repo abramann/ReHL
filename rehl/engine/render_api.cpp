@@ -1,6 +1,6 @@
 #include "precompiled.h"
 
-// TODO: Find good name for variables in R_AnimateLight, R_SetupGL
+// TODO: Find good name for variables in R_AnimateLight, R_SetupGL, ProjectPointOnPlane
 // TODO: Correct implement of R_SetupGL, R_AnimateLight, GL_BuildLightmaps(gl_main.cpp)
 
 struct cshift_t
@@ -8,6 +8,11 @@ struct cshift_t
 	int destcolor[3];
 	int percent;
 };
+
+const float PI = 3.141592653589793;
+const double FAR_PLANE = 16000.0;
+const cvar_t gl_envmapsize = { "gl_envmapsize", "256" };
+const cvar_t gl_flipmtrix = { "gl_flipmatrix", "0" };
 
 const int dottexture[8][8] =
 {
@@ -57,13 +62,15 @@ ARRAY(vec4_t, gProjectionMatrix, [4], 0x45C1F);
 ARRAY(vec4_t, r_world_matrix, [4], 0x45BAB);
 ARRAY(vec4_t, gWorldToScreen, [4], 0x45CB9);
 ARRAY(vec4_t, gScreenToWorld, [4], 0x45CB4);
-VVAR(cl_entity_t*, currententity, 0x4949C, nullptr;);
-VAR(vec3_t, modelorg, 0x4947A);
+VVAR(cl_entity_t*, currententity, 0x44297, nullptr;);
+VAR(vec3_t, modelorg, 0x49486);
 VAR(colorVec, gWaterColor, 0x4948B);
 ARRAY(glpoly_t*, lightmap_polys, [64], 0x494E0);
 ARRAY(float, skymins, [2][6], 0x505FC);
 ARRAY(float, skymaxs, [2][6], 0x5060E);
 VAR(int, gDecalSurfCount, 0x49577);
+VVAR(int, gRenderMode, 0x89257);
+ARRAY(mplane_t, frustum, [4], 0x452DC);
 
 // cvars
 VVAR(cvar_t, r_cachestudio, 0x46BD4, { "r_cachestudio" COMMA "1" COMMA 0 COMMA 0.0f COMMA nullptr });
@@ -105,10 +112,6 @@ VVAR(cvar_t, ati_npatch, 0x46BC0, { "ati_npatch" COMMA "1.0"  COMMA FCVAR_ARCHIV
 VVAR(cvar_t, gl_wireframe, 0x46BCA, { "gl_wireframe" COMMA "0" COMMA 40 });
 VVAR(cvar_t, gl_fog, 0x46D4A, { "gl_fog" COMMA "0" COMMA FCVAR_ARCHIVE });
 
-const cvar_t gl_envmapsize = { "gl_envmapsize", "256" };
-const cvar_t gl_flipmtrix = { "gl_flipmatrix", "0" };
-const double FAR_PLANE = 16000.0;
-
 void R_SetupFrame();
 void R_SetFrustum();
 void R_SetupGL();
@@ -117,7 +120,7 @@ void R_DrawEntitiesOnList();
 void R_Clear();
 void R_CheckVariables();
 void R_AnimateLight();
-void AllowFog(int allowed);
+void AllowFog(qboolean allowed);
 void GL_LoadFilterTexture(float r, float g, float b, float brightness);
 void RotatePointAroundVector(vec_t* dst, const vec_t* dir, const vec_t* point, float degrees);
 int SignbitsForPlane(mplane_t* out);
@@ -134,12 +137,10 @@ void R_DrawViewModel()
 
 void R_RenderScene()
 {
-	//return Call_Function<void>(0x46350);
-
 	if (CL_IsDevOverviewMode())
-		CL_SetDevOverView(&r_refdef);
+		CL_SetDevOverView(&r_refdef);	// Implement
 
-	R_SetupFrame();
+	R_SetupFrame();	// Correct R_AnimateLight & GL_BuildLightmaps
 	R_SetFrustum();
 	R_SetupGL();
 	R_MarkLeaves();
@@ -158,7 +159,35 @@ void R_RenderScene()
 		R_RenderFinalFog();
 
 	isFogEnabled = qglIsEnabled(GL_FOG);
+	if (r_refdef.onlyClientDraws == false)
+	{
+		if (CL_IsDevOverviewMode())
+		{
+			qglClearColor(0, 1, 0, 0);
+			glClear(GL_DEPTH_BUFFER_BIT6_QCOM);
+		}
+		R_DrawWorld();
+		S_ExtraUpdate();
+		R_DrawEntitiesOnList();
+	}
+	if (g_bUserFogOn)
+		R_RenderFinalFog();
 
+	AllowFog(false);
+	ClientDLL_DrawNormalTriangles();
+	AllowFog(true);
+
+	if (g_pcl.waterlevel > 2 && r_refdef.onlyClientDraws == false || !g_bUserFogOn)
+		qglDisable(GL_FOG);
+
+	R_DrawTEntitiesOnList(r_refdef.onlyClientDraws);
+	S_ExtraUpdate();
+	if (r_refdef.onlyClientDraws == false)
+	{
+		R_RenderDlights();
+		GL_DisableMultitexture();
+		R_DrawParticles();
+	}
 }
 
 void R_PolyBlend()
@@ -379,7 +408,7 @@ void R_RenderView()
 		if (r_refdef.onlyClientDraws == false)
 			R_PreDrawViewModel();	// Implement
 
-		R_RenderScene(); // Implement
+		R_RenderScene(); 
 		if (r_refdef.onlyClientDraws == false)
 		{
 			R_DrawViewModel(); // Implement
@@ -486,7 +515,6 @@ void R_InitSky()
 
 void R_MarkLeaves()
 {
-	return Call_Function<void>(0x495C0);
 	if (mirror)
 		return;
 	if (r_oldviewleaf == r_viewleaf && r_novis.value == 0) 
@@ -644,7 +672,8 @@ void R_SetupFrame()
 
 void R_SetFrustum()
 {
-	mplane_t frustum[4];
+	 //Call_Function<void>(0x45640);
+	 //return;
 	float fov = scr_fov_value;
 	CalcFov(&scr_fov_value, glwidth, glheight);
 	float xa = -(90 - fov * 0.5f);
@@ -657,9 +686,11 @@ void R_SetFrustum()
 
 	for (int i = 0; i < ARRAYSIZE(frustum); i++)
 	{
-		frustum[i].normal[3] = _DotProduct(frustum[i].normal, r_origin);
-		frustum->normal[3] = SignbitsForPlane(&frustum[i]);
+		frustum[i].dist = _DotProduct(frustum[i].normal, r_origin);
+		frustum[i].signbits = SignbitsForPlane(&frustum[i]);
+		frustum[i].type = 5;
 	}
+	ZeroMemory(frustum, sizeof(frustum));
 }
 
 void R_SetupGL()
@@ -763,7 +794,6 @@ void R_SetupGL()
 			vec4_t& projmat = gProjectionMatrix[0];
 			for (int j = 0; j < 4; j++)
 			{
-				world2scren[j] = 0;
 				for (int k = 0; k < 4; k++)
 				{
 					world2scren[j] = r_worldmat[k] * projmat[j];
@@ -773,9 +803,10 @@ void R_SetupGL()
 	}
 	else
 	{
-		// 
+		// Never executed code
+		NOT_IMPLEMENTED;
 	}
-	InvertMatrix((float*)&gWorldToScreen, (float*)&gScreenToWorld);
+	InvertMatrix((float*)&gWorldToScreen, (float*)&gScreenToWorld);  // Implement
 }
 
 void R_ClearSkyBox()
@@ -789,18 +820,49 @@ void R_ClearSkyBox()
 
 void R_RecursiveWorldNode(mnode_t* node)
 {
+	return Call_Function<void, mnode_t*>(0x49220, node);
+
+	NOT_IMPLEMENTED;
 }
 
 void R_BlendLightmaps()
 {
+	return Call_Function<void>(0x48500);
 }
 
 void DrawTextureChains()
 {
+	return Call_Function<void>(0x48AB0);
 }
 
 void R_DrawDecals(qboolean bMultitexture)
 {
+	return Call_Function<void, qboolean>(0x4B890, bMultitexture);
+}
+
+void R_DrawTEntitiesOnList(qboolean clientOnly)
+{
+	return Call_Function<void, qboolean>(0x88AF0, clientOnly);
+}
+
+void R_RenderDlights()
+{
+	return Call_Function<void>(0x430F0);
+}
+
+void GL_DisableMultitexture()
+{
+	return Call_Function<void>(0x478A0);
+}
+
+void R_DrawParticles()
+{
+	return Call_Function<void>(0x7CB20);
+}
+
+void R_BuildLightMap(msurface_t* psurf, uchar* dest, int stride)
+{
+	return Call_Function<void, msurface_t*, uchar*, int>(0x47390, psurf, dest, stride);
 }
 
 void R_DrawWorld()
@@ -810,7 +872,6 @@ void R_DrawWorld()
 	cl_entity_t ent;
 	Q_memset(&ent, 0, sizeof(cl_entity_t));
 	currententity = &ent;
-
 	ent.model = g_pcl.worldmodel;
 
 	VectorCopy(r_refdef.vieworg, modelorg);
@@ -846,8 +907,8 @@ void R_DrawWorld()
 	S_ExtraUpdate();
 	if (!CL_IsDevOverviewMode())
 	{
-		R_DrawDecals(0);
-		R_BlendLightmaps();
+		R_DrawDecals(false);	// Implement
+		R_BlendLightmaps();	// Implement
 	}
 }
 
@@ -882,21 +943,22 @@ void R_CheckVariables()
 
 void R_AnimateLight()
 {	
+	Call_Function<void>(0x42eb0);
 	const int v1 = 10 * g_pcl.time;
 	for (int i = 0; i < ARRAYSIZE(d_lightstylevalue); i++)
 	{
 		int len = cl_lightstyle[i].length;
 		if (len > 0)
 		{
-			d_lightstylevalue[i] = 22 * (cl_lightstyle[i].map[v1 % len]) - 97;
-			d_lightstylevalue[i] = 22 * (cl_lightstyle[0].map[v1 % len] + i * 68) - 97;
+			//d_lightstylevalue[i] = 22 * (cl_lightstyle[i].map[v1 % len]) - 97;
+			//d_lightstylevalue[i] = 22 * (cl_lightstyle[i].map[v1 % len + i * 68]) - 97;
+			d_lightstylevalue[i] = 22 * (cl_lightstyle[i].map[v1 % len] - 97);
 		}
 		else
 		{
 			d_lightstylevalue[i] = 256;
 		}
 	}
-	Call_Function<void>(0x42eb0);
 }
 
 void GL_LoadFilterTexture(float r, float g, float b, float brightness)
@@ -932,7 +994,7 @@ void GL_LoadFilterTexture(float r, float g, float b, float brightness)
 	free(texbuf);
 }
 
-void AllowFog(int allowed)
+void AllowFog(qboolean allowed)
 {
 	if (allowed)
 	{
@@ -960,18 +1022,87 @@ float CalcFov(float* fov_x, float width, float height)
 	return RAD2DEG(half_fov_y) * 2;
 }
 
+void R_ConcatRotations(vec3_t* in1, vec3_t* in2, vec3_t* out)
+{
+	for (int i = 0; i < 3; i++)
+	{
+		for (int j = 0; j < 3; j++)
+		{
+			vec3_t v2 = { in2[0][j], in2[1][j], in2[2][j] };
+			out[i][j] = _DotProduct(in1[i], v2);
+		}
+	}
+}
+
+void ProjectPointOnPlane(vec_t* dst, const vec_t* p, const vec_t* normal)
+{
+	float v5 = 1.0f / _DotProduct(normal, normal);
+	float v7 = _DotProduct(normal, p) * v5;
+	for (int i = 0; i < 3; i++)
+		dst[i] = p[i] - (normal[i] * v5 * v7);
+}
+
+void PerpendicularVector(vec_t* dst, const vec_t* src)
+{
+	// Missing garbage code here
+
+	vec3_t tempvec = { 0 };
+	ProjectPointOnPlane(dst, tempvec, src);
+	VectorNormalize(dst);
+}
+
 void RotatePointAroundVector(vec_t* dst, const vec_t* dir, const vec_t* point, float degrees)
 {
-	return Call_Function<void, const vec_t*, const vec_t*, const vec_t*, float>(0x43A10, dst, dir, point, degrees);
-	NOT_IMPLEMENTED;
+	 return Call_Function<void, const vec_t*, const vec_t*, const vec_t*, float>(0x43A10, dst, dir, point, degrees);
+	vec3_t m[3];
+	float im[3][3];
+	float zrot[3][3];
+	float tmpmat[3][3];
+	float rot[3][3];
+	vec3_t vr;
+	vec3_t vup;
+	vec3_t vf;
+	vec_t p[9] = { 0 };
+	PerpendicularVector(vf, dir);
+	CrossProduct(vr, vf, vup);
+	for (int i = 0; i < 3; i++)
+	{
+		m[i][0] = vr[i];
+		m[i][1] = vup[i];
+		m[i][2] = vf[i];
+	}
+	Q_memcpy(im, m, sizeof(vec3_t[3]));
+	for (int i = 0; i < 3; i++)
+	{
+		for (int j = 0; j < 3; j++)
+		{
+			if (j == i)
+				continue;
+			im[i][j] = m[j][i];
+		}
+	}
+
+	Q_memset(zrot, 0, sizeof(zrot));
+	zrot[2][2] = 1;
+	float angle = degrees * PI / 180;
+	float s = sin(angle), c = cos(angle);
+	zrot[0][0] = zrot[1][1] = c;
+	zrot[0][1] = s;
+	zrot[1][0] = -s;
+
+	R_ConcatRotations(m, zrot, tmpmat);
+	R_ConcatRotations(tmpmat, im, rot);
+	for (int i = 0; i < 3; i++)
+		dst[i] = _DotProduct(rot[i], point);
 }
 
 int SignbitsForPlane(mplane_t* out)
 {
+	int sign = 0;
 	for (int i = 0; i < 3; ++i)
 	{
 		if (out->normal[i] < 0.0)
-			return 1 << i;
+			sign|= 1 << i;
 	}
-	return 0;
+	return sign;
 }

@@ -87,7 +87,7 @@ void EXT_FUNC Mod_LoadStudioModel_internal(model_t * mod, void * buffer)
 
 void Mod_LoadStudioModel(model_t * mod, void * buffer)
 {
-	//return Call_Function<void, model_t*, void*>(0x61AD0, mod, buffer);
+	return Call_Function<void, model_t*, void*>(0x61AD0, mod, buffer);
 	uint8 *poutdata;
 	uint8 *pindata;
 	mstudiotexture_t *ptexture;

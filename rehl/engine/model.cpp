@@ -45,15 +45,9 @@ VAR(char *, wadpath, 0x40AC5);
 int tested;
 int ad_enabled;
 cachewad_t ad_wad;
-
+int r_pixbytes = 1;
 
 // values for model_t's needload
-enum
-{
-	NL_PRESENT = 0,
-	NL_NEEDS_LOADED,
-	NL_UNREFERENCED
-};
 
 void SW_Mod_Init(void)
 {
@@ -270,7 +264,6 @@ qboolean IsCZPlayerModel(uint32 crc, const char  * filename)
 
 model_t *Mod_LoadModel(model_t *mod, qboolean crash, qboolean trackCRC)
 {
-	NOT_IMPLEMENTED;
 	uchar *buf;
 	char tmpName[MAX_PATH];
 	int length;

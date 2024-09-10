@@ -4,7 +4,6 @@ void GL_CreateSurfaceLightmap(msurface_t *surf);
 
 void BuildSurfaceDisplayList(msurface_t *fa);
 
-// TODO: 'allocated' find better place 
 ARRAY(int, allocated, [64][128], 0x49BCF);
 
 ARRAY(int, lightmap_textures, [64], 0x49BD9);
@@ -17,15 +16,15 @@ VAR(int, lightmap_bytes, 0x49C0E);
 
 VAR(model_t*, currentmodel, 0x49C50);
 
-ARRAY(int, lightmap_modified, [64], 0x49CE9);
+ARRAY(qboolean, lightmap_modified, [64], 0x48677);
 
 ARRAY(uchar, lightmaps, [4194304], 0x49D47);
 
-mvertex_t *r_pcurrentvertbase;
+VVAR(mvertex_t*, r_pcurrentvertbase, 0x49C5B, nullptr);
 
 void GL_BuildLightmaps()
 {
-	return Call_Function<void>(0x49BC0);
+	//return Call_Function<void>(0x49BC0);
 
 	Q_memset(allocated, 0, sizeof(allocated));
 	r_framecount = 1;
@@ -35,11 +34,10 @@ void GL_BuildLightmaps()
 			lightmap_textures[i] = GL_GenTexture();
 	}
 
-	gl_lightmap_format = GL_RGBA;
-	lightmap_used = GL_RGBA;
+	gl_lightmap_format = lightmap_used = GL_RGBA;
 	lightmap_bytes = 4;
 
-	for (int i = 0; i < MAX_MODELS; i++)
+	for (int i = 1; i < MAX_MODELS; i++)
 	{
 		model_t* model = g_pcl.model_precache[i];
 		if (model == nullptr)
@@ -48,45 +46,141 @@ void GL_BuildLightmaps()
 		if (*model->name == '*' || model->numsurfaces <= 0)
 			continue;
 
-		model = CL_GetModelByIndex(i + 1);	// Implement
-		currentmodel = model;
-		mvertex_t* vertexes = model->vertexes;
-
+		currentmodel = model = CL_GetModelByIndex(i);
+		r_pcurrentvertbase = model->vertexes;
 		int numsurfaces = model->numsurfaces;
 		if (numsurfaces <= 0)
 			continue;
 
 		for (int j = 0; j < numsurfaces; j++)
 		{
-			GL_CreateSurfaceLightmap(&model->surfaces[j]);	// Implement
-			if ((model->surfaces[i].flags & 0x10) == 0)
-				BuildSurfaceDisplayList(model->surfaces + j);	// Implement
+			msurface_t* surface = &model->surfaces[j];
+			GL_CreateSurfaceLightmap(surface);	// Implement
+			if ((surface->flags & 0x10) == 0)
+				BuildSurfaceDisplayList(surface);	// Implement
 		}
-		if (!gl_texsort)
-			GL_SelectTexture(TEXTURE1_SGIS);
-		for (int j = 0; j < 64; j++)
-		{
-			if (!allocated[j][0])
-				break;
+	}
+	if (!gl_texsort)
+		GL_SelectTexture(TEXTURE1_SGIS);
+	for (int i = 0; i < 64; i++)
+	{
+		if (!allocated[i][0])
+			break;
 
-			lightmap_modified[i] = false;
-			GL_Bind(lightmap_textures[j]);
-			qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-			qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-			qglPixelStorei(GL_UNPACK_ALIGNMENT, 4);
-			qglTexImage2D(GL_TEXTURE_2D, 0, lightmap_used, 128, 128, 0, gl_lightmap_format, GL_UNSIGNED_BYTE, &lightmaps[lightmap_bytes * (0x4000*i)]);
-		}
+		lightmap_modified[i] = false;
+		GL_Bind(lightmap_textures[i]);
+		qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		qglPixelStorei(GL_UNPACK_ALIGNMENT, 4);
+		qglTexImage2D(GL_TEXTURE_2D, 0, lightmap_used, 128, 128, 0, gl_lightmap_format, GL_UNSIGNED_BYTE, &lightmaps[lightmap_bytes * (16384 * i)]);
 	}
 }
 
 void GL_CreateSurfaceLightmap(msurface_t *surf)
 {
-	return Call_Function<void, msurface_t*>(0x49B50, surf);
+	//return Call_Function<void, msurface_t*>(0x49B50, surf);
+	int flags = surf->flags;
+	if ((flags & 0x14) == 0 && ((flags & 0x20) == 0 || (surf->texinfo->flags & 1) == 0))
+	{
+		int texnum = surf->lightmaptexturenum = AllocBlock((surf->extents[0] / 16) + 1, (surf->extents[1] / 16) + 1, &surf->light_s, &surf->light_t);
+		int bytes = lightmap_bytes;
+		R_BuildLightMap(surf, &lightmaps[bytes * (surf->light_s + ((surf->light_t + (texnum << 7)) << 7))], bytes << 7);
+	}
 }
 
 void BuildSurfaceDisplayList(msurface_t *fa)
 {
 	return Call_Function<void, msurface_t*>(0x497B0, fa);
+	
+	/*
+	int j; // [esp+3Ch] [ebp-60h]
+	int ja; // [esp+3Ch] [ebp-60h]
+	medge_t* pedges;
+	glpoly_t* poly;
+
+	int numedges = fa->numedges;
+
+	pedges = currentmodel->edges;
+
+	poly = (glpoly_t*)Hunk_Alloc(28 * numedges + 16);
+
+	poly->next = fa->polys;
+
+	poly->flags = fa->flags;
+
+	fa->polys = poly;
+
+	poly->numverts = numedges;
+
+	if (numedges <= 0)
+	{
+		for (int i = 0; i < numedges; i++)
+		{
+			
+			int v;
+			int surfedge = currentmodel->surfedges[i + fa->firstedge];
+			if (surfedge > 0)
+				v = pedges[-surfedge].v[1];
+			else
+				v = pedges[-surfedge].v[0];
+
+			mtexinfo_t* texinfo = fa->texinfo;
+			texture_t* tex = texinfo->texture;
+			mvertex_t* vertex = &r_pcurrentvertbase[v];
+			vec3_t v2;
+			VectorCopy(vertex->position, v2);
+			float v3 = _DotProduct(texinfo->vecs[0], v2) + texinfo->vecs[0][3];
+			float v4 = _DotProduct(texinfo->vecs[1], v2);
+			float v5 = v3 / tex->width;
+			
+		}
+	}
+	if (gl_keeptjunctions.value == 0.0 && fa->flags >= 0 && numedges > 0)
+	{
+		
+	}
+	*/
+}
+
+int AllocBlock(int w, int h, int* x, int* y)
+{
+	//return Call_Function<int, int, int, int*, int*>(0x496d0, w, h, x, y);
+	int	i, j;
+	int	best, best2;
+	int BLOCK_SIZE = 128;
+	best = BLOCK_SIZE;
+
+	for (i = 0; i < BLOCK_SIZE - w; i++)
+	{
+		best2 = 0;
+
+		for (j = 0; j < w; j++)
+		{
+			if (allocated[i][j] >= best)
+				break;
+			if (allocated[i][j] > best2)
+				best2 = allocated[i][j];
+		}
+
+		if (j == w)
+		{
+			// this is a valid spot
+			*x = i;
+			*y = best = best2;
+		}
+	}
+
+	if (best + h > BLOCK_SIZE)
+		return false;
+
+	//if (w > 0)
+	//	memset(&allocated[best][*x], best + h, w);
+
+	for (i = 0; i < w; i++)
+	{
+		allocated[*x][i] = best + h;
+	}
+	return *x;
 }
 
 void GL_Dump_f()

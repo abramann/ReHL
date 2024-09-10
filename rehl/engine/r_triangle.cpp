@@ -1,5 +1,12 @@
 #include "precompiled.h"
 
+VVAR(qboolean, gD3DMode, 0x4DA37, false);
+VVAR(GLfloat, flFogDensity, 0x88E85, 0);
+ARRAY(float, flFinalFogColor, [4], 0x88EA6);
+VVAR(GLfloat, flFogEnd, 0x88EC9, 0);
+VVAR(GLfloat, flFogStart, 0x88EB7, 0);
+
+
 triangleapi_t tri =
 {
 	TRI_API_VERSION,
@@ -26,7 +33,35 @@ triangleapi_t tri =
 
 void tri_GL_RenderMode(int mode)
 {
-	NOT_IMPLEMENTED;
+	switch (mode)
+	{
+	case kRenderNormal:
+		qglDisable(GL_BLEND);
+		qglDepthMask(GL_TRUE);
+		qglShadeModel(GL_FLAT);
+	case kRenderTransColor:
+	case kRenderTransTexture:
+		qglBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		qglEnable(GL_BLEND);
+		qglShadeModel(GL_SMOOTH);
+		break;
+	case kRenderTransAlpha:
+		qglEnable(GL_BLEND);
+		qglTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, 8448.0);
+		qglBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		qglShadeModel(GL_SMOOTH);
+		qglDepthMask(GL_FALSE);
+		break;
+	case kRenderTransAdd:
+		qglBlendFunc(1, 1);
+		qglEnable(GL_BLEND);
+		qglDepthMask(GL_FALSE);
+		qglShadeModel(GL_SMOOTH);
+		break;
+	default:
+		break;
+	}
+	gRenderMode = mode;
 }
 
 void tri_GL_Begin(int primitiveCode)
@@ -93,7 +128,16 @@ void R_RenderFog(float* flFogColor, float flStart, float flEnd, int bOn)
 
 void R_RenderFinalFog()
 {
-	NOT_IMPLEMENTED;
+	if (gD3DMode != 1)
+	{
+		glEnable(GL_FOG);
+		qglFogi(GL_FOG_MODE, GL_EXP2);
+		qglFogf(GL_FOG_DENSITY, flFogDensity);
+		qglHint(GL_FOG_HINT, GL_NICEST);
+		qglFogfv(GL_FOG_COLOR, flFinalFogColor);
+		qglFogf(GL_FOG_START, flFogStart);
+		qglFogf(GL_FOG_END, flFogEnd);
+	}
 }
 
 void tri_WorldTransform(float* screen, float* world)

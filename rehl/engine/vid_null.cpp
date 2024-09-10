@@ -28,7 +28,7 @@
 
 #include "precompiled.h"
 
-int r_pixbytes = 1;
+extern int r_pixbytes;
 
 void D_FlushCaches() 
 { 

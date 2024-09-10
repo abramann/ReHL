@@ -1092,11 +1092,8 @@ dlight_t* CL_AllocElight(int key) // - TODO: improve - ScriptedSnark
 
 model_t* CL_GetModelByIndex(int index)
 {
-	return Call_Function<model_t*, int>(0x1A3E0, index);
-
-	NOT_IMPLEMENTED;
+	//return Call_Function<model_t*, int>(0x1A3E0, index);
 	
-	/*
 	if (index >= MAX_MODELS)
 		return nullptr;
 
@@ -1121,8 +1118,6 @@ model_t* CL_GetModelByIndex(int index)
 	}
 
 	return model;
-	*/
-	return nullptr;
 }
 
 void CL_GetPlayerHulls()

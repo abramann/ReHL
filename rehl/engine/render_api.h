@@ -1,16 +1,7 @@
 #pragma once
 #include "cl_entity.h"
+#include "model.h"
 
-typedef struct glpoly_s
-{
-	glpoly_s* next;
-	glpoly_s* chain;
-	int numverts;
-	int flags;
-	float verts[4][7];
-} glpoly_t;
-
-extern int r_pixbytes;
 
 EXTERN_VAR(qboolean, gl_texsort);
 EXTERN_VAR(cl_entity_t , r_worldentity);
@@ -18,6 +9,7 @@ EXTERN_VAR(int , c_brush_polys);
 EXTERN_VAR(int , c_alias_polys);
 EXTERN_VAR(qboolean , mirror);
 EXTERN_VAR(int, r_framecount);
+EXTERN_VAR(int, gRenderMode);
 
 EXTERN_VAR(cvar_t, ati_npatch);
 EXTERN_VAR(cvar_t, gl_wireframe);
@@ -113,6 +105,18 @@ void DrawTextureChains();
 
 void R_DrawDecals(qboolean bMultitexture);
 
-void AllowFog(int allowed);
+void R_DrawTEntitiesOnList(qboolean clientOnly);
+
+void R_RenderDlights();
+
+void GL_DisableMultitexture();
+
+void R_DrawParticles();
+
+void R_BuildLightMap(msurface_t* psurf, uchar* dest, int stride);
+
+void AllowFog(qboolean allowed);
 
 float CalcFov(float* fov_x, float width, float height);
+
+void RotatePointAroundVector(vec_t* dst, const vec_t* dir, const vec_t* point, float degrees);

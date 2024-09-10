@@ -18,6 +18,13 @@ struct startup_timing_t
 	float time;
 };
 
+enum
+{
+	NL_PRESENT = 0,
+	NL_NEEDS_LOADED,
+	NL_UNREFERENCED // this model can be freed after sequence precaching is done
+};
+
 const int MAX_STARTUP_TIMINGS = 32;
 
 EXTERN_VAR(qboolean, g_bCS_CZ_Flags_Initialized);	

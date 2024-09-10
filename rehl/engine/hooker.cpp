@@ -59,24 +59,18 @@ void SetupHooks()
 	DirectHook(0x6B2F0, PM_Init);
 
 	// PM_Init functions
-	//DirectHook(0x6BBD0, _PM_TestPlayerPosition);
 	DirectHook(0x6BF00, _PM_PlayerTrace);	// *
-	//DirectHook(0x6C830, PM_RecursiveHullCheck);
-	//DirectHook(0x6BAA0, PM_HullForStudioModel);
 	DirectHook(0x810C0, R_StudioHull);	// *
-	//DirectHook(0x6B290, PM_StuckTouch);
 	DirectHook(0x6B970, PM_PointContents);	// *
 	DirectHook(0x6B8B0, PM_LinkContents);	// *
-	//DirectHook(0x6BA70, PM_TruePointContents);
 	DirectHook(0x6B810, PM_HullPointContents);	// *
 	DirectHook(0x6C680, PM_TraceLine);	// *
-	//DirectHook(0x6B650, PM_TraceModel);
 	DirectHook(0xC90F8, SV_HullPointContents); // *
 	DirectHook(0xC6A90, SV_RecursiveHullCheck);	// *
 	DirectHook(0x5DFD0, Info_ValueForKey);	// *
 	DirectHook(0x134A0, CL_Particle);	// *
 	DirectHook(0x58190, SV_GetPlayerHulls);
-	
+
 	//Host_Init
 	DirectHook(0xB180, ClientDLL_Init);
 	DirectHook(0x1A830, HookServerMsg); // *
@@ -98,11 +92,11 @@ void SetupHooks()
 
 	//DirectHook(0x46440, R_RenderView);	// *
 	//R_RenderView functions
-	//DirectHook(0x49BC0, GL_BuildLightmaps); // Correct implement
+	DirectHook(0x49BC0, GL_BuildLightmaps); // Correct implement
+	DirectHook(0x1A3E0, CL_GetModelByIndex);
 	DirectHook(0x46350, R_RenderScene);
-	DirectHook(0x45640, R_SetupFrame);	// Correct R_AnimateLight
-	DirectHook(0x45270, R_SetFrustum);
-
+	DirectHook(0x89220, tri_GL_RenderMode);
+	//DirectHook(0x496d0, AllocBlock);
 	// Mod
 	//DirectHook(0x40030, Mod_LoadModel);
 	//DirectHook(0x3FD50, Mod_PointInLeaf);

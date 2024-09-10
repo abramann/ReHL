@@ -7,3 +7,4 @@ EXTERN_VAR(GLenum, gl_lightmap_format);
 
 void GL_BuildLightmaps();
 
+int AllocBlock(int w, int h, int* x, int* y);

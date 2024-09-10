@@ -7,10 +7,10 @@
 
 extern triangleapi_t tri;
 
-extern GLfloat flFogDensity;
-extern float flFinalFogColor[4];
-extern GLfloat flFogEnd;
-extern GLfloat flFogStart;
+EXTERN_VAR(GLfloat, flFogDensity);
+EXTERN_ARRAY(float, flFinalFogColor, [4]);
+EXTERN_VAR(GLfloat, flFogEnd);
+EXTERN_VAR(GLfloat, flFogStart);
 
 void tri_GL_RenderMode(int mode);
 
