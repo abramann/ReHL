@@ -4,6 +4,8 @@ void GL_CreateSurfaceLightmap(msurface_t *surf);
 
 void BuildSurfaceDisplayList(msurface_t *fa);
 
+const int BLOCK_SIZE = 128;
+
 ARRAY(int, allocated, [64][128], 0x49BCF);
 
 ARRAY(int, lightmap_textures, [64], 0x49BD9);
@@ -84,7 +86,9 @@ void GL_CreateSurfaceLightmap(msurface_t *surf)
 	{
 		int texnum = surf->lightmaptexturenum = AllocBlock((surf->extents[0] / 16) + 1, (surf->extents[1] / 16) + 1, &surf->light_s, &surf->light_t);
 		int bytes = lightmap_bytes;
-		R_BuildLightMap(surf, &lightmaps[bytes * (surf->light_s + ((surf->light_t + (texnum << 7)) << 7))], bytes << 7);
+		R_BuildLightMap(surf, &lightmaps[bytes * (surf->light_s + ((surf->light_t + (texnum *128)) * 128))], bytes * 128);
+
+		//R_BuildLightMap(surf, &lightmaps[bytes * (surf->light_s + ((surf->light_t + (texnum << 7)) << 7))], bytes << 7);
 	}
 }
 
@@ -143,44 +147,44 @@ void BuildSurfaceDisplayList(msurface_t *fa)
 }
 
 int AllocBlock(int w, int h, int* x, int* y)
-{
-	//return Call_Function<int, int, int, int*, int*>(0x496d0, w, h, x, y);
-	int	i, j;
-	int	best, best2;
-	int BLOCK_SIZE = 128;
-	best = BLOCK_SIZE;
-
-	for (i = 0; i < BLOCK_SIZE - w; i++)
+{	
+	int best;
+	int texnum;
+	int best2 = 0;
+	texnum = 0;
+	for (int k = 0; ; k += 128)
 	{
-		best2 = 0;
-
-		for (j = 0; j < w; j++)
+		best2 = BLOCK_SIZE;
+		for (int i = 0; i < BLOCK_SIZE - w; i++)
 		{
-			if (allocated[i][j] >= best)
-				break;
-			if (allocated[i][j] > best2)
-				best2 = allocated[i][j];
+			best = 0;
+			int j;
+			for (j = 0; j < w; j++)
+			{
+				int* v = (int*)allocated + i + k + j;
+				if (*v >= best2)
+					break;
+				if (*v > best)
+					best = *v;
+			}
+			if (j == w)
+			{
+				best2 = best;
+				*x = i;
+				*y = best;
+			}
 		}
-
-		if (j == w)
-		{
-			// this is a valid spot
-			*x = i;
-			*y = best = best2;
-		}
+		if (best2 + h <= BLOCK_SIZE)
+			break;
+		++texnum;
+		if (k + BLOCK_SIZE >= 0x2000)
+			Sys_Error("%s: Full", __func__);
 	}
 
-	if (best + h > BLOCK_SIZE)
-		return false;
+	for (int i = 0; i < w; i++)
+		allocated[texnum][i + *x] = best2 + h;
 
-	//if (w > 0)
-	//	memset(&allocated[best][*x], best + h, w);
-
-	for (i = 0; i < w; i++)
-	{
-		allocated[*x][i] = best + h;
-	}
-	return *x;
+	return texnum;
 }
 
 void GL_Dump_f()
