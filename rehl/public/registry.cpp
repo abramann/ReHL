@@ -35,7 +35,8 @@ private:
 };
 
 #ifdef SHARED_GAME_DATA
-IRegistry *registry = ADDRESS_OF_DATAPTR(IRegistry*, 0xAC6D4);
+IRegistry **sp_registry = ADDRESS_OF_DATA(IRegistry**, 0x3AA16);
+IRegistry*& registry = *sp_registry;
 #else
 static CRegistry g_Registry;
 IRegistry *registry = (IRegistry *)&g_Registry;

@@ -17,6 +17,32 @@ void* GetInterface(const char* interface, CreateInterfaceFn * factoryList, int n
 
 namespace vgui2
 {
+#ifdef SHARED_GAME_DATA
+	IInput* * sp_g_pInputInterface = ADDRESS_OF_DATA(IInput* *, 0xDB3E1);
+	IInput* & g_pInputInterface = *sp_g_pInputInterface;
+
+	ISystem* * sp_g_pSystemInterface = ADDRESS_OF_DATA(ISystem* *, 0xDB3D0);
+	ISystem* & g_pSystemInterface = *sp_g_pSystemInterface;
+
+	IPanel* * sp_g_pPanelInterface = ADDRESS_OF_DATA(IPanel* *, 0xDB396);
+	IPanel* & g_pPanelInterface = *sp_g_pPanelInterface;
+
+	IVGui* * sp_g_pVGuiInterface = ADDRESS_OF_DATA(IVGui* *, 0xDB389);
+	IVGui* & g_pVGuiInterface = *sp_g_pVGuiInterface;
+
+	ILocalize* * sp_g_pLocalizeInterface = ADDRESS_OF_DATA(ILocalize* *, 0xDB3F2);
+	ILocalize* & g_pLocalizeInterface = *sp_g_pLocalizeInterface;
+
+	ISchemeManager* * sp_g_pSchemeInterface = ADDRESS_OF_DATA(ISchemeManager* *, 0xDB2B1);
+	ISchemeManager* & g_pSchemeInterface = *sp_g_pSchemeInterface;
+
+	IFileSystem** sp_g_pFileSystemInterface = ADDRESS_OF_DATA(IFileSystem* *, 0xDB3FF);
+	IFileSystem* & g_pFileSystemInterface = *sp_g_pFileSystemInterface;
+	
+	ISurface* * sp_g_pSurfaceInterface = ADDRESS_OF_DATA(ISurface* *, 0xDB3AC);
+	ISurface* & g_pSurfaceInterface = *sp_g_pSurfaceInterface;
+
+#else
 	IInput* g_pInputInterface;
 	ISystem* g_pSystemInterface;
 	IPanel* g_pPanelInterface;
@@ -24,8 +50,8 @@ namespace vgui2
 	ILocalize* g_pLocalizeInterface;
 	ISchemeManager* g_pSchemeInterface;
 	class IFileSystem* g_pFileSystemInterface;
-	ISurface* g_pSurfaceInterface;
-
+	ISurface* g_pSurfaceInterface; #endif
+#endif
 	char g_szControlsModuleName[256];
 
 	IPanel *ipanel()

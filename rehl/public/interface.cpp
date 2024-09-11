@@ -56,7 +56,7 @@ InterfaceReg::InterfaceReg(InstantiateInterfaceFn fn, const char *pName) : m_pNa
 EXPORT_FUNCTION IBaseInterface *CreateInterface(const char *pName, int *pReturnCode)
 {
 	//return Call_Function<IBaseInterface*, const char*, int*>(0x5E8C0, pName, pReturnCode);
-
+	
 	InterfaceReg *pCur;
 	for (pCur = InterfaceReg::s_pInterfaceRegs; pCur; pCur = pCur->m_pNext)
 	{
@@ -205,7 +205,11 @@ CreateInterfaceFn Sys_GetFactory(CSysModule *pModule)
 // Output : CreateInterfaceFn
 CreateInterfaceFn Sys_GetFactoryThis()
 {
+#ifdef SHARED_GAME_DATA
+	return Call_Function<CreateInterfaceFn>(0x5E9F0);
+#else
 	return CreateInterface;
+#endif
 }
 
 // Purpose: returns the instance of the named module

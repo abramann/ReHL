@@ -141,17 +141,22 @@ protected:
 
 	CUtlMemory<T> m_Memory;
 	int m_Size;
-
+#ifdef REHLDS
 	// For easier access to the elements through the debugger
 	// it's in release builds so this can be used in libraries correctly
 	T *m_pElements;
+#endif
 };
 
 // For easier access to the elements through the debugger
 template <class T>
 inline void CUtlVector<T>::ResetDbgInfo()
 {
+	return;
+	CHECK_REQUIRED;
+#ifdef REHLDS
 	m_pElements = m_Memory.Base();
+#endif
 }
 
 // constructor, destructor

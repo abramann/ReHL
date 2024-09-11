@@ -29,7 +29,10 @@
 
 typedef struct rect_s
 {
-	int left, right, top, bottom;
+	int left;
+	int right;
+	int top;
+	int bottom;
 } wrect_t, rect_t;
 
 typedef struct vmode_s

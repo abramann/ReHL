@@ -60,6 +60,15 @@ typedef struct mvertex_s
 	vec3_t			position;
 } mvertex_t;
 
+typedef struct glpoly_s
+{
+	glpoly_s* next;
+	glpoly_s* chain;
+	int numverts;
+	int flags;
+	float verts[4][7];
+} glpoly_t;
+
 typedef struct mplane_s
 {
 	vec3_t			normal;			// surface normal
@@ -129,6 +138,47 @@ struct decal_s
 
 struct msurface_s
 {
+#ifndef REHLDS
+	int visframe;
+
+	mplane_t* plane;
+
+	int flags;
+
+	int firstedge;
+
+	int numedges;
+
+	short texturemins[2];
+
+	short extents[2];
+
+	int light_s;
+
+	int light_t;
+
+	glpoly_t* polys;
+
+	msurface_s* texturechain;
+
+	mtexinfo_t* texinfo;
+
+	int dlightframe;
+
+	int dlightbits;
+
+	int lightmaptexturenum;
+
+	byte styles[4];
+
+	int cached_light[4];
+
+	qboolean cached_dlight;
+
+	color24* samples;
+
+	decal_t* pdecals;
+#else
 	int				visframe;		// should be drawn when node is crossed
 
 	int				dlightframe;	// last frame the surface was checked by an animated light
@@ -156,6 +206,7 @@ struct msurface_s
 	color24			*samples;
 
 	decal_t			*pdecals;
+#endif
 };
 
 typedef struct mnode_s
@@ -182,8 +233,11 @@ typedef struct mleaf_s
 	int				contents;		// wil be a negative contents number
 	int				visframe;		// node needs to be traversed if current
 
+#ifdef REHLDS
 	short			minmaxs[6];		// for bounding box culling
-
+#else
+	float minmaxs[6];
+#endif
 	struct mnode_s	*parent;
 
 	// leaf specific

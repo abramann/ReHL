@@ -11,6 +11,8 @@
 #pragma once
 #endif
 
+#include "hooker.h"
+
 //-----------------------------------------------------------------------------
 // Purpose: Interface to registry
 //-----------------------------------------------------------------------------
@@ -30,6 +32,7 @@ public:
 	virtual void			WriteString(const char *key, const char *value) = 0;
 };
 
-extern IRegistry *registry;
+EXTERN_VAR(IRegistry*, registry);
+//extern IRegistry *registry;
 
 #endif // UTIL_REGISTRY_H

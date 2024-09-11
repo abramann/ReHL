@@ -37,9 +37,6 @@ typedef void* HGLRC;
 #include "cvar.h"
 #include "model.h"
 
-extern cvar_t gl_ztrick;
-extern cvar_t gl_vsync;
-
 extern qboolean scr_skipupdate;
 extern qboolean scr_skiponeupdate;
 
@@ -56,8 +53,12 @@ struct glwstate_t
 
 #ifdef SHARED_GAME_DATA
 extern char*& wadpath;
+extern cvar_t& gl_ztrick;
+extern cvar_t& gl_vsync;
 #else
 extern char*  wadpath;
+extern cvar_t gl_ztrick;
+extern cvar_t gl_vsync;
 #endif
 
 extern glwstate_t glw_state;

@@ -74,5 +74,5 @@ typedef enum sv_delta_s
 } sv_delta_t;
 
 typedef unsigned char uchar;
-
+typedef unsigned int uint;
 #endif // MAINTYPES_H
