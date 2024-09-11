@@ -84,23 +84,23 @@ cl_entity_t *studioapi_GetCurrentEntity()
 
 player_info_t *studioapi_PlayerInfo(int index)
 {
-	if (index >= 0 && index < m1.maxclients)
-		return &m1.players[index];
+	if (index >= 0 && index < g_pcl.maxclients)
+		return &g_pcl.players[index];
 
 	return nullptr;
 }
 
 entity_state_t *__cdecl studioapi_GetPlayerState(int index)
 {
-	if (index >= 0 && index < m1.maxclients)
-		return &m1.frames[m1.parsecountmod].playerstate[index];
+	if (index >= 0 && index < g_pcl.maxclients)
+		return &g_pcl.frames[g_pcl.parsecountmod].playerstate[index];
 
 	return nullptr;
 }
 
 cl_entity_t *studioapi_GetViewEntity()
 {
-	return &m1.viewent;
+	return &g_pcl.viewent;
 }
 
 void studioapi_GetTimes(int *framecount, double *cl_time, double *cl_oldtime)
@@ -108,8 +108,8 @@ void studioapi_GetTimes(int *framecount, double *cl_time, double *cl_oldtime)
 	NOT_IMPLEMENTED;
 
 	//*framecount = r_framecount;
-	*cl_time = m1.time;
-	*cl_oldtime = m1.oldtime;
+	*cl_time = g_pcl.time;
+	*cl_oldtime = g_pcl.oldtime;
 }
 
 cvar_s *studioapi_GetCvar(const char *name)

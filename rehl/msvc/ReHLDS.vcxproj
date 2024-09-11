@@ -73,7 +73,6 @@
     <ClCompile Include="..\engine\gl_draw.cpp" />
     <ClCompile Include="..\engine\gl_hud.cpp" />
     <ClCompile Include="..\engine\gl_main.cpp" />
-    <ClCompile Include="..\engine\gl_rmisc.cpp" />
     <ClCompile Include="..\engine\gl_rsuf.cpp" />
     <ClCompile Include="..\engine\gl_screen.cpp" />
     <ClCompile Include="..\engine\gl_vidnt.cpp" />
@@ -103,13 +102,14 @@
     <ClCompile Include="..\engine\pr_cmds.cpp" />
     <ClCompile Include="..\engine\pr_edict.cpp" />
     <ClCompile Include="..\engine\public_amalgamation.cpp" />
+    <ClCompile Include="..\engine\render_api.cpp" />
     <ClCompile Include="..\engine\r_efx.cpp" />
     <ClCompile Include="..\engine\r_part.cpp" />
     <ClCompile Include="..\engine\r_studio.cpp" />
     <ClCompile Include="..\engine\r_triangle.cpp" />
     <ClCompile Include="..\engine\Sequence.cpp" />
     <ClCompile Include="..\engine\snd_mix.cpp" />
-    <ClCompile Include="..\engine\snd_null.cpp" />
+    <ClCompile Include="..\engine\sound.cpp" />
     <ClCompile Include="..\engine\sse_mathfun.cpp" />
     <ClCompile Include="..\engine\sv_log.cpp" />
     <ClCompile Include="..\engine\sv_main.cpp" />
@@ -383,7 +383,6 @@
     <ClInclude Include="..\engine\com_custom.h" />
     <ClInclude Include="..\engine\consistency.h" />
     <ClInclude Include="..\engine\console.h" />
-    <ClInclude Include="..\engine\CStaticPanel.h" />
     <ClInclude Include="..\engine\Cursor.h" />
     <ClInclude Include="..\engine\custom_int.h" />
     <ClInclude Include="..\engine\cvar.h" />
@@ -407,7 +406,6 @@
     <ClInclude Include="..\engine\gl_draw.h" />
     <ClInclude Include="..\engine\gl_hud.h" />
     <ClInclude Include="..\engine\gl_main.h" />
-    <ClInclude Include="..\engine\gl_rmisc.h" />
     <ClInclude Include="..\engine\gl_rsuf.h" />
     <ClInclude Include="..\engine\gl_screen.h" />
     <ClInclude Include="..\engine\gl_vidnt.h" />
@@ -416,7 +414,6 @@
     <ClInclude Include="..\engine\host_cmd.h" />
     <ClInclude Include="..\engine\HTMLCommands.h" />
     <ClInclude Include="..\engine\IBorder.h" />
-    <ClInclude Include="..\engine\IClientVGUI.h" />
     <ClInclude Include="..\engine\igame.h" />
     <ClInclude Include="..\engine\IHTMLChromeController.h" />
     <ClInclude Include="..\engine\IMixerControls.h" />
@@ -443,6 +440,7 @@
     <ClInclude Include="..\engine\pr_cmds.h" />
     <ClInclude Include="..\engine\pr_edict.h" />
     <ClInclude Include="..\engine\renderer.h" />
+    <ClInclude Include="..\engine\render_api.h" />
     <ClInclude Include="..\engine\r_part.h" />
     <ClInclude Include="..\engine\r_studio.h" />
     <ClInclude Include="..\engine\r_triangle.h" />
@@ -589,7 +587,6 @@
     <ClInclude Include="..\vgui2\VGui.h" />
     <ClInclude Include="..\vgui2\VGui_Controls.h" />
     <ClInclude Include="BuildGroup.h" />
-    <ClInclude Include="GameUI.h" />
     <ClInclude Include="ISurface.h" />
   </ItemGroup>
   <ItemGroup>
@@ -629,7 +626,7 @@
     <PlatformToolset Condition="'$(VisualStudioVersion)' == '15.0'">v141_xp</PlatformToolset>
     <PlatformToolset Condition="'$(VisualStudioVersion)' == '16.0'">v142</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
-    <PlatformToolset>v140</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Tests|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
@@ -639,7 +636,7 @@
     <PlatformToolset Condition="'$(VisualStudioVersion)' == '15.0'">v141_xp</PlatformToolset>
     <PlatformToolset Condition="'$(VisualStudioVersion)' == '16.0'">v142</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
-    <PlatformToolset>v140</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Test Fixes|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
@@ -649,7 +646,7 @@
     <PlatformToolset Condition="'$(VisualStudioVersion)' == '15.0'">v141_xp</PlatformToolset>
     <PlatformToolset Condition="'$(VisualStudioVersion)' == '16.0'">v142</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
-    <PlatformToolset>v140</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release Play|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
@@ -660,7 +657,7 @@
     <PlatformToolset Condition="'$(VisualStudioVersion)' == '16.0'">v142</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>MultiByte</CharacterSet>
-    <PlatformToolset>v140</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
@@ -671,7 +668,7 @@
     <PlatformToolset Condition="'$(VisualStudioVersion)' == '16.0'">v142</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>MultiByte</CharacterSet>
-    <PlatformToolset>v140</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
@@ -735,7 +732,7 @@
       <AdditionalOptions>/arch:IA32 %(AdditionalOptions)</AdditionalOptions>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>precompiled.h</PrecompiledHeaderFile>
-      <UndefinePreprocessorDefinitions>SWDS</UndefinePreprocessorDefinitions>
+      <UndefinePreprocessorDefinitions>SWDS;REHLDS_SSE;</UndefinePreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <PreprocessorDefinitions>REHLDS_OPT_PEDANTIC;REHLDS_SSE;REHLDS_SELF;HAVE_OPT_STRTOOLS;USE_BREAKPAD_HANDLER;DEDICATED;SHARED_GAME_DATA;_CRT_SECURE_NO_WARNINGS;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
@@ -769,7 +766,7 @@
       <AdditionalOptions>/arch:IA32 %(AdditionalOptions)</AdditionalOptions>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>precompiled.h</PrecompiledHeaderFile>
-      <UndefinePreprocessorDefinitions>SWDS</UndefinePreprocessorDefinitions>
+      <UndefinePreprocessorDefinitions>SWDS;REHLDS_SSE;</UndefinePreprocessorDefinitions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -802,7 +799,7 @@
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>precompiled.h</PrecompiledHeaderFile>
       <EnableEnhancedInstructionSet>NoExtensions</EnableEnhancedInstructionSet>
-      <UndefinePreprocessorDefinitions>SWDS</UndefinePreprocessorDefinitions>
+      <UndefinePreprocessorDefinitions>SWDS;REHLDS_SSE;</UndefinePreprocessorDefinitions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -832,7 +829,7 @@
       <SDLCheck>true</SDLCheck>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>precompiled.h</PrecompiledHeaderFile>
-      <UndefinePreprocessorDefinitions>SWDS</UndefinePreprocessorDefinitions>
+      <UndefinePreprocessorDefinitions>SWDS;REHLDS_SSE;</UndefinePreprocessorDefinitions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -865,7 +862,7 @@
       <AdditionalOptions>/arch:IA32 %(AdditionalOptions)</AdditionalOptions>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>precompiled.h</PrecompiledHeaderFile>
-      <UndefinePreprocessorDefinitions>SWDS</UndefinePreprocessorDefinitions>
+      <UndefinePreprocessorDefinitions>SWDS;REHLDS_SSE;</UndefinePreprocessorDefinitions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -904,7 +901,7 @@
       <AdditionalOptions>/arch:IA32 %(AdditionalOptions)</AdditionalOptions>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>precompiled.h</PrecompiledHeaderFile>
-      <UndefinePreprocessorDefinitions>SWDS; </UndefinePreprocessorDefinitions>
+      <UndefinePreprocessorDefinitions>SWDS;REHLDS_SSE; </UndefinePreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <PreprocessorDefinitions>REHLDS_OPT_PEDANTIC;REHLDS_SELF;HAVE_OPT_STRTOOLS;USE_BREAKPAD_HANDLER;DEDICATED;SHARED_GAME_DATA;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>

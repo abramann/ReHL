@@ -254,9 +254,6 @@
     <ClCompile Include="..\engine\sys_linuxwind.cpp">
       <Filter>engine\common</Filter>
     </ClCompile>
-    <ClCompile Include="..\engine\snd_null.cpp">
-      <Filter>engine\server</Filter>
-    </ClCompile>
     <ClCompile Include="..\engine\traceinit.cpp">
       <Filter>engine\common</Filter>
     </ClCompile>
@@ -467,9 +464,6 @@
     <ClCompile Include="..\public\utlsymbol.cpp">
       <Filter>public</Filter>
     </ClCompile>
-    <ClCompile Include="..\engine\gl_rmisc.cpp">
-      <Filter>engine\client</Filter>
-    </ClCompile>
     <ClCompile Include="..\engine\thread.cpp">
       <Filter>engine\client</Filter>
     </ClCompile>
@@ -521,6 +515,12 @@
     </ClCompile>
     <ClCompile Include="..\engine\LinuxFont.cpp">
       <Filter>engine</Filter>
+    </ClCompile>
+    <ClCompile Include="..\engine\render_api.cpp">
+      <Filter>engine\client</Filter>
+    </ClCompile>
+    <ClCompile Include="..\engine\sound.cpp">
+      <Filter>engine\client</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -1358,9 +1358,6 @@
     <ClInclude Include="..\vgui2\Panel.h">
       <Filter>engine\client\vgui2</Filter>
     </ClInclude>
-    <ClInclude Include="GameUI.h">
-      <Filter>engine\client</Filter>
-    </ClInclude>
     <ClInclude Include="..\engine\GameConsole.h">
       <Filter>engine\client</Filter>
     </ClInclude>
@@ -1393,9 +1390,6 @@
     </ClInclude>
     <ClInclude Include="..\vgui2\ISurface.h">
       <Filter>engine\client\vgui2</Filter>
-    </ClInclude>
-    <ClInclude Include="..\engine\CStaticPanel.h">
-      <Filter>engine\client</Filter>
     </ClInclude>
     <ClInclude Include="..\engine\MessageMap.h">
       <Filter>engine\client\vgui2</Filter>
@@ -1436,9 +1430,6 @@
     <ClInclude Include="..\vgui2\FocusNavGroup.h">
       <Filter>engine\client\vgui2</Filter>
     </ClInclude>
-    <ClInclude Include="..\engine\IClientVGUI.h">
-      <Filter>engine\client</Filter>
-    </ClInclude>
     <ClInclude Include="..\engine\FontManager.h">
       <Filter>engine</Filter>
     </ClInclude>
@@ -1447,9 +1438,6 @@
       <Filter>engine</Filter>
     </ClInclude>
     <ClInclude Include="..\engine\MemoryPool.h">
-      <Filter>engine\client</Filter>
-    </ClInclude>
-    <ClInclude Include="..\engine\gl_rmisc.h">
       <Filter>engine\client</Filter>
     </ClInclude>
     <ClInclude Include="..\engine\IThread.h">
@@ -1472,6 +1460,9 @@
     </ClInclude>
     <ClInclude Include="..\engine\EnginePanel.h">
       <Filter>engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\render_api.h">
+      <Filter>engine\client</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
