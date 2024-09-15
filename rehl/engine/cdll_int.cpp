@@ -465,6 +465,12 @@ void ClientDLL_CalcRefdef(ref_params_t* pparams)
 		cl_funcs.pCalcRefdef(pparams);
 }
 
+int ClientDLL_AddEntity(int type, cl_entity_s* ent)
+{
+	TO_IMPLEMENT;
+	return Call_Function<int, int, cl_entity_s*>(0x42E30, type, ent);
+}
+
 void ClientDLL_CreateEntities()
 {
 	if (cl_funcs.pCreateEntities)

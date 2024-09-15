@@ -6,7 +6,10 @@ ARRAY(float, flFinalFogColor, [4], 0x88EA6);
 VVAR(GLfloat, flFogEnd, 0x88EC9, 0);
 VVAR(GLfloat, flFogStart, 0x88EB7, 0);
 
-
+#ifdef SHARED_GAME_DATA
+triangleapi_t* sp_tri = (triangleapi_t*)((*(DWORD*)AddBase(0xBA9F) - 4));
+triangleapi_t& tri = *sp_tri;
+#else
 triangleapi_t tri =
 {
 	TRI_API_VERSION,
@@ -30,6 +33,7 @@ triangleapi_t tri =
 	&tri_GL_Color4fRendermode,
 	&R_FogParams
 };
+#endif
 
 void tri_GL_RenderMode(int mode)
 {

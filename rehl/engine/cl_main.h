@@ -38,8 +38,8 @@ EXTERN_VAR(cvar_t, fs_perf_warnings);
 extern cl_entity_t* cl_entities;
 
 extern efrag_t cl_efrags[MAX_EFRAGS];
-extern dlight_t cl_dlights[MAX_DLIGHTS];
 extern dlight_t cl_elights[MAX_ELIGHTS];
+EXTERN_ARRAY(dlight_t, cl_dlights, [MAX_DLIGHTS]);
 EXTERN_ARRAY(lightstyle_t, cl_lightstyle, [MAX_LIGHTSTYLES]);
 
 extern int g_iCurrentTiming;
@@ -55,8 +55,6 @@ extern cvar_t cl_name;
 
 extern client_state_t m1;
 
-
-extern dlight_t cl_dlights[MAX_DLIGHTS];
 
 void SetupStartupTimings();
 void AddStartupTiming(const char* name);

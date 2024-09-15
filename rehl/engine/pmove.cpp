@@ -82,7 +82,6 @@ qboolean PM_AddToTouched(pmtrace_t tr, vec_t *impactvelocity)
 
 void EXT_FUNC PM_StuckTouch(int hitent, pmtrace_t *ptraceresult)
 {
-	NOT_TESTED;
 	//return Call_Function<void, int, pmtrace_t*>(0x6B290, hitent, ptraceresult);
 #ifdef REHLDS_CHECKS
 	if (hitent >= MAX_PHYSENTS)	// FIXED: added for preventing buffer overrun
@@ -93,6 +92,8 @@ void EXT_FUNC PM_StuckTouch(int hitent, pmtrace_t *ptraceresult)
 
 	if (pmove->server)
 	{
+		NOT_TESTED;
+
 		int n = pmove->physents[hitent].info;
 		edict_t *info = EDICT_NUM(n);	// looks like just entity index check
 		PM_AddToTouched(*ptraceresult, pmove->velocity);

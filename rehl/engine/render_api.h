@@ -3,6 +3,12 @@
 #include "model.h"
 
 
+typedef struct cshift_s
+{
+	int destcolor[3];
+	int percent;
+} cshift_t;
+
 EXTERN_VAR(qboolean, gl_texsort);
 EXTERN_VAR(cl_entity_t , r_worldentity);
 EXTERN_VAR(int , c_brush_polys);
@@ -73,6 +79,10 @@ void R_DrawViewModel();
 
 void R_RenderScene();
 
+void R_DrawWorld();
+
+void DrawGLPolyScroll(msurface_t* psurface, cl_entity_t* pEntity);
+
 void R_SetStackBase(void);
 
 void R_Init(void);
@@ -99,9 +109,23 @@ void R_ClearSkyBox();
 
 void R_RecursiveWorldNode(mnode_t* node);
 
+qboolean R_CullBox(vec_t* mins, vec_t* maxs);
+
+void R_StoreEfrags(efrag_t** ppefrag);
+
 void R_BlendLightmaps();
 
+void R_DrawSequentialPoly(msurface_t* s, int face);
+
 void DrawTextureChains();
+
+void DrawGLSolidPoly(glpoly_t* p);
+
+texture_t* R_TextureAnimation(msurface_t* s);
+
+void EmitWaterPolys(msurface_t* fa, int direction);
+
+void R_RenderDynamicLightmaps(msurface_t* fa);
 
 void R_DrawDecals(qboolean bMultitexture);
 
@@ -109,14 +133,16 @@ void R_DrawTEntitiesOnList(qboolean clientOnly);
 
 void R_RenderDlights();
 
-void GL_DisableMultitexture();
-
 void R_DrawParticles();
 
 void R_BuildLightMap(msurface_t* psurf, uchar* dest, int stride);
 
+void R_AddDynamicLights(msurface_t* surf);
+
 void AllowFog(qboolean allowed);
 
 float CalcFov(float* fov_x, float width, float height);
+
+float ScrollOffset(msurface_t* psurface, cl_entity_t* pEntity);
 
 void RotatePointAroundVector(vec_t* dst, const vec_t* dir, const vec_t* point, float degrees);

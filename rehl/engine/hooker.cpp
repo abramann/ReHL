@@ -90,20 +90,33 @@ void SetupHooks()
 	//(0x3E320, GL_Upload32);	// * Correct implement
 	DirectHook(0x3E630, GL_Upload16);	// *
 
-	//DirectHook(0x46440, R_RenderView);	// *
+										//DirectHook(0x46440, R_RenderView);	// *
 	//R_RenderView functions
+	DirectHook(0x47390, R_BuildLightMap);
 	DirectHook(0x49BC0, GL_BuildLightmaps); // Correct implement
 	DirectHook(0x1A3E0, CL_GetModelByIndex);
+	//DirectHook(0x49440, R_DrawWorld);
 	DirectHook(0x46350, R_RenderScene);
 	DirectHook(0x89220, tri_GL_RenderMode);
-	//DirectHook(0x496d0, AllocBlock);
+	//DirectHook(0x43A10, RotatePointAroundVector);
+	// TODO R_DrawWorld
+	// If R_DrawWorld implemented remove those
+	DirectHook(0x49220, R_RecursiveWorldNode);
+	DirectHook(0x42E30, R_StoreEfrags);
+	DirectHook(0x34B90, R_CullBox);
+	DirectHook(0x47900, R_DrawSequentialPoly); // *
+	DirectHook(0x47F00, R_RenderDynamicLightmaps); // *
+	/*DirectHook(0x48500, R_BlendLightmaps);
+	DirectHook(0x48AB0, DrawTextureChains);
+	DirectHook(0x4B890, R_DrawDecals);*/
+
 	// Mod
 	//DirectHook(0x40030, Mod_LoadModel);
 	//DirectHook(0x3FD50, Mod_PointInLeaf);
 	//DirectHook(0x2D1D0, CRC32_ProcessBuffer);
 	DirectHook(0x28AB0, Mod_DecompressVis);	// static
 
-	DirectHook(0x29A70, COM_ExplainDisconnection);
+	//DirectHook(0x29A70, COM_ExplainDisconnection);
 }
 
 uintptr_t AddBase(uintptr_t offset)

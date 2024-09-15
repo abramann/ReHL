@@ -1,16 +1,15 @@
 #include "precompiled.h"
+#include "render_api.h"
 
-// TODO: Find good name for variables in R_AnimateLight, R_SetupGL, ProjectPointOnPlane
-// TODO: Correct implement of R_SetupGL, R_AnimateLight, GL_BuildLightmaps(gl_main.cpp)
 
-struct cshift_t
-{
-	int destcolor[3];
-	int percent;
-};
+// TODO: Find good name for variables in R_AddDynamicLights, ProjectPointOnPlane, BuildSurfaceDisplayList
+// TODO: Correct implement of R_DrawWorld(starnge calls?), R_SetupGL(projection matrix),
 
 const float PI = 3.141592653589793;
 const double FAR_PLANE = 16000.0;
+const double NEAR_PLANE = 4;
+const int MAX_LIGHTMAP = 324;
+const int MAX_DECAL_SURFACES = 512;
 const cvar_t gl_envmapsize = { "gl_envmapsize", "256" };
 const cvar_t gl_flipmtrix = { "gl_flipmatrix", "0" };
 
@@ -29,7 +28,7 @@ const int dottexture[8][8] =
 VVAR(int, r_framecount, 0x42E55, 0);
 VVAR(int, trickframe_25783, 0x45D68, 0);
 ARRAY(int, playertextures, [16], 0x46D8B);	// Probably not needed, single xref
-VVAR(qboolean, gl_texsort, 0x46D69, true);
+VVAR(qboolean, gl_texsort, 0x494F2, true);
 VAR(int, r_numparticles, 0x7ABDA);
 VVAR(BEAM*, gBeams, 0x7AB53, nullptr);
 VVAR(particle_t*, particles, 0x7AC0C, nullptr);
@@ -37,7 +36,7 @@ VAR(int, particletexture, 0x46713);
 VAR(cl_entity_t, r_worldentity, 0x46DE9);
 VAR(int, c_brush_polys, 0x4649F);
 VAR(int, c_alias_polys, 0x464A9);
-VAR(qboolean, mirror, 0x464B3);
+VAR(qboolean, mirror, 0x45A89);
 VAR(float, gldepthmin, 0x45DB8);
 VAR(float, gldepthmax, 0x45D86);
 VVAR(qboolean, g_bUserFogOn, 0x463B8, false);
@@ -62,15 +61,22 @@ ARRAY(vec4_t, gProjectionMatrix, [4], 0x45C1F);
 ARRAY(vec4_t, r_world_matrix, [4], 0x45BAB);
 ARRAY(vec4_t, gWorldToScreen, [4], 0x45CB9);
 ARRAY(vec4_t, gScreenToWorld, [4], 0x45CB4);
-VVAR(cl_entity_t*, currententity, 0x44297, nullptr;);
+VVAR(cl_entity_t*, currententity, 0x4949D, nullptr;);
 VAR(vec3_t, modelorg, 0x49486);
 VAR(colorVec, gWaterColor, 0x4948B);
 ARRAY(glpoly_t*, lightmap_polys, [64], 0x494E0);
 ARRAY(float, skymins, [2][6], 0x505FC);
 ARRAY(float, skymaxs, [2][6], 0x5060E);
-VAR(int, gDecalSurfCount, 0x49577);
+VAR(int, gDecalSurfCount, 0x47C04);
+VARRAY(msurface_t*, gDecalSurfs, [500], 0x47D74 ,{ nullptr });
 VVAR(int, gRenderMode, 0x89257);
 ARRAY(mplane_t, frustum, [4], 0x452DC);
+VVAR(int, r_dlightactive, 0x47403, 0);
+VARRAY(colorVec, blocklights, [MAX_LIGHTMAP], 0x4761D, { 0 });
+VVAR(int, cl_numvisedicts, 0xBBB3, 0);
+VVAR(int, mirrortexturenum, 0x4938D, 0);
+VVAR(msurface_t*, skychain, 0x48AD7, nullptr);
+VVAR(msurface_t*, waterchain, 0x493C3, nullptr);
 
 // cvars
 VVAR(cvar_t, r_cachestudio, 0x46BD4, { "r_cachestudio" COMMA "1" COMMA 0 COMMA 0.0f COMMA nullptr });
@@ -115,7 +121,6 @@ VVAR(cvar_t, gl_fog, 0x46D4A, { "gl_fog" COMMA "0" COMMA FCVAR_ARCHIVE });
 void R_SetupFrame();
 void R_SetFrustum();
 void R_SetupGL();
-void R_DrawWorld();
 void R_DrawEntitiesOnList();
 void R_Clear();
 void R_CheckVariables();
@@ -140,7 +145,7 @@ void R_RenderScene()
 	if (CL_IsDevOverviewMode())
 		CL_SetDevOverView(&r_refdef);	// Implement
 
-	R_SetupFrame();	// Correct R_AnimateLight & GL_BuildLightmaps
+	R_SetupFrame();
 	R_SetFrustum();
 	R_SetupGL();
 	R_MarkLeaves();
@@ -149,7 +154,7 @@ void R_RenderScene()
 		if (CL_IsDevOverviewMode())
 		{
 			qglClearColor(0.0, 1.0, 0.0, 0.0);
-			qglClear(0x4000u);
+			qglClear(GL_COLOR_BUFFER_BIT);
 		}
 		R_DrawWorld();
 		S_ExtraUpdate();
@@ -164,7 +169,7 @@ void R_RenderScene()
 		if (CL_IsDevOverviewMode())
 		{
 			qglClearColor(0, 1, 0, 0);
-			glClear(GL_DEPTH_BUFFER_BIT6_QCOM);
+			qglClear(GL_DEPTH_BUFFER_BIT6_QCOM);
 		}
 		R_DrawWorld();
 		S_ExtraUpdate();
@@ -251,9 +256,9 @@ void R_Init()
 
 	R_InitParticles();
 	R_InitParticleTexture();
-	//R_UploadEmptyTex();
+	//R_UploadEmptyTex();	// Not needed?
 	for (int i = 0; i < 16; i++)
-		playertextures[i] = GL_GenTexture();
+		playertextures[i] = GL_GenTexture(); // same?
 }
 
 void R_PushDlights()
@@ -385,7 +390,6 @@ void R_ReadPointFile_f(void)
 void R_RenderView()
 {
 	double time1;
-	double time1a;
 	float framerate;
 	
 	if (r_norefresh.value == 0.0)
@@ -515,6 +519,7 @@ void R_InitSky()
 
 void R_MarkLeaves()
 {
+	//return Call_Function<void>(0x495C0);
 	if (mirror)
 		return;
 	if (r_oldviewleaf == r_viewleaf && r_novis.value == 0) 
@@ -523,7 +528,7 @@ void R_MarkLeaves()
 	uchar solid[4096];
 	uchar* vis = nullptr;
 
-	++r_visframecount;
+	r_visframecount++;
 	r_oldviewleaf = r_viewleaf;
 	if (r_novis.value == 0)
 	{
@@ -540,10 +545,9 @@ void R_MarkLeaves()
 	model_t* worldmodel = g_pcl.worldmodel;
 	for (int i = 0; i < worldmodel->numleafs; i++)
 	{
-		if ((((int)vis[i >> 3] >> (i & 7)) & 1) != 0)
+		if (vis[i / 8] / ((int)pow(2 ,(i & 7))) %2 != 0)
 		{
 			mleaf_t* leaf = &worldmodel->leafs[i+1];
-
 			do
 			{
 				if (leaf->visframe == r_visframecount)
@@ -552,7 +556,6 @@ void R_MarkLeaves()
 				leaf = (mleaf_t*)leaf->parent;
 			} while (leaf);
 		}
-
 	}
 }
 
@@ -600,9 +603,9 @@ void R_Clear()
 		if (gl_ztrick.value == 0.0)
 		{
 			if (gl_clear.value == 0.0)
-				qglClear(GL_DEPTH_BUFFER_BIT0_QCOM);
+				qglClear(GL_DEPTH_BUFFER_BIT);
 			else
-				qglClear(GL_DEPTH_BUFFER_BIT6_QCOM | GL_DEPTH_BUFFER_BIT0_QCOM);
+				qglClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 			gldepthmin = 0.0;
 			gldepthmax = 1.0;
 			glDepthFunc(GL_LEQUAL);
@@ -610,7 +613,7 @@ void R_Clear()
 		else
 		{
 			if (gl_clear.value != 0.0)
-				glClear(GL_DEPTH_BUFFER_BIT6_QCOM);
+				glClear(GL_COLOR_BUFFER_BIT);
 			if ((++trickframe_25783 & 1) != 0)
 			{
 				gldepthmin = 0.0f;
@@ -628,9 +631,9 @@ void R_Clear()
 	else
 	{
 		if (gl_clear.value == 0.0)
-			qglClear(GL_DEPTH_BUFFER_BIT0_QCOM);
+			qglClear(GL_DEPTH_BUFFER_BIT);
 		else
-			qglClear(GL_DEPTH_BUFFER_BIT6_QCOM | GL_DEPTH_BUFFER_BIT0_QCOM);
+			qglClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		gldepthmin = 0.0f;
 		gldepthmax = 0.5f;
 		qglDepthFunc(GL_LEQUAL);
@@ -640,6 +643,8 @@ void R_Clear()
 
 void R_SetupFrame()
 {
+	//return Call_Function<void>(0x45640);
+
 	R_ForceCVars(g_pcl.maxclients > 1);
 	R_CheckVariables();
 	R_AnimateLight();
@@ -672,32 +677,33 @@ void R_SetupFrame()
 
 void R_SetFrustum()
 {
-	 //Call_Function<void>(0x45640);
-	 //return;
-	float fov = scr_fov_value;
-	CalcFov(&scr_fov_value, glwidth, glheight);
-	float xa = -(90 - fov * 0.5f);
-	float xb = 90 - (0.5 * glwidth);
+	float xa;
+	float xb;
+	float fov_x = 90.0;	
+	float fov = CalcFov(&fov_x, glwidth, glheight);
 
-	RotatePointAroundVector(frustum[0].normal, vup, vpn, xa);
-	RotatePointAroundVector(frustum[1].normal, vup, vpn, -xa);
-	RotatePointAroundVector(frustum[2].normal, vright, vpn, xb);
+	xa = 90 - (scr_fov_value / 2);
+	xb = 90 - (fov / 2);
+
+	RotatePointAroundVector(frustum[0].normal, vup, vpn, -xa);
+	RotatePointAroundVector(frustum[1].normal,vup, vpn, xa);
+	RotatePointAroundVector(frustum[2].normal, vright,vpn, xb);
 	RotatePointAroundVector(frustum[3].normal, vright, vpn, -xb);
-
 	for (int i = 0; i < ARRAYSIZE(frustum); i++)
 	{
 		frustum[i].dist = _DotProduct(frustum[i].normal, r_origin);
 		frustum[i].signbits = SignbitsForPlane(&frustum[i]);
 		frustum[i].type = 5;
 	}
-	ZeroMemory(frustum, sizeof(frustum));
 }
 
-void R_SetupGL()
+void R_SetupGL()	// Correct projection matrix error
 {
 	return Call_Function<void>(0x458D0);
+
 	qglMatrixMode(GL_PROJECTION);
 	qglLoadIdentity();
+
 	int x = r_refdef.vrect.x;
 	int v1 = r_refdef.vrect.width + r_refdef.vrect.x;
 	int v2 = glheight - r_refdef.vrect.y;
@@ -717,7 +723,7 @@ void R_SetupGL()
 	{
 		y = 0;
 		x = 0;
-		vpWidth = vpHeight = gl_envmapsize.value;
+		vpWidth = vpHeight = gl_envmapsize.value;	// const
 		glwidth = glheight = gl_envmapsize.value;
 	}
 	qglViewport(x + glx, y + gly, vpWidth, vpHeight);
@@ -726,12 +732,17 @@ void R_SetupGL()
 	float screenaspect = width / height;
 
 	float fov = CalcFov(&scr_fov_value, width, height);
+
 	if (r_refdef.onlyClientDraws)
 	{
-		qglFrustum(screenaspect * -fov, screenaspect * fov, -fov, fov, 4.0, FAR_PLANE);
+		// qglFrustum
+		Call_Function<void, double, double, double, int>(0x457C0, fov, screenaspect, NEAR_PLANE, FAR_PLANE);
+
 	}
 	else  if (CL_IsDevOverviewMode())
 	{
+		NOT_TESTED;
+		// Check from qglOrtho
 		float zoom = gDevOverview.zoom;
 		float clipplane = 4096.0 / zoom;
 		screenaspect = 4096.0 / (zoom * screenaspect);
@@ -745,7 +756,8 @@ void R_SetupGL()
 	}
 	else
 	{
-		qglFrustum(screenaspect * -fov, fov * screenaspect, -fov, fov, 4.0, movevars.zmax);
+		// qglFrustum
+		Call_Function<void, double, double, double, int>(0x457C0, fov, screenaspect, NEAR_PLANE, movevars.zmax);
 	}
 
 	if (mirror)
@@ -806,7 +818,8 @@ void R_SetupGL()
 		// Never executed code
 		NOT_IMPLEMENTED;
 	}
-	InvertMatrix((float*)&gWorldToScreen, (float*)&gScreenToWorld);  // Implement
+
+	InvertMatrix((float*)gWorldToScreen, (float*)gScreenToWorld);  // Implement
 }
 
 void R_ClearSkyBox()
@@ -820,23 +833,471 @@ void R_ClearSkyBox()
 
 void R_RecursiveWorldNode(mnode_t* node)
 {
-	return Call_Function<void, mnode_t*>(0x49220, node);
+	//return Call_Function<void, mnode_t*>(0x49220, node);
+	mnode_t* node_; // edi
+	mplane_t* plane; // eax
+	long double v3; // fst7
+	__int16 v4; // fps
+	bool v5; // c0
+	char v6; // c2
+	bool v7; // c3
+	int v8; // ebx
+	msurface_t* surf; // esi
+	__int16 v10; // fps
+	bool v11; // c0
+	char v12; // c2
+	bool v13; // c3
+	unsigned int v14; // ecx
+	texture_t* v15; // eax
+	msurface_s* v16; // ecx
+	int firstsurface_; // ecx
+	mnode_s* v20; // eax
+	int v21; // edx
+	int* v22; // esi
+	double v23; // [esp+Ch] [ebp-8h]
+	mnode_t* nodea; // [esp+1Ch] [ebp+8h]
 
-	NOT_IMPLEMENTED;
+	node_ = node;
+
+	if (node->contents == CONTENTS_SOLID)
+		return; // hit a solid leaf
+
+	if (node->visframe != r_visframecount)
+		return;
+
+	if (R_CullBox(node_->minmaxs, &node_->minmaxs[3]))
+		return;
+
+	if (node_->contents < 0)
+	{
+		firstsurface_ = *(DWORD*)&node_->firstsurface;
+		v20 = node_->children[1];
+		if (firstsurface_)
+		{
+			v21 = r_framecount;
+			do
+			{
+				v22 = (int*)v20->contents;
+				v20 = (mnode_s*)((char*)v20 + 4);
+				--firstsurface_;
+				*v22 = v21;
+			} while (firstsurface_);
+		}
+		if (node_->children[0])
+			R_StoreEfrags((efrag_t**)node_->children);
+		return;
+	}
+
+	plane = node_->plane;
+	if (plane->type)
+	{
+		if (plane->type == 1)
+		{
+			v3 = modelorg[1];
+		}
+		else
+		{
+			v3 = modelorg[2];
+			if (plane->type != 2)
+				v3 = v3 * plane->normal[2] + modelorg[1] * plane->normal[1] + modelorg[0] * plane->normal[0];
+		}
+	}
+	else
+	{
+		v3 = modelorg[0];
+	}
+	v23 = v3 - plane->dist;
+	v5 = v23 < 0.0;
+	v6 = 0;
+	v7 = v23 == 0.0;
+	v8 = v3 < 0.0;
+	R_RecursiveWorldNode(node_->children[v8]);
+	if (node_->numsurfaces)
+	{
+		surf = &g_pcl.worldmodel->surfaces[node_->firstsurface];
+		if (v23 >= -0.01)
+		{
+			v11 = v23 < 0.01;
+			v12 = 0;
+			v13 = v23 == 0.01;
+			if (v11 == 0)
+				v8 = 0;
+		}
+		else
+		{
+			v8 = 2;
+		}
+		nodea = (mnode_t*)node_->numsurfaces;
+		do
+		{
+			if (surf->visframe == r_framecount)
+			{
+				v14 = surf->flags;
+				if ((v14 & 0x80u) != 0 || v23 < 0.0 == ((v14 >> 1) & 1))
+				{
+					if (gl_texsort)
+					{
+						if (mirror == false || surf->texinfo->texture != g_pcl.worldmodel->textures[mirrortexturenum])
+						{
+							v15 = surf->texinfo->texture;
+							v16 = v15->texturechain;
+							v15->texturechain = surf;
+							surf->texturechain = v16;
+						}
+					}
+					else if ((v14 & 4) != 0)
+					{
+						surf->texturechain = skychain;
+						skychain = surf;
+ 					}
+					else if ((v14 & 0x10) != 0)
+					{
+						surf->texturechain = waterchain;
+						waterchain = surf;
+ 					}
+					else
+					{
+						R_DrawSequentialPoly(surf, 0);
+					}
+				}
+			}
+			++surf;
+			nodea = (mnode_t*)((char*)nodea - 1);
+		} while (nodea);
+	}
+	node_ = node_->children[v8 == 0];
+	if (node_->contents == -2)
+		return;
+}
+
+qboolean R_CullBox(vec_t* mins, vec_t* maxs)
+{
+	for (int i = 0; i < 4; i++)
+	{
+		if (BoxOnPlaneSide(mins, maxs,&frustum[i]) == 2)
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
+void R_StoreEfrags(efrag_t** ppefrag)
+{
+	efrag_t* efrag;
+	cl_entity_s* ent;
+
+	for (; *ppefrag; ppefrag = &efrag->leafnext)
+	{
+		efrag = *ppefrag;
+
+		ent = efrag->entity;
+		if (ent->model->type > (unsigned int)mod_alias)
+			Sys_Error("%s Bad entity type %d\n", __func__, ent->model->type);
+		if (ent->visframe != r_framecount && cl_numvisedicts <= 511)
+		{
+			if (ClientDLL_AddEntity(ET_FRAGMENTED, efrag->entity))
+				ent->visframe = r_framecount;
+		}
+	}
 }
 
 void R_BlendLightmaps()
 {
+	TO_IMPLEMENT;
 	return Call_Function<void>(0x48500);
+}
+
+void R_DrawSequentialPoly(msurface_t* s, int face)
+{
+	//return Call_Function<void, msurface_t*, int>(0x47900, s, face);
+
+	int rendermode;
+	texture_t* animationtex;
+	int renderstate;
+	auto polygs = s->polys;
+	auto vert = polygs->verts;
+
+	if (currententity->curstate.rendermode == 1)
+	{
+		GL_DisableMultitexture();
+		qglBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		glEnable(GL_BLEND);
+		int texnum = R_TextureAnimation(s)->gl_texturenum;
+		GL_Bind(texnum);
+		qglDisable(GL_TEXTURE_2D);
+		DrawGLSolidPoly(s->polys);
+		GL_EnableMultitexture();
+	}
+	else if ((s->flags & 0x94) != 0)
+	{
+		if ((s->flags & 0x10) != 0)
+		{
+			GL_DisableMultitexture();
+			int texnum = s->texinfo->texture->gl_texturenum;
+			GL_Bind(texnum);
+			EmitWaterPolys(s, face);
+		}
+	}
+	else
+	{
+		if (!filterMode)
+			R_RenderDynamicLightmaps(s);
+
+		if (gl_mtexable && ((rendermode = currententity->curstate.rendermode) == 0 || rendermode == 4))
+		{
+			animationtex = R_TextureAnimation(s);
+			GL_SelectTexture(TEXTURE0_SGIS);
+			GL_Bind(animationtex->gl_texturenum);
+			qglTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, 8448);
+
+			if (currententity->curstate.rendermode == 1)
+				qglDisable(GL_TEXTURE_2D);
+
+			GL_EnableMultitexture();
+
+			if (filterMode)
+				GL_Bind(gl_FilterTexture);
+			else
+				GL_Bind(lightmap_textures[s->lightmaptexturenum]);
+
+			int lmtexnum = s->lightmaptexturenum;
+			if (lightmap_modified[lmtexnum])
+			{
+				lightmap_modified[lmtexnum] = false;
+
+				glRect_t* lmrect = &lightmap_rectchange[lmtexnum];
+
+				GLvoid* pixels = &lightmaps[lightmap_bytes * ((lightmap_rectchange[lmtexnum].t + (lmtexnum << 7)) << 7)];
+				glTexSubImage2D(GL_TEXTURE_2D, 0, 0,
+					lightmap_rectchange[lmtexnum].t, 128,
+					lightmap_rectchange[lmtexnum].h, gl_lightmap_format,
+					GL_UNSIGNED_BYTE, pixels);
+
+				lmrect->l = lmrect->t = 128;
+				lmrect->h = lmrect->w = 0;
+			}
+
+			qglTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, 8448);
+
+			renderstate = DT_SetRenderState(animationtex->gl_texturenum);
+
+			qglBegin(GL_POLYGON);
+			
+			for (int i = 0; i < polygs->numverts; i++)
+			{
+				qglMTexCoord2fSGIS(TEXTURE0_SGIS, vert[i][3], vert[i][4]);
+				qglMTexCoord2fSGIS(TEXTURE1_SGIS, vert[i][5], vert[i][6]);
+				if (renderstate)
+				{
+					float u;
+					if ((s->flags & 0x20) != 0)
+						u = ScrollOffset(s, currententity) + vert[i][3];
+					else
+						u = vert[i][3];
+
+					float v = vert[i][5];
+					DT_SetTextureCoordinates(u, v);
+				}
+				qglVertex3fv(vert[i]);
+			}
+			
+			qglEnd();
+			if (renderstate)
+				DT_ClearRenderState();
+
+			if (gl_texsort == false && s->pdecals)
+			{
+				gDecalSurfs[gDecalSurfCount] = s;
+				if (++gDecalSurfCount > MAX_DECAL_SURFACES - 1)
+					Sys_Error("%s: Too many decal surfaces!\n", __func__);
+
+				if (!currententity->curstate.rendermode)
+					R_DrawDecals(true);
+
+				if (gl_wireframe.value > 0)
+				{
+					qglDisable(GL_TEXTURE_2D);
+					qglColor3f(1.0, 1.0, 1.0);
+
+					if (gl_wireframe.value == 2.0)
+						qglDisable(GL_DEPTH_TEST);
+
+					qglBegin(GL_POINT_BIT);
+
+					for (int i = 0; i < polygs->numverts; i++)
+						qglVertex3fv(vert[i]);
+
+					qglEnd();
+					qglEnable(GL_TEXTURE_2D);
+					if (gl_wireframe.value == 2.0)
+						qglEnable(GL_DEPTH_TEST);
+				}
+			}
+			// return
+		}
+		else
+		{
+			
+			GL_DisableMultitexture();
+			auto texanimation = R_TextureAnimation(s);
+			GL_Bind(texanimation->gl_texturenum);
+			if ((s->flags & 0x20) != 0)
+			{
+				DrawGLPolyScroll(s, currententity);
+			}
+			else
+			{
+				qglBegin(GL_POLYGON);
+
+				for (int i = 0; i < polygs->numverts; i++)
+				{
+					qglTexCoord2f(vert[i][3], vert[i][4]);
+					qglVertex3fv(vert[i]);
+				}
+
+				qglEnd();
+			}
+
+			if (!gl_texsort && s->pdecals)
+			{
+				gDecalSurfs[gDecalSurfCount] = s;
+				if (++gDecalSurfCount > MAX_DECAL_SURFACES - 1)
+					Sys_Error("%s: Too many decal surfaces!\n", __func__);
+
+				R_DrawDecals(false);
+
+				if (gl_wireframe.value != 0.0)
+				{
+					qglDisable(GL_TEXTURE_2D);
+					qglColor3f(1.0, 1.0, 1.0);
+
+					if (gl_wireframe.value == 2.0)
+						qglDisable(GL_DEPTH_TEST);
+
+					qglBegin(GL_POINT_BIT);
+
+					for (int i = 0; i < polygs->numverts; i++)
+						qglVertex3fv(vert[i]);
+
+					qglEnd();
+					qglEnable(GL_TEXTURE_2D);
+					if (gl_wireframe.value == 2.0)
+						qglEnable(GL_DEPTH_TEST);
+				}
+				if (!currententity->curstate.rendermode)
+				{
+					if (filterMode)
+						GL_Bind(gl_FilterTexture);
+					else
+						GL_Bind(lightmap_textures[s->lightmaptexturenum]);
+
+					qglEnable(GL_BLEND);
+					qglBegin(GL_POLYGON);
+
+					for (int i = 0; i < polygs->numverts; i++)
+					{
+						qglTexCoord2f(vert[i][5], vert[i][6]);
+						qglVertex3fv(vert[i]);
+					}
+
+					qglEnd();
+					qglDisable(GL_BLEND);
+				}
+			}
+		}
+	}
 }
 
 void DrawTextureChains()
 {
+	TO_IMPLEMENT;
 	return Call_Function<void>(0x48AB0);
+}
+
+void DrawGLSolidPoly(glpoly_t* p)
+{
+	TO_IMPLEMENT;
+	return Call_Function<void, glpoly_t*>(0x483C0, p);
+}
+
+texture_t* R_TextureAnimation(msurface_t* s)
+{
+	TO_IMPLEMENT;
+	return Call_Function<texture_t*, msurface_t*>(0x47750, s);
+}
+
+void EmitWaterPolys(msurface_t* fa, int direction)
+{
+	return Call_Function<void, msurface_t*, int>(0x4F192, fa, direction);
+}
+
+void R_RenderDynamicLightmaps(msurface_t* fa)
+{
+	//return Call_Function<void, msurface_t*>(0x47F00, fa);
+	++c_brush_polys;
+	if ((fa->flags & 0x14) != 0)
+		return;
+
+	int lmtexnum = fa->lightmaptexturenum;
+	auto polys = fa->polys;
+	uint* cached_light = (uint*)fa->cached_light;
+	polys->chain = lightmap_polys[lmtexnum];
+	lightmap_polys[lmtexnum] = polys;
+	
+	uchar* styles = fa->styles;
+	for (int i = 0; i < 5; i++)
+	{
+		if (i == 4 || styles[i] == 255)
+		{
+			if (fa->dlightframe != r_framecount && !fa->cached_dlight)
+				return;
+			break;
+		}
+		if (d_lightstylevalue[styles[i]] != cached_light[i])
+			break;
+	}
+	if (r_dynamic.value == 0.0)
+		return;
+
+	int light_s = fa->light_t;
+	glRect_t* lmrect = &lightmap_rectchange[lmtexnum];
+	lightmap_modified[lmtexnum] = 1;
+
+	int h = lmrect->h;
+	int t = lmrect->t;
+	int w = lmrect->w;
+	int l = lmrect->l;
+
+	if (light_s < t)
+	{
+		if (h)
+			h = lmrect->h += lmrect->t + - light_s;
+		lmrect->t = t = light_s;
+	}
+
+	if (light_s < lmrect->l)
+	{
+		if (w > 0)
+			w = lmrect->w += l + - light_s;
+		lmrect->l = l = light_s;
+	}
+
+	int smax = (fa->extents[0]  / 16) + 1;
+	int tmax = (fa->extents[1] / 16) + 1;
+	int light_t = fa->light_t;
+	if (l + w < smax + light_s)
+		lmrect->w = smax + light_s - lmrect->l;
+	if (t + h < tmax + light_t)
+		lmrect->h = tmax + light_t - t;
+
+	R_BuildLightMap(fa, &lightmaps[lightmap_bytes * (fa->light_s + ((fa->light_t + (lmtexnum << 7)) << 7))],
+		lightmap_bytes << 7);
 }
 
 void R_DrawDecals(qboolean bMultitexture)
 {
+	TO_IMPLEMENT;
 	return Call_Function<void, qboolean>(0x4B890, bMultitexture);
 }
 
@@ -850,11 +1311,6 @@ void R_RenderDlights()
 	return Call_Function<void>(0x430F0);
 }
 
-void GL_DisableMultitexture()
-{
-	return Call_Function<void>(0x478A0);
-}
-
 void R_DrawParticles()
 {
 	return Call_Function<void>(0x7CB20);
@@ -862,13 +1318,195 @@ void R_DrawParticles()
 
 void R_BuildLightMap(msurface_t* psurf, uchar* dest, int stride)
 {
-	return Call_Function<void, msurface_t*, uchar*, int>(0x47390, psurf, dest, stride);
+	//return Call_Function<void, msurface_s*, uchar*, int>(0x47390, psurf, dest, stride);
+	
+	int smax;
+	int tmax;
+	color24* samples;
+	int size;
+	int lightscale;
+
+	if (gl_overbright.value == 0.0 || !gl_texsort)
+		lightscale = pow(2.0, 1.0 / v_lightgamma.value) * 256.0 + 0.5;
+	else
+		lightscale = 256;
+
+	smax = (psurf->extents[0] / 16) + 1;
+	tmax = (psurf->extents[1] / 16) + 1;
+	samples = psurf->samples;
+	size = smax * tmax;
+	psurf->dlightbits = psurf->cached_dlight = r_dlightactive & psurf->dlightbits;
+	if (smax * tmax > MAX_LIGHTMAP)
+		Sys_Error(
+			"Error: lightmap for texture% s too large(% d x % d = % d luxels); cannot exceed% d\n",
+			psurf->texinfo->texture->name,
+			smax,
+			tmax,
+			size,
+			MAX_LIGHTMAP);
+
+	if (filterMode)
+	{
+		for (int i = 0; i < size; i++)
+		{
+			blocklights[i].r = filterColorRed * 65280.0 * filterBrightness;
+			blocklights[i].g = filterColorGreen * 65280.0 * filterBrightness;
+			blocklights[i].b = filterBrightness * 65280.0 * filterColorBlue;
+		}
+	}
+	else if (r_fullbright.value == 0.0 && g_pcl.worldmodel->lightdata)
+	{
+		for (int i = 0; i < size; i++)
+		{
+			blocklights[i].r = blocklights[i].g = blocklights[i].b = 0;
+		}
+
+		if (samples)
+		{
+			for (int i = 0; i < 4; i++)
+			{
+				uchar style = psurf->styles[i];
+				if (style == 255)
+					break;
+
+				int light = psurf->cached_light[i] = d_lightstylevalue[style];
+
+				for (int j = 0; j < size; j++)
+				{
+					blocklights[j].r += light * samples[j + (i * size)].r;
+					blocklights[j].g += light * samples[j + (i * size)].g;
+					blocklights[j].b += light * samples[j + (i * size)].b;
+				}
+			}
+		}
+		if (psurf->dlightframe == r_framecount)
+		{
+			R_AddDynamicLights(psurf);
+		}
+	}
+	else
+	{
+		for (int i = 0; i < size; i++)
+		{
+			blocklights[i].r = blocklights[i].g = blocklights[i].b = 65280;
+		}
+	}
+	if (gl_lightmap_format == GL_RGBA)
+	{
+		uchar* lightmap = dest;
+		for (int i = 0; i < tmax; i++, lightmap += stride - 4 * smax)
+		{
+			for (int j = 0; j < smax; j++)
+			{
+				for (int k = 0; k < 3; k++)
+				{
+					int index = (lightscale * *(&blocklights[(i * smax) + j].r + k)) / 16384;
+					if (index > 1023)
+						index = 1023;
+					lightmap[k] = lightgammatable[index] / 4;
+				}
+
+				if (gl_monolights.value == 0.0)
+				{
+					lightmap[3] = 255;
+				}
+				else
+				{
+					lightmap[3] = ~((149 * lightmap[1] + 29 * lightmap[2] + 76 * lightmap[0]) / 256);
+					lightmap[0] = lightmap[1] = lightmap[2] = 255;
+				}
+				lightmap += 4;
+			}
+		}
+	}
+	else
+	{
+		NOT_TESTED; // Never executed code
+		if (gl_lightmap_format != GL_LUMINANCE && gl_lightmap_format != GL_INTENSITY)
+			Sys_Error("Bad lightmap format");
+
+		uchar* lightmap = dest;
+		int j;
+		for (int i = 0; i < tmax; i++, lightmap += stride)
+		{
+			for (j = 0; j < smax; j++)
+			{
+				int red = blocklights[(i * smax) + j].r;
+				uchar v = red / 256;
+				if (v > 255)
+					v = 255;
+				lightmap[j] = 255 - v;
+			}
+		}
+	}
 }
 
-void R_DrawWorld()
+void R_AddDynamicLights(msurface_t* surf)
 {
-	return Call_Function<void>(0x49440);
+	//return Call_Function<void, msurface_t*>(0x47110, surf);
+	
+	mtexinfo_t* texinfo;
+	long double v10;
+	vec3_t v18;
+	double radius;
+	int tmax;
+	int smax; 
+	float minlight;
 
+	texinfo = surf->texinfo;
+	smax = (surf->extents[0] / 16) + 1;
+
+	tmax = (surf->extents[1] / 16) + 1;
+	for (int lnum = 0; lnum < 32; ++lnum)
+	{
+		if (((1 << lnum) & surf->dlightbits) != 0)
+		{
+			VectorSubtract(cl_dlights[lnum].origin, currententity->origin, v18);
+
+			radius = cl_dlights[lnum].radius;
+			float v5 = abs(_DotProduct(v18, surf->plane->normal) - surf->plane->dist);
+			minlight = cl_dlights[lnum].minlight;
+			float v36 = radius - v5;
+			if (v36 >= minlight)
+			{
+				float v32 = v36 - minlight;
+
+				float v15 = _DotProduct(v18, texinfo->vecs[0]) + texinfo->vecs[0][3] - surf->texturemins[0];
+				float v17 = _DotProduct(v18, texinfo->vecs[1]) + texinfo->vecs[1][3] - surf->texturemins[1];
+
+				for (int i = 0; i < tmax; i++)
+				{
+					int v7 = abs(v17 - (i * 16));
+			
+					for (int j = 0; j < smax; j++)
+					{
+						int v9 = abs(v15 - (j * 16));
+						if (v9 <= v7)
+							v10 = v7 + (v9 / 2);
+						else
+							v10 = v9 + (v7 / 2);
+
+						float v35 = v10;
+						if (v35 < v32)
+						{
+							int v11 = (v36 - v35) * 256;
+							int blindex = (i * smax) + j;
+							blocklights[blindex].r += (v11 * cl_dlights[lnum].color.r) / 256;
+							blocklights[blindex].g += (v11 * cl_dlights[lnum].color.g) / 256;
+							blocklights[blindex].b += (v11 * cl_dlights[lnum].color.b) / 256;
+						}
+
+					}
+				}
+			}
+		}
+	}
+}
+
+void R_DrawWorld()	// TODO Correct implement
+{
+	 Call_Function<void>(0x49440);
+	 return;
 	cl_entity_t ent;
 	Q_memset(&ent, 0, sizeof(cl_entity_t));
 	currententity = &ent;
@@ -877,12 +1515,15 @@ void R_DrawWorld()
 	VectorCopy(r_refdef.vieworg, modelorg);
 	
 	currenttexture = -1;
-	memcpy(&ent.curstate.rendercolor, &gWaterColor, sizeof(colorVec));
+	color24& rendercolor = ent.curstate.rendercolor;
+	rendercolor.r = gWaterColor.r;
+	rendercolor.g = gWaterColor.g;
+	rendercolor.b = gWaterColor.b;
 
 	qglColor3f(1.0, 1.0, 1.0);
 	Q_memset(lightmap_polys, 0, 256);
 	R_ClearSkyBox();
-	if (gl_texsort == false)
+	if (!gl_texsort)
 	{
 		switch (gl_lightmap_format)
 		{
@@ -890,9 +1531,9 @@ void R_DrawWorld()
 			qglBlendFunc(0, GL_ONE_MINUS_SRC_COLOR);
 			break;
 		case GL_INTENSITY:
-			glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, 8448.0);
+			qglTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, 8448.0);
 			qglColor4f(0.0, 0.0, 0.0, 1.0);
-			qglBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+			qglBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_COLOR);
 			break;
 		case GL_RGBA:
 			qglTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, 8448.0);
@@ -907,9 +1548,16 @@ void R_DrawWorld()
 	S_ExtraUpdate();
 	if (!CL_IsDevOverviewMode())
 	{
+		vec3_t;
 		R_DrawDecals(false);	// Implement
 		R_BlendLightmaps();	// Implement
 	}
+}
+
+void DrawGLPolyScroll(msurface_t* psurface, cl_entity_t* pEntity)
+{
+	TO_IMPLEMENT;
+	return Call_Function<void, msurface_t*, cl_entity_t*>(0x48350, psurface,pEntity);
 }
 
 void R_DrawEntitiesOnList()
@@ -943,16 +1591,13 @@ void R_CheckVariables()
 
 void R_AnimateLight()
 {	
-	Call_Function<void>(0x42eb0);
-	const int v1 = 10 * g_pcl.time;
+	//Call_Function<void>(0x42eb0);
 	for (int i = 0; i < ARRAYSIZE(d_lightstylevalue); i++)
 	{
 		int len = cl_lightstyle[i].length;
 		if (len > 0)
 		{
-			//d_lightstylevalue[i] = 22 * (cl_lightstyle[i].map[v1 % len]) - 97;
-			//d_lightstylevalue[i] = 22 * (cl_lightstyle[i].map[v1 % len + i * 68]) - 97;
-			d_lightstylevalue[i] = 22 * (cl_lightstyle[i].map[v1 % len] - 97);
+			d_lightstylevalue[i] = 22 * (cl_lightstyle[i].map[(int)(10 * g_pcl.time) % len] - 97);
 		}
 		else
 		{
@@ -964,14 +1609,11 @@ void R_AnimateLight()
 void GL_LoadFilterTexture(float r, float g, float b, float brightness)
 {
 	uchar* texbuf = (uchar*)Mem_Malloc(192);
-	uchar rfiltered = r * brightness * 255;
-	uchar gfiltered = g * brightness * 255;
-	uchar bfiltered = b * brightness * 255;
 	for (int i = 0; i < 192;)
 	{
-		texbuf[i++] = rfiltered;
-		texbuf[i++] = gfiltered;
-		texbuf[i++] = bfiltered;
+		texbuf[i++] = r * brightness * 255;
+		texbuf[i++] = g * brightness * 255;
+		texbuf[i++] = b * brightness * 255;
 	}
 	
 	if (gl_FilterTexture)
@@ -991,7 +1633,7 @@ void GL_LoadFilterTexture(float r, float g, float b, float brightness)
 		qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY, gl_ansio.value);
 
 	}
-	free(texbuf);
+	Mem_Free(texbuf);
 }
 
 void AllowFog(qboolean allowed)
@@ -1022,8 +1664,14 @@ float CalcFov(float* fov_x, float width, float height)
 	return RAD2DEG(half_fov_y) * 2;
 }
 
+float ScrollOffset(msurface_t* psurface, cl_entity_t* pEntity)
+{
+	return Call_Function<float, msurface_t*, cl_entity_t*>(0x482A0, psurface, pEntity);
+}
+
 void R_ConcatRotations(vec3_t* in1, vec3_t* in2, vec3_t* out)
 {
+	return Call_Function<void, vec3_t*, vec3_t*, vec3_t*>(0x63150, in1, in2, out);
 	for (int i = 0; i < 3; i++)
 	{
 		for (int j = 0; j < 3; j++)
@@ -1044,16 +1692,22 @@ void ProjectPointOnPlane(vec_t* dst, const vec_t* p, const vec_t* normal)
 
 void PerpendicularVector(vec_t* dst, const vec_t* src)
 {
-	// Missing garbage code here
-
+	return Call_Function<void, vec_t*, const vec_t*>(0x43980, dst, src);
+	int i;
+	for (i = 0; i < 3; i++)
+	{
+		if (src[i] <= src[0] && src[i] <= src[1] && src[i] <= src[2])
+			break;
+	}
 	vec3_t tempvec = { 0 };
+	tempvec[i] = 1;
 	ProjectPointOnPlane(dst, tempvec, src);
 	VectorNormalize(dst);
 }
 
 void RotatePointAroundVector(vec_t* dst, const vec_t* dir, const vec_t* point, float degrees)
 {
-	 return Call_Function<void, const vec_t*, const vec_t*, const vec_t*, float>(0x43A10, dst, dir, point, degrees);
+	return Call_Function<void, const vec_t*, const vec_t*, const vec_t*, float>(0x43A10, dst, dir, point, degrees);
 	vec3_t m[3];
 	float im[3][3];
 	float zrot[3][3];

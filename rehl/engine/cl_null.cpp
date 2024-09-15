@@ -32,7 +32,7 @@
 #include "cl_ents.h"
 
 VVAR(cl_enginefunc_dst_t, g_engdstAddrs, 0x635C4, k_engdstNull);
-VAR(client_state_t, g_pcl, 0xC699);
+VAR(client_state_t, g_pcl, 0x1777E);
 VAR(client_static_t, g_pcls, 0x15ECD);
 
 double g_clockdelta = 0;

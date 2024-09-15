@@ -180,12 +180,12 @@ typedef struct client_static_s
 	int build_num;
 } client_static_t;
 
-typedef struct client_state_s
+struct client_state_t
 {
 	int max_edicts;
 	resource_t resourcesonhand;
 	resource_t resourcesneeded;
-	resource_t resourcelist[MAX_RESOURCE_LIST];
+	resource_t resourcelist[1280];
 	int num_resources;
 	qboolean need_force_consistency_response;
 	char serverinfo[512];
@@ -202,7 +202,7 @@ typedef struct client_state_s
 	vec3_t simorg;
 	vec3_t simvel;
 	vec3_t simangles;
-	vec3_t predicted_origins[64];
+	vec_t predicted_origins[64][3];
 	vec3_t prediction_error;
 	float idealpitch;
 	vec3_t viewheight;
@@ -224,37 +224,37 @@ typedef struct client_state_s
 	local_state_t predicted_frames[64];
 	int delta_sequence;
 	int playernum;
-	event_t event_precache[MAX_EVENTS];
-	model_t *model_precache[MAX_MODELS];
+	event_s event_precache[256];
+	model_s* model_precache[512];
 	int model_precache_count;
-	sfx_s *sound_precache[MAX_SOUNDS];
-	consistency_t consistency_list[MAX_CONSISTENCY_LIST];
+	sfx_s* sound_precache[512];
+	consistency_t consistency_list[512];
 	int num_consistency;
 	int highentity;
 	char levelname[40];
 	int maxclients;
 	int gametype;
 	int viewentity;
-	model_t *worldmodel;
-	efrag_t *free_efrags;
+	model_s* worldmodel;
+	efrag_s* free_efrags;
 	int num_entities;
 	int num_statics;
 	cl_entity_t viewent;
 	int cdtrack;
 	int looptrack;
 	CRC32_t serverCRC;
-	unsigned char clientdllmd5[16];
+	unsigned __int8 clientdllmd5[16];
 	float weaponstarttime;
 	int weaponsequence;
 	int fPrecaching;
-	dlight_t *pLight;
+	dlight_t* pLight;
 	player_info_t players[32];
 	entity_state_t instanced_baseline[64];
 	int instanced_baseline_number;
 	CRC32_t mapCRC;
 	event_state_t events;
 	char downloadUrl[128];
-} client_state_t;
+};
 
 typedef enum CareerStateType_e
 {

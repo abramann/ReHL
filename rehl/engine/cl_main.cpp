@@ -42,8 +42,8 @@ cl_entity_t* cl_entities = nullptr;
 
 // TODO, allocate dynamically
 efrag_t cl_efrags[MAX_EFRAGS] = {};
-dlight_t cl_dlights[MAX_DLIGHTS] = {};
 dlight_t cl_elights[MAX_ELIGHTS] = {};
+VARRAY(dlight_t, cl_dlights, [MAX_DLIGHTS], 0x177F0, {});
 VARRAY(lightstyle_t, cl_lightstyle, [MAX_LIGHTSTYLES], 0x17812, {});
 
 int g_bRedirectedToProxy = 0;

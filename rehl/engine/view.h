@@ -31,3 +31,7 @@ void BuildGammaTable(float g);
 EXTERN_VAR(cvar_t, v_lambert);
 EXTERN_VAR(cvar_t, v_lightgamma);
 EXTERN_ARRAY(float, v_blend, [4]);
+EXTERN_ARRAY(int, lineargammatable, [1024]);
+EXTERN_ARRAY(int, screengammatable, [1024]);
+EXTERN_ARRAY(int, lightgammatable, [1024]);
+EXTERN_ARRAY(uchar, texgammatable, [256]);

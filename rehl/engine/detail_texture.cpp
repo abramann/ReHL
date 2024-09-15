@@ -35,3 +35,14 @@ void DT_LoadDetailMapFile(char * levelName)
 {
 	return Call_Function<void, char*>(0x334B0, levelName);
 }
+
+int DT_SetRenderState(int diffuseId)
+{
+	TO_IMPLEMENT;
+	return Call_Function<int, int>(0x33CA0, diffuseId);
+}
+
+void DT_SetTextureCoordinates(float u, float v)
+{
+	qglMTexCoord2fSGIS(TEXTURE2_SGIS, u, v);
+}

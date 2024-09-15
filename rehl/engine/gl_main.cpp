@@ -10,7 +10,7 @@ ARRAY(int, allocated, [64][128], 0x49BCF);
 
 ARRAY(int, lightmap_textures, [64], 0x49BD9);
 
-VAR(GLenum, gl_lightmap_format, 0x49C17);
+VAR(GLenum, gl_lightmap_format, 0x494FB);
 
 VAR(GLint, lightmap_used, 0x49C1C);
 
@@ -23,6 +23,10 @@ ARRAY(qboolean, lightmap_modified, [64], 0x48677);
 ARRAY(uchar, lightmaps, [4194304], 0x49D47);
 
 VVAR(mvertex_t*, r_pcurrentvertbase, 0x49C5B, nullptr);
+
+VVAR(qboolean, mtexenabled, 0x478A1, false);
+
+ARRAY(glRect_t, lightmap_rectchange, [64], 0x47A5A);
 
 void GL_BuildLightmaps()
 {
@@ -57,9 +61,9 @@ void GL_BuildLightmaps()
 		for (int j = 0; j < numsurfaces; j++)
 		{
 			msurface_t* surface = &model->surfaces[j];
-			GL_CreateSurfaceLightmap(surface);	// Implement
+			GL_CreateSurfaceLightmap(surface);
 			if ((surface->flags & 0x10) == 0)
-				BuildSurfaceDisplayList(surface);	// Implement
+				BuildSurfaceDisplayList(surface);
 		}
 	}
 	if (!gl_texsort)
@@ -87,63 +91,61 @@ void GL_CreateSurfaceLightmap(msurface_t *surf)
 		int texnum = surf->lightmaptexturenum = AllocBlock((surf->extents[0] / 16) + 1, (surf->extents[1] / 16) + 1, &surf->light_s, &surf->light_t);
 		int bytes = lightmap_bytes;
 		R_BuildLightMap(surf, &lightmaps[bytes * (surf->light_s + ((surf->light_t + (texnum *128)) * 128))], bytes * 128);
-
-		//R_BuildLightMap(surf, &lightmaps[bytes * (surf->light_s + ((surf->light_t + (texnum << 7)) << 7))], bytes << 7);
 	}
 }
 
-void BuildSurfaceDisplayList(msurface_t *fa)
+void BuildSurfaceDisplayList(msurface_t* fa)
 {
-	return Call_Function<void, msurface_t*>(0x497B0, fa);
-	
-	/*
-	int j; // [esp+3Ch] [ebp-60h]
-	int ja; // [esp+3Ch] [ebp-60h]
-	medge_t* pedges;
-	glpoly_t* poly;
-
 	int numedges = fa->numedges;
-
-	pedges = currentmodel->edges;
+	glpoly_t* poly;
+	model_t* currmodel;
+	mvertex_t* vertexbase;
+	mtexinfo_t* texinfo = fa->texinfo;
+	texture_t* texture = texinfo->texture;
+	medge_t* pedges = currentmodel->edges;
 
 	poly = (glpoly_t*)Hunk_Alloc(28 * numedges + 16);
-
 	poly->next = fa->polys;
-
 	poly->flags = fa->flags;
-
 	fa->polys = poly;
-
 	poly->numverts = numedges;
 
-	if (numedges <= 0)
-	{
-		for (int i = 0; i < numedges; i++)
-		{
-			
-			int v;
-			int surfedge = currentmodel->surfedges[i + fa->firstedge];
-			if (surfedge > 0)
-				v = pedges[-surfedge].v[1];
-			else
-				v = pedges[-surfedge].v[0];
+	currmodel = currentmodel;
 
-			mtexinfo_t* texinfo = fa->texinfo;
-			texture_t* tex = texinfo->texture;
-			mvertex_t* vertex = &r_pcurrentvertbase[v];
-			vec3_t v2;
-			VectorCopy(vertex->position, v2);
-			float v3 = _DotProduct(texinfo->vecs[0], v2) + texinfo->vecs[0][3];
-			float v4 = _DotProduct(texinfo->vecs[1], v2);
-			float v5 = v3 / tex->width;
-			
-		}
-	}
-	if (gl_keeptjunctions.value == 0.0 && fa->flags >= 0 && numedges > 0)
+	for (int i = 0; i < numedges; i++)
 	{
-		
+		int surfedge = currentmodel->surfedges[i + fa->firstedge];
+		int v;
+		if (surfedge <= 0)
+			v = pedges[-surfedge].v[1];
+		else
+			v = pedges[surfedge].v[0];
+
+		vertexbase = &r_pcurrentvertbase[v];
+		texinfo = fa->texinfo;
+
+		float v13 = _DotProduct(texinfo->vecs[0], vertexbase->position) + texinfo->vecs[0][3];// texinfo->vecs[0][0] * v9 + texinfo->vecs[0][1] * v10 + texinfo->vecs[0][2] * v11 + texinfo->vecs[0][3];
+		float v4 = _DotProduct(texinfo->vecs[1], vertexbase->position) + texinfo->vecs[1][3];
+
+		poly->verts[0][3] = v13 / texture->width;
+		poly->verts[0][4] = v4 / texture->height;
+
+		VectorCopy(vertexbase->position, poly->verts[0]);
+
+		float v22 = _DotProduct(vertexbase->position, fa->texinfo->vecs[0]) + fa->texinfo->vecs[0][3]
+			- fa->texturemins[0]
+			+(16 * fa->light_s)
+			+ 8.0;
+
+			float v23 = _DotProduct(vertexbase->position, fa->texinfo->vecs[1]) + fa->texinfo->vecs[1][3]
+			- fa->texturemins[1]
+			+ 16 * fa->light_t
+			+ 8.0;
+
+		poly->verts[0][5] = v22 * 0.00048828125;
+		poly->verts[0][6] = 0.00048828125 * v23;
+		poly = (glpoly_t*)((char*)poly + 28);
 	}
-	*/
 }
 
 int AllocBlock(int w, int h, int* x, int* y)
@@ -185,6 +187,26 @@ int AllocBlock(int w, int h, int* x, int* y)
 		allocated[texnum][i + *x] = best2 + h;
 
 	return texnum;
+}
+
+void GL_DisableMultitexture()
+{
+	if (mtexenabled)
+	{
+		qglDisable(GL_TEXTURE_2D);
+		GL_SelectTexture(TEXTURE0_SGIS);
+		mtexenabled = false;
+	}
+}
+
+void GL_EnableMultitexture()
+{
+	if (gl_mtexable)
+	{
+		GL_SelectTexture(TEXTURE1_SGIS);
+		qglEnable(GL_TEXTURE_2D);
+		mtexenabled = true;
+	}
 }
 
 void GL_Dump_f()

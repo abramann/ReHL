@@ -5,7 +5,7 @@
 
 #include <glew.h>
 
-extern triangleapi_t tri;
+EXTERN_VAR(triangleapi_t, tri);
 
 EXTERN_VAR(GLfloat, flFogDensity);
 EXTERN_ARRAY(float, flFinalFogColor, [4]);
