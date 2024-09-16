@@ -51,6 +51,7 @@ enum
 
 #define RAD2DEG(x)	((float)(x) * (float)(180.f / M_PI))
 #define DEG2RAD(x)	((float)(x) * (float)(M_PI / 180.f))
+#define PlaneDiff(point,plane) (((plane)->type < 3 ? (point)[(plane)->type] : _DotProduct((point), (plane)->normal)) - (plane)->dist)
 
 #define BOX_ON_PLANE_SIDE(emins, emaxs, p)      \
 	(((p)->type < 3) ?                          \
@@ -144,7 +145,7 @@ float anglemod(float a);
 void BOPS_Error(void);
 
 int BoxOnPlaneSide(vec_t *emins, vec_t *emaxs, mplane_t *p);
-int InvertMatrix(const float *m, float *out);
+int InvertMatrix(vec4_t* out, const vec4_t* in1);
 void AngleVectors_ext(const vec_t *angles, vec_t *forward, vec_t *right, vec_t *up);
 void AngleVectors(const vec_t *angles, vec_t *forward, vec_t *right, vec_t *up);
 void AngleVectorsTranspose(const vec_t *angles, vec_t *forward, vec_t *right, vec_t *up);
@@ -167,7 +168,6 @@ NOBODY void VectorInverse(vec_t *v);
 NOBODY int Q_log2(int val);
 NOBODY void VectorMatrix(vec_t *forward, vec_t *right, vec_t *up);
 void VectorAngles(const vec_t *forward, vec_t *angles);
-NOBODY void R_ConcatRotations(float *in1, float *in2, float *out);
 void R_ConcatTransforms(float in1[3][4], float in2[3][4], float out[3][4]);
 NOBODY void FloorDivMod(double numer, double denom, int *quotient, int *rem);
 NOBODY int GreatestCommonDivisor(int i1, int i2);

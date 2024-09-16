@@ -133,11 +133,27 @@ void R_DrawTEntitiesOnList(qboolean clientOnly);
 
 void R_RenderDlights();
 
+void R_MarkLights(dlight_t* light, int bit, mnode_t* node);
+
 void R_DrawParticles();
+
+void R_DrawEntitiesOnList();
+
+void R_Clear();
+
+void R_CheckVariables();
+
+void R_AnimateLight();
+
+void GL_LoadFilterTexture(float r, float g, float b, float brightness);
+
+int SignbitsForPlane(mplane_t* out);
 
 void R_BuildLightMap(msurface_t* psurf, uchar* dest, int stride);
 
 void R_AddDynamicLights(msurface_t* surf);
+
+void R_RenderDlight(dlight_t* light);
 
 void AllowFog(qboolean allowed);
 
@@ -145,4 +161,6 @@ float CalcFov(float* fov_x, float width, float height);
 
 float ScrollOffset(msurface_t* psurface, cl_entity_t* pEntity);
 
-void RotatePointAroundVector(vec_t* dst, const vec_t* dir, const vec_t* point, float degrees);
+void R_ConcatRotations(vec3_t* in1, vec3_t* in2, vec3_t* out);
+
+void RotatePointAroundVector(vec3_t* dst, const vec_t* dir, const vec_t* point, float degrees);

@@ -34,11 +34,8 @@ VAR(movevars_t, movevars, 0x940F0);
 VAR(playermove_t  *, pmove, 0x144E6);
 
 #ifdef SHARED_GAME_DATA
-vec_t(*sp_player_mins)[4][3] = ADDRESS_OF_DATA(vec_t(*)[4][3], 0x9B31A);
-vec_t(&player_mins)[4][3] = *sp_player_mins;
-
-vec_t(*sp_player_maxs)[4][3] = ADDRESS_OF_DATA(vec_t(*)[4][3], 0x9B315);
-vec_t(&player_maxs)[4][3] = *sp_player_maxs;
+ARRAY(vec_t, player_mins, [4][3], 0x9B31A);
+ARRAY(vec_t, player_maxs, [4][3], 0x9B315);
 #else
 vec3_t player_mins[MAX_MAP_HULLS] = {
 	{ -16.0f, -16.0f, -36.0f, },

@@ -26,7 +26,7 @@ VVAR(mvertex_t*, r_pcurrentvertbase, 0x49C5B, nullptr);
 
 VVAR(qboolean, mtexenabled, 0x478A1, false);
 
-ARRAY(glRect_t, lightmap_rectchange, [64], 0x47A5A);
+ARRAY(glRect_t, lightmap_rectchange, [64], 0x47F9E);
 
 void GL_BuildLightmaps()
 {

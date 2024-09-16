@@ -33,7 +33,7 @@ VVAR(bool, atismoothing, 0x4CBB2, false);
 VVAR(int, gGLHardwareType, 0x4CC21, 0);
 VVAR(cvar_t, gl_ztrick, 0x4E121, { "gl_ztrick" COMMA "0" });
 VVAR(cvar_t, gl_vsync, 0x4E12B, { "gl_vsync" COMMA "1" COMMA FCVAR_ARCHIVE });
-VVAR(int, currenttexture, 0x3C148, -1); // to avoid unnecessary texture sets
+VVAR(int, currenttexture, 0x494B8, -1); // to avoid unnecessary texture sets
 VARRAY(int, cnttextures, [2], 0x3C142, { -1 COMMA - 1 }); // cached
 VAR(qboolean, g_bSupportsNPOTTextures, 0x4D1B7);
 VVAR(int, gl_mtexable, 0x3C104, 0);
