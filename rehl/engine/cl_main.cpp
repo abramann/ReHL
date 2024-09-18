@@ -37,9 +37,7 @@ netadr_t g_rconaddress;
 char g_lastrconcommand[1024];
 //client_static_t cls;
 //client_state_t cl;
-
-cl_entity_t* cl_entities = nullptr;
-
+// 
 // TODO, allocate dynamically
 efrag_t cl_efrags[MAX_EFRAGS] = {};
 dlight_t cl_elights[MAX_ELIGHTS] = {};

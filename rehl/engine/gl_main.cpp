@@ -1,5 +1,7 @@
 #include "precompiled.h"
 
+// TODO: Find var names BuildSurfaceDisplayList
+
 void GL_CreateSurfaceLightmap(msurface_t *surf);
 
 void BuildSurfaceDisplayList(msurface_t *fa);
@@ -97,20 +99,19 @@ void GL_CreateSurfaceLightmap(msurface_t *surf)
 void BuildSurfaceDisplayList(msurface_t* fa)
 {
 	int numedges = fa->numedges;
-	glpoly_t* poly;
-	model_t* currmodel;
+
 	mvertex_t* vertexbase;
 	mtexinfo_t* texinfo = fa->texinfo;
 	texture_t* texture = texinfo->texture;
 	medge_t* pedges = currentmodel->edges;
 
-	poly = (glpoly_t*)Hunk_Alloc(28 * numedges + 16);
+	glpoly_t* poly = (glpoly_t*)Hunk_Alloc(28 * numedges + 16);	// Why 28!=sizeof(glpoly_t)
 	poly->next = fa->polys;
 	poly->flags = fa->flags;
 	fa->polys = poly;
 	poly->numverts = numedges;
 
-	currmodel = currentmodel;
+	model_t* currmodel = currentmodel;
 
 	for (int i = 0; i < numedges; i++)
 	{
@@ -163,17 +164,16 @@ int AllocBlock(int w, int h, int* x, int* y)
 			int j;
 			for (j = 0; j < w; j++)
 			{
-				int* v = (int*)allocated + i + k + j;
-				if (*v >= best2)
+				int* loc = (int*)allocated + i + k + j;
+				if (*loc >= best2)
 					break;
-				if (*v > best)
-					best = *v;
+				if (*loc > best)
+					best = *loc;
 			}
 			if (j == w)
 			{
-				best2 = best;
+				*y = best2 = best;
 				*x = i;
-				*y = best;
 			}
 		}
 		if (best2 + h <= BLOCK_SIZE)

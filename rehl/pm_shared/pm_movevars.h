@@ -42,10 +42,6 @@ struct movevars_s
 	float	skyvec_z;			// 
 };
 
-#ifdef SHARED_GAME_DATA
-extern movevars_t & movevars;
-#else
-extern movevars_t  movevars;
-#endif
+EXTERN_VAR(movevars_t, movevars);
 
 #endif

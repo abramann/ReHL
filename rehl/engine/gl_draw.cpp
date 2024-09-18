@@ -82,12 +82,13 @@ void BoxFilter3x3(unsigned char *out, unsigned char *in, int w, int h, int x, in
 
 void ComputeScaledSize(int *wscale, int *hscale, int width, int height);
 
+void GL_MipMap(uchar* in, int width, int height);
+
 void GL_ResampleAlphaTexture(unsigned char *in, int inwidth, int inheight, unsigned char *out, int outwidth, int outheight);
 void GL_ResampleTexture(uint *in, int inwidth, int inheight, uint *out, int outwidth, int outheight);
 short GL_PaletteAdd(unsigned char *pPal, qboolean isSky);
 void GL_PaletteInit();
-void ApplyScale(unsigned char* data, int width, int height, unsigned char* scaledData, int scaled_width, int scaled_height);
-
+void GL_ResampleTexturePoint(uchar* in, int inwidth, int inheight, uchar* out, int outwidth, int outheight);
 
 static int scissor_x = 0, scissor_y = 0, scissor_width = 0, scissor_height = 0;
 static qboolean giScissorTest = false;
@@ -680,7 +681,7 @@ int GL_LoadTexture2(char * identifier, GL_TEXTURETYPE textureType, int width, in
 		if (fs_perf_warnings.value != 0.0)
 			Con_DPrintf("fs_perf_warnings: resampling non-power-of-2 texture %s (%dx%d)", identifier, width, height);
 
-		ApplyScale(data, width, height, scaledData, scaled_width, scaled_height);
+		GL_ResampleTexturePoint(data, width, height, scaledData, scaled_width, scaled_height);
 		textureData = scaledData;
 	}
 
@@ -897,7 +898,7 @@ void GL_Upload32(uint *data, int width, int height, qboolean mipmap, int iType, 
 	{
 		for (int i = 1; scaled_width > 1 || scaled_height > 1; i++)
 		{
-			Call_Function<void, uint*, int, int>(0x3E0F0, scaled_25071, scaled_width, scaled_height);
+			GL_MipMap((uchar*)scaled_25071, scaled_width, scaled_height);
 
 			scaled_width /= 2;
 			scaled_height /= 2;
@@ -918,8 +919,6 @@ void GL_Upload32(uint *data, int width, int height, qboolean mipmap, int iType, 
 
 void GL_Upload16(unsigned char *data, int width, int height, qboolean mipmap, int iType, unsigned char *pPal, int filter)
 {
-	g_pcl.model_precache;
-	g_pcl.model_precache_count;
 	//return Call_Function<void, uchar*, int, int, qboolean, int, uchar*, int>(0x3E630, data, width, height, mipmap, iType, pPal, filter);
 
 	int count = height * width;
@@ -1022,7 +1021,8 @@ void GL_Upload16(unsigned char *data, int width, int height, qboolean mipmap, in
 
 void BoxFilter3x3(unsigned char * out, unsigned char * in, int w, int h, int x, int y)
 {
-	return Call_Function<void, uchar*, uchar*, int, int, int, int>(0x3E240, out, in, w, h, x, y);
+	//return Call_Function<void, uchar*, uchar*, int, int, int, int>(0x3E240, out, in, w, h, x, y);
+	
 	int r = 0;
 	int g = 0;
 	int b = 0;
@@ -1065,7 +1065,8 @@ void BoxFilter3x3(unsigned char * out, unsigned char * in, int w, int h, int x, 
 
 void ComputeScaledSize(int *wscale, int *hscale, int width, int height)
 {
-	return Call_Function<void, int*, int*, int, int>(0x3DB50, wscale, hscale, width, height);
+	//return Call_Function<void, int*, int*, int, int>(0x3DB50, wscale, hscale, width, height);
+	
 	if (g_bSupportsNPOTTextures)
 	{
 		if (wscale)
@@ -1124,10 +1125,18 @@ void ComputeScaledSize(int *wscale, int *hscale, int width, int height)
 	}
 }
 
+void GL_MipMap(uchar* in, int width, int height)
+{
+	TO_IMPLEMENT;
+	return Call_Function<void, uchar*, int, int>(0x3E0F0, in, width, height);
+}
+
 void GL_ResampleAlphaTexture(unsigned char *in, int inwidth, int inheight, unsigned char *out, int outwidth, int outheight)
 {
-	Call_Function<void, unsigned char *, int, int, unsigned char *, int, int>(0x3DE90, in, inwidth, inheight, out, outwidth, outheight);
+	TO_IMPLEMENT;
 
+	Call_Function<void, unsigned char *, int, int, unsigned char *, int, int>(0x3DE90, in, inwidth, inheight, out, outwidth, outheight);
+	
 	/*
 	unsigned char p1[1024];
 	unsigned char p2[1024];
@@ -1159,6 +1168,7 @@ void GL_ResampleAlphaTexture(unsigned char *in, int inwidth, int inheight, unsig
 
 void GL_ResampleTexture(uint *in, int inwidth, int inheight, uint *out, int outwidth, int outheight)
 {
+	TO_IMPLEMENT;
 	Call_Function<void, uint *, int, int, uint *, int, int>(0x3DCD0, in, inwidth, inheight, out, outwidth, outheight);
 
 	/*
@@ -1227,37 +1237,34 @@ void GL_ResampleTexture(uint *in, int inwidth, int inheight, uint *out, int outw
 */
 }
 
-void ApplyScale(unsigned char* data, int width, int height, unsigned char* scaledData, int scaled_width, int scaled_height)
+void GL_ResampleTexturePoint(uchar* in, int inwidth, int inheight, uchar* out, int outwidth, int outheight)
 {
-	NOT_IMPLEMENTED;
-	/*
-	 // Calculate scaling factors (fixed point 16.16)
-  uint widthScale = (width << 16) / scaledWidth;
-  uint heightScale = (height << 16) / scaledHeight;
+		NOT_IMPLEMENTED;
+		Call_Function<void, uchar*, int, int, uchar*, int, int>(0x3E060, in, inwidth, inheight, out, outwidth, outheight);
+		/*
+		 // Calculate scaling factors (fixed point 16.16)
+	  uint widthScale = (width << 16) / scaledWidth;
+	  uint heightScale = (height << 16) / scaledHeight;
 
-  // Check for invalid scaled height
-  if (scaledHeight <= 0) {
-	return 0; // Handle error or return something meaningful
-  }
+	  if (scaledHeight <= 0) {
+		return 0;
+	  }
 
-  // Loop through scaled height
-  for (int y = 0; y < scaledHeight; y += (heightScale >> 2)) {
-	// Check for invalid scaled width
-	if (scaledWidth <= 0) {
-	  break; // Handle error or skip processing
-	}
+	  for (int y = 0; y < scaledHeight; y += (heightScale >> 2)) {
+		// Check for invalid scaled width
+		if (scaledWidth <= 0) {
+		  break; // Handle error or skip processing
+		}
 
-	// Loop through scaled width
-	for (int x = 0; x < scaledWidth; x += (widthScale >> 2)) {
-	  // Calculate source pixel index (avoid overflow with uint)
-	  int sourceIndex = y * width + x;
+		for (int x = 0; x < scaledWidth; x += (widthScale >> 2)) {
+		  // Calculate source pixel index (avoid overflow with uint)
+		  int sourceIndex = y * width + x;
 
-	  // Copy pixel from source image to output
-	  *out++ = *((unsigned char*)imageData + sourceIndex);
-	}
+		  *out++ = *((unsigned char*)imageData + sourceIndex);
+		}
 
-	// Move to next row in source image based on scaling factor
-	imageData += width * ((heightScale + y) >> 16);
-  }
-  */
+		imageData += width * ((heightScale + y) >> 16);
+	  }
+	  */
+
 }

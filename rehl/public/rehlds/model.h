@@ -215,7 +215,7 @@ typedef struct mnode_s
 	int				contents;		// 0, to differentiate from leafs
 	int				visframe;		// node needs to be traversed if current
 
-	short			minmaxs[6];		// for bounding box culling
+	float			minmaxs[6];		// for bounding box culling
 
 	struct mnode_s	*parent;
 

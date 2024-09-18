@@ -2,13 +2,16 @@
 #include "render_api.h"
 
 
-// TODO: Find good name for variables in R_AddDynamicLights, ProjectPointOnPlane, BuildSurfaceDisplayList
+// TODO: Find good name for variables in ProjectPointOnPlane, BuildSurfaceDisplayList
 
 const float PI = 3.141592653589793f;
-const double FAR_PLANE = 16000.0;
+const float DEFAULT_BLOCKLIGHT = 65280.0f;
+const double FAR_PLANE = 16000;
 const double NEAR_PLANE = 4;
 const int MAX_LIGHTMAP = 324;
 const int MAX_DECAL_SURFACES = 512;
+const int SAMPLE_SIZE = 16;
+const int LIGHTMAP_POLYGONS = 64;
 const cvar_t gl_envmapsize = { "gl_envmapsize", "256" };
 const cvar_t gl_flipmtrix = { "gl_flipmatrix", "0" };
 const cvar_t gl_flashblend = { "gl_flashblend", "0" };
@@ -64,7 +67,7 @@ ARRAY(vec4_t, gScreenToWorld, [4], 0x45CB4);
 VVAR(cl_entity_t*, currententity, 0x4949D, nullptr;);
 VAR(vec3_t, modelorg, 0x4947B);
 VAR(colorVec, gWaterColor, 0x4948B);
-ARRAY(glpoly_t*, lightmap_polys, [64], 0x494E0);
+ARRAY(glpoly_t*, lightmap_polys, [LIGHTMAP_POLYGONS], 0x494E0);
 ARRAY(float, skymins, [2][6], 0x505FC);
 ARRAY(float, skymaxs, [2][6], 0x5060E);
 VAR(int, gDecalSurfCount, 0x49577);
@@ -78,6 +81,10 @@ VVAR(int, mirrortexturenum, 0x4938D, 0);
 VVAR(msurface_t*, skychain, 0x48AD7, nullptr);
 VVAR(msurface_t*, waterchain, 0x493C3, nullptr);
 VVAR(int, r_dlightframecount, 0x43112, 0);
+VVAR(int, skytexturenum, 0x48B55, 0);
+VVAR(cl_entity_t*, cl_entities, 0x48AB5, nullptr);
+ARRAY(float, turbsin, [256], 0x4878C); // TODO: It's const, find way to export it from IDA
+VVAR(int, gLoadSky, 0x4F9C9, 0);
 
 // cvars
 VVAR(cvar_t, r_cachestudio, 0x46BD4, { "r_cachestudio" COMMA "1" COMMA 0 COMMA 0.0f COMMA nullptr });
@@ -246,8 +253,8 @@ void R_Init()
 	R_InitParticles();
 	R_InitParticleTexture();
 	//R_UploadEmptyTex();	// Not needed?
-	for (int i = 0; i < 16; i++)
-		playertextures[i] = GL_GenTexture(); // same?
+	//for (int i = 0; i < 16; i++)
+	//	playertextures[i] = GL_GenTexture(); // no reference, not needed?
 }
 
 void R_PushDlights()
@@ -282,21 +289,22 @@ void R_InitParticles()
 		else
 		{
 			r_numparticles = 512;
-			sizeParticles = 28672;
+			sizeParticles = r_numparticles * sizeof(particle_t);
 		}
 	}
 	else
 	{
 		r_numparticles = 2048;
-		sizeParticles = 114688;
+		sizeParticles = sizeof(particle_t) * r_numparticles;
 	}
-	particles = (particle_t *)Hunk_AllocName(sizeParticles, (char *)"particles");
-	gBeams = (BEAM *)Hunk_AllocName(15872, "lightning");
+	particles = (particle_t *)Hunk_AllocName(sizeParticles, "particles");
+	gBeams = (BEAM *)Hunk_AllocName(sizeof(BEAM) * 128 , "lightning");
 }
 
 void R_InitParticleTexture()
 {
 	particletexture = GL_GenTexture();
+
 	GL_Bind(particletexture);
 
 	char data[8][8][4] = { 0 };
@@ -393,7 +401,7 @@ void R_RenderView()
 	
 	if (r_norefresh.value == 0.0)
 	{
-		if (!r_worldentity.model || !g_pcl.worldmodel)
+		if (r_worldentity.model == nullptr || g_pcl.worldmodel == nullptr)
 			Sys_Error("%s: NULL worldmodel", __func__);
 
 		if (r_speeds.value != 0.0)
@@ -408,11 +416,11 @@ void R_RenderView()
 	
 		R_Clear();
 
-		if (r_refdef.onlyClientDraws == false)
+		if (!r_refdef.onlyClientDraws)
 			R_PreDrawViewModel();	// Implement
 
 		R_RenderScene(); 
-		if (r_refdef.onlyClientDraws == false)
+		if (!r_refdef.onlyClientDraws)
 		{
 			R_DrawViewModel(); // Implement
 			R_PolyBlend();	// Implement
@@ -420,7 +428,7 @@ void R_RenderView()
 
 		S_ExtraUpdate();
 
-		if (r_speeds.value != 0.0)
+		if (r_speeds.value != 0)
 		{
 			framerate = g_pcl.time - g_pcl.oldtime;
 			float fps = framerate;
@@ -428,12 +436,8 @@ void R_RenderView()
 				fps = 1.0 / fps;
 
 			float time2 = Sys_FloatTime();
-			Con_Printf(
-				"%3ifps %3i ms  %4i wpoly %4i epoly\n",
-				fps + 0.5,
-				(time2 - time1) * 1000,
-				c_brush_polys,
-				c_alias_polys);
+			Con_Printf("%3ifps %3i ms  %4i wpoly %4i epoly\n",
+				fps + 0.5, (time2 - time1) * 1000, c_brush_polys, c_alias_polys);
 		}
 	}
 }
@@ -509,16 +513,18 @@ void R_ForceCVars(qboolean multiplayer)
 void SCR_BeginLoadingPlaque(qboolean reconnect)
 {
 	NOT_IMPLEMENTED;
+	return Call_Function<void, qboolean>(0x4C130, reconnect);
 }
 
 void R_InitSky() 
 { 
-	NOT_IMPLEMENTED;
+	gLoadSky = 1;
 }
 
 void R_MarkLeaves()
 {
 	//return Call_Function<void>(0x495C0);
+
 	if (mirror)
 		return;
 	if (r_oldviewleaf == r_viewleaf && r_novis.value == 0) 
@@ -633,6 +639,7 @@ void R_Clear()
 			qglClear(GL_DEPTH_BUFFER_BIT);
 		else
 			qglClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
 		gldepthmin = 0.0f;
 		gldepthmax = 0.5f;
 		qglDepthFunc(GL_LEQUAL);
@@ -647,7 +654,9 @@ void R_SetupFrame()
 	R_ForceCVars(g_pcl.maxclients > 1);
 	R_CheckVariables();
 	R_AnimateLight();
+
 	r_framecount++;
+
 	VectorCopy(r_refdef.vieworg, r_origin);
 
 	r_oldviewleaf = r_viewleaf;
@@ -676,13 +685,13 @@ void R_SetupFrame()
 
 void R_SetFrustum()
 {
-	float xa;
-	float xb;
-	float fov_x = 90.0;	
-	float fov = CalcFov(&fov_x, glwidth, glheight);
+	//return Call_Function<void>(0x45270);
 
-	xa = 90 - (scr_fov_value / 2);
-	xb = 90 - (fov / 2);
+	float fov_x = 90.0;	
+	float fov = CalcFov(fov_x, glwidth, glheight);
+
+	float xa = 90 - (scr_fov_value / 2);
+	float xb = 90 - (fov / 2);
 
 	RotatePointAroundVector(&frustum[0].normal, vup, vpn, -xa);
 	RotatePointAroundVector(&frustum[1].normal,vup, vpn, xa);
@@ -696,171 +705,6 @@ void R_SetFrustum()
 	}
 }
 
-#define LODWORD(x) (*((unsigned int*)&(x)))
-/*
-void R_SetupGL()
-{
-	int y; // eax
-	int v1; // edx
-	int v2; // ecx
-	GLsizei v3; // esi
-	GLsizei value; // ebx
-	long double width; // fst7
-	long double height; // fst6
-	long double v7; // fst5
-	long double v8; // fst5
-	long double v9; // fst7
-	__m128 v10; // xmm5
-	__m128 v11; // xmm4
-	__m128 v12; // xmm3
-	__m128 v13; // xmm1
-	__m128 v14; // xmm2
-	__m128 v15; // xmm6
-	__m128 v16; // xmm5
-	__m128 v17; // xmm4
-	__m128 v18; // xmm0
-	__m128 v19; // xmm0
-	__m128 v20; // xmm4
-	__m128 v21; // xmm3
-	__m128 v22; // xmm2
-	__m128 v23; // xmm1
-	__m128 v24; // xmm2
-	long double zoom; // fst7
-	long double v26; // fst7
-	__m128 v27; // xmm2
-	__m128 v28; // xmm3
-	__m128 v29; // xmm4
-	__m128 v30; // xmm5
-	__m128 v31; // xmm2
-	__m128 v32; // xmm0
-	__m128 v33; // xmm2
-	__m128 v34; // xmm1
-	__m128 v35; // xmm5
-	__m128 v36; // xmm7
-	__m128 v37; // xmm4
-	float v38; // [esp+0h] [ebp-8Ch]
-	GLfloat v39; // [esp+0h] [ebp-8Ch]
-	GLfloat v40; // [esp+0h] [ebp-8Ch]
-	GLfloat v41; // [esp+0h] [ebp-8Ch]
-	GLfloat v42; // [esp+0h] [ebp-8Ch]
-	GLfloat v43; // [esp+4h] [ebp-88h]
-	GLfloat v44; // [esp+8h] [ebp-84h]
-	float v45; // [esp+30h] [ebp-5Ch]
-	float v46; // [esp+50h] [ebp-3Ch]
-	float screenaspect; // [esp+60h] [ebp-2Ch]
-	float screenaspecta; // [esp+60h] [ebp-2Ch]
-	__m128 screenaspectb; // [esp+60h] [ebp-2Ch]
-	float v50; // [esp+74h] [ebp-18h]
-	float v51; // [esp+7Ch] [ebp-10h]
-	float v52; // [esp+7Ch] [ebp-10h]
-
-	qglMatrixMode(0x1701u);
-	qglLoadIdentity();
-	y = r_refdef.vrect.y;
-	v1 = r_refdef.vrect.x - (r_refdef.vrect.x > 0);
-	v2 = ((unsigned int)(glheight - (r_refdef.vrect.height + y)) < 0x80000000)
-		+ glheight
-		- (r_refdef.vrect.height
-			+ y)
-		- 1;
-	if (envmap)
-	{
-		value = (int)gl_envmapsize.value;
-		v2 = 0;
-		v1 = 0;
-		glheight = value;
-		v3 = value;
-		glwidth = value;
-	}
-	else
-	{
-		v3 = (r_refdef.vrect.x + r_refdef.vrect.width < glwidth) + r_refdef.vrect.x + r_refdef.vrect.width - v1;
-		value = (glheight > glheight - y)
-			+ glheight
-			- (((unsigned int)(glheight - (r_refdef.vrect.height + y)) < 0x80000000)
-				+ glheight
-				- r_refdef.vrect.height
-				- 1);
-	}
-	qglViewport(glx + v1, gly + v2, v3, value);
-	width = (long double)r_refdef.vrect.width;
-	height = (long double)r_refdef.vrect.height;
-	screenaspect = width / height;
-	v7 = scr_fov_value;
-	if (scr_fov_value < 1.0)
-	{
-		v8 = 0.9999999999999999;
-	}
-	else if (v7 <= 179.0)
-	{
-		v46 = height;
-		v45 = width;
-		height = v46;
-		v8 = tan(v7 / 360.0 * 3.141592653589793);
-		width = v45;
-	}
-	else
-	{
-		v8 = 0.9999999999999999;
-	}
-	v51 = width / v8;
-	v38 = height / v51;
-	v52 = atanf(LODWORD(v38)) * 360.0 / 3.141592653589793;
-	if (r_refdef.onlyClientDraws)
-	{
-		v9 = tan(v52 * 3.141592653589793 / 360.0) * 4.0;
-		qglFrustum(screenaspect * -v9, v9 * screenaspect, -v9, v9, 4.0, 16000.0);
-	}
-	else
-	{
-		if (CL_IsDevOverviewMode())
-		{
-			zoom = gDevOverview.zoom;
-			v50 = 4096.0 / zoom;
-			screenaspecta = 4096.0 / (zoom * screenaspect);
-			qglOrtho(
-				(double)-(int)v50,
-				(double)(int)v50,
-				(double)-(int)screenaspecta,
-				(double)(int)screenaspecta,
-				16000.0 - gDevOverview.z_min,
-				16000.0 - gDevOverview.z_max);
-			if (mirror)
-				goto LABEL_22;
-		LABEL_21:
-			qglCullFace(0x404u);
-			goto LABEL_13;
-		}
-		v26 = tan(v52 * (double)3.141592653589793 / (float)360.0) * 4.0;
-		qglFrustum(screenaspect * -v26, v26 * screenaspect, -v26, v26, 4.0, movevars.zmax);
-	}
-	if (mirror == false)
-		goto LABEL_21;
-LABEL_22:
-	if (mirror_plane->normal[2] == 0.0)
-		qglScalef(-1.0, 1.0, 1.0);
-	else
-		qglScalef(1.0, -1.0, 1.0);
-	qglCullFace(0x405u);
-LABEL_13:
-	qglGetFloatv(0xBA7u,(GLfloat*) gProjectionMatrix);
-	qglMatrixMode(0x1700u);
-	qglLoadIdentity();
-	qglRotatef(-90.0, 1.0, 0.0, 0.0);
-	qglRotatef(90.0, 0.0, 0.0, 1.0);
-	v39 = -r_refdef.viewangles[2];
-	qglRotatef(v39, 1.0, 0.0, 0.0);
-	v40 = -r_refdef.viewangles[0];
-	qglRotatef(v40, 0.0, 1.0, 0.0);
-	v41 = -r_refdef.viewangles[1];
-	qglRotatef(v41, 0.0, 0.0, 1.0);
-	v44 = -r_refdef.vieworg[2];
-	v43 = -r_refdef.vieworg[1];
-	v42 = -r_refdef.vieworg[0];
-	qglTranslatef(v42, v43, v44);
-	qglGetFloatv(0xBA6u,(GLfloat*) r_world_matrix);
-}
-*/
 void R_SetupGL()
 {
 	//return Call_Function<void>(0x458D0);
@@ -869,20 +713,20 @@ void R_SetupGL()
 	qglLoadIdentity();
 
 	int x = r_refdef.vrect.x;
-	int v1 = r_refdef.vrect.width + r_refdef.vrect.x;
-	int v2 = glheight - r_refdef.vrect.y;
+	int x2 = r_refdef.vrect.width + r_refdef.vrect.x;
+	int y2 = glheight - r_refdef.vrect.y;
 	int y = glheight - r_refdef.vrect.height - r_refdef.vrect.y;
 	if (r_refdef.vrect.x > 0)
 		x = r_refdef.vrect.x - 1;
-	if (v1 < glwidth)
-		++v1;
+	if (x2 < glwidth)
+		++x2;
 	if (y < 0)
 		--y;
-	if (v2 < glheight)
-		++v2;
+	if (y2 < glheight)
+		++y2;
 
-	int vpWidth = v1 - x;
-	int vpHeight = v2 - y;
+	int vpWidth = x2 - x;
+	int vpHeight = y2 - y;
 	if (envmap)
 	{
 		y = 0;
@@ -890,15 +734,16 @@ void R_SetupGL()
 		vpWidth = vpHeight = gl_envmapsize.value;	// const
 		glwidth = glheight = gl_envmapsize.value;
 	}
+
 	qglViewport(x + glx, y + gly, vpWidth, vpHeight);
+
 	float width = r_refdef.vrect.width;
 	float height = r_refdef.vrect.height;
 	float screenaspect = width / height;
 
-	float fov = CalcFov(&scr_fov_value, width, height);
+	float fov = CalcFov(scr_fov_value, width, height);
 
-	auto v = atanf(1.0f / screenaspect) * 360.0 / PI;
-	float viewfield = tan(v * PI / 360.0f) * 4;
+	float viewfield = tan(fov * PI / 360.0f) * 4;
 
 	if (r_refdef.onlyClientDraws)
 	{
@@ -906,7 +751,6 @@ void R_SetupGL()
 	}
 	else  if (CL_IsDevOverviewMode())
 	{
-		NOT_TESTED;
 		float zoom = gDevOverview.zoom;
 		float clipplane = 4096.0 / zoom;
 		screenaspect = 4096.0 / (zoom * screenaspect);
@@ -922,6 +766,7 @@ void R_SetupGL()
 	{
 		glFrustum(screenaspect * -viewfield, viewfield * screenaspect, -viewfield, viewfield, NEAR_PLANE, movevars.zmax);
 	}
+	//Call_Function<void>(0x458D0);
 
 	if (mirror)
 	{
@@ -936,10 +781,9 @@ void R_SetupGL()
 	{
 		qglCullFace(GL_FRONT);
 	}
-
 	qglGetFloatv(GL_PROJECTION_MATRIX, (float*)gProjectionMatrix);
 
-	qglMatrixMode(0x1700u);
+	qglMatrixMode(GL_MODELVIEW);
 	qglLoadIdentity();
 	qglRotatef(-90.0, 1.0, 0.0, 0.0);
 	qglRotatef(90.0, 0.0, 0.0, 1.0);
@@ -959,17 +803,19 @@ void R_SetupGL()
 	qglEnable(GL_DEPTH_TEST);
 
 	if (gl_flipmatrix.value == 0.0)
-	{
+	{		
 		for (int i = 0; i < 4; i++)
 		{
 			vec4_t& r_worldmat = r_world_matrix[i];
 			vec4_t& world2scren = gWorldToScreen[i];
-			vec4_t& projmat = gProjectionMatrix[0];
 			for (int j = 0; j < 4; j++)
 			{
+				vec4_t& projmat = gProjectionMatrix[j];
+				gWorldToScreen[i][j] = 0;
+
 				for (int k = 0; k < 4; k++)
 				{
-					world2scren[j] = r_worldmat[k] * projmat[j];
+					gWorldToScreen[i][j] += r_worldmat[k] * projmat[k];
 				}
 			}
 		}
@@ -992,556 +838,91 @@ void R_ClearSkyBox()
 	}
 }
 
-/*
 void R_RecursiveWorldNode(mnode_t* node)
-{
-	mnode_t* node_; // edi
-	mplane_t* plane; // eax
-	long double v3; // fst7
-	__int16 v4; // fps
-	bool v5; // c0
-	char v6; // c2
-	bool v7; // c3
-	int v8; // ebx
-	msurface_t* surf; // esi
-	__int16 v10; // fps
-	bool v11; // c0
-	char v12; // c2
-	bool v13; // c3
-	unsigned int v14; // ecx
-	texture_t* v15; // eax
-	msurface_s* v16; // ecx
-	int firstsurface_; // ecx
-	mnode_s* v20; // eax
-	int v21; // edx
-	int* v22; // esi
-	double v23; // [esp+Ch] [ebp-8h]
-	mnode_t* nodea; // [esp+1Ch] [ebp+8h]
-
-	node_ = node;
-
-	if (node->contents == CONTENTS_SOLID)
-		return; // hit a solid leaf
-
-	while (1)
-	{
-		if (node->visframe != r_visframecount)
-			return;
-
-		if (R_CullBox(node_->minmaxs, &node_->minmaxs[3]))
-			return;
-
-		if (node_->contents < 0)
-		{
-			firstsurface_ = *(DWORD*)&node_->firstsurface;
-			v20 = node_->children[1];
-			if (firstsurface_)
-			{
-				v21 = r_framecount;
-				do
-				{
-					v22 = (int*)v20->contents;
-					v20 = (mnode_s*)((char*)v20 + 4);
-					--firstsurface_;
-					*v22 = v21;
-				} while (firstsurface_);
-			}
-			if (node_->children[0])
-				R_StoreEfrags((efrag_t**)node_->children);
-			return;
-		}
-
-		plane = node_->plane;
-		if (plane->type)
-		{
-			if (plane->type == 1)
-			{
-				v3 = modelorg[1];
-			}
-			else
-			{
-				v3 = modelorg[2];
-				if (plane->type != 2)
-					v3 = v3 * plane->normal[2] + modelorg[1] * plane->normal[1] + modelorg[0] * plane->normal[0];
-			}
-		}
-		else
-		{
-			v3 = modelorg[0];
-		}
-		v23 = v3 - plane->dist;
-		v5 = v23 < 0.0;
-		v6 = 0;
-		v7 = v23 == 0.0;
-		v8 = v3 < 0.0;
-		R_RecursiveWorldNode(node_->children[v8]);
-		if (node_->numsurfaces)
-		{
-			surf = &g_pcl.worldmodel->surfaces[node_->firstsurface];
-			if (v23 >= -0.01)
-			{
-				v11 = v23 < 0.01;
-				v12 = 0;
-				v13 = v23 == 0.01;
-				if (v11 == 0)
-					v8 = 0;
-			}
-			else
-			{
-				v8 = 2;
-			}
-			nodea = (mnode_t*)node_->numsurfaces;
-			do
-			{
-				if (surf->visframe == r_framecount)
-				{
-					v14 = surf->flags;
-					if ((v14 & 0x80u) != 0 || v23 < 0.0 == ((v14 >> 1) & 1))
-					{
-						if (gl_texsort)
-						{
-							if (mirror == false || surf->texinfo->texture != g_pcl.worldmodel->textures[mirrortexturenum])
-							{
-								v15 = surf->texinfo->texture;
-								v16 = v15->texturechain;
-								v15->texturechain = surf;
-								surf->texturechain = v16;
-							}
-						}
-						else if ((v14 & 4) != 0)
-						{
-							surf->texturechain = skychain;
-							skychain = surf;
-						}
-						else if ((v14 & 0x10) != 0)
-						{
-							surf->texturechain = waterchain;
-							waterchain = surf;
-						}
-						else
-						{
-							R_DrawSequentialPoly(surf, 0);
-						}
-					}
-				}
-				++surf;
-				nodea = (mnode_t*)((char*)nodea - 1);
-			} while (nodea);
-		}
-		node_ = node_->children[v8 == 0];
-		if (node_->contents == -2)
-			return;
-	}
-}
-*/
-
-void __cdecl R_RecursiveWorldNode(mnode_t* node)
 {	
-	return Call_Function<void, mnode_t*>(0x49220, node);
+	//return Call_Function<void, mnode_t*>(0x49220, node);
 
-	mnode_t* n; // ebx
-	int side; // ebp
-	qboolean v3; // eax
-	mplane_t* v4; // edx
-	byte v5; // al
-	long double v6; // fst7
-	int v7; // edi
-	long double v8; // fst7
-	msurface_t* surf; // esi
-	int v10; // ecx
-	texture_t* v11; // eax
-	int v12; // esi
-	mnode_s* v13; // edi
-	DWORD* v14; // edx
-	__int32 v15; // eax
-	DWORD* v16; // edx
-	BOOL v17; // [esp+28h] [ebp-24h]
-	mtexinfo_t* v18; // [esp+2Ch] [ebp-20h]
+	int side;
 
-	for (n = node; n->contents != -2 && n->visframe == r_visframecount; n = n->children[side])
+	for (mnode_t* n = node; n->contents != CONTENT_SOLID && n->visframe == r_visframecount; n = n->children[side])
 	{
-		v3 = R_CullBox(n->minmaxs, &n->minmaxs[3]);
-		if (v3)
+		if (R_CullBox(n->minmaxs, &n->minmaxs[3]))
 			break;
+
 		if (n->contents < 0)
 		{
-			v12 = *(DWORD*)&n->firstsurface;
-			v13 = n->children[1];
-			if (v12)
+			mleaf_t* pleaf = (mleaf_t*)n;
+
+			msurface_t** mark = pleaf->firstmarksurface;
+			int c = pleaf->nummarksurfaces;
+
+			if (c)
 			{
 				do
 				{
-					v14 = (DWORD*)*(&v13->contents + v3);
-					v15 = v3 + 1;
-					*v14 = r_framecount;
-					if (v15 == v12)
-						break;
-					v16 = (DWORD*)*(&v13->contents + v15);
-					v3 = v15 + 1;
-					*v16 = r_framecount;
-				} while (v3 != v12);
+					(*mark)->visframe = r_framecount;
+					mark++;
+				} while (--c);
 			}
-			if (n->children[0])
-				R_StoreEfrags((efrag_t**)n->children);
+
+			// deal with model fragments in this leaf
+			if (pleaf->efrags)
+				R_StoreEfrags(&pleaf->efrags);
 			return;
 		}
-		v4 = n->plane;
-		v5 = v4->type;
-		if (v5 == 1)
+		mplane_t* plane = n->plane;
+		byte type = plane->type;
+		double dot;
+		if (type == 1)
 		{
-			v6 = modelorg[1] - v4->dist;
+			dot = modelorg[1] - plane->dist;
 		}
-		else if (v5)
+		else if (type)
 		{
-			if (v5 == 2)
-				v6 = modelorg[2] - v4->dist;
+			if (type == 2)
+				dot = modelorg[2] - plane->dist;
 			else
-				v6 = modelorg[0] * v4->normal[0] + modelorg[1] * v4->normal[1] + modelorg[2] * v4->normal[2] - v4->dist;
+				dot = _DotProduct(modelorg,plane->normal) - plane->dist;
 		}
 		else
 		{
-			v6 = modelorg[0] - v4->dist;
+			dot = modelorg[0] - plane->dist;
 		}
-		v17 = v6 < 0.0;
-		R_RecursiveWorldNode(n->children[v17]);
-		v7 = n->numsurfaces;
-		v8 = (double)v6;
+		R_RecursiveWorldNode(n->children[dot < 0]);
+		int numsurfaces = n->numsurfaces;
+		dot = (double)dot;
 		if (n->numsurfaces)
 		{
 			side = 0;
-			surf = &g_pcl.worldmodel->surfaces[n->firstsurface];
-			if (v8 >= -0.01)
-			{
-				side = !v17;
-				if (v8 > 0.01)
-					side = 1;
-			}
-			do
-			{
-				if (surf->visframe == r_framecount)
-				{
-					v10 = surf->flags;
-					if ((v10 & 0x80u) != 0 || ((v10 & 2) != 0) == v8 < 0.0)
-					{
-						if (gl_texsort)
-						{
-							v18 = surf->texinfo;
-							v11 = v18->texture;
-							if (mirror == false || v11 != g_pcl.worldmodel->textures[mirrortexturenum])
-							{
-								surf->texturechain = v11->texturechain;
-								v18->texture->texturechain = surf;
-							}
-						}
-						else if ((v10 & 4) != 0)
-						{
-							surf->texturechain = skychain;
-							skychain = surf;
-						}
-						else if ((v10 & 0x10) != 0)
-						{
-							surf->texturechain = waterchain;
-							waterchain = surf;
-						}
-						else
-						{
-							R_DrawSequentialPoly(surf, 0);
-							v8 = (double)v8;
-						}
-					}
-				}
-				++surf;
-				--v7;
-			} while (v7);
-		}
-		else
-		{
-			side = !v17;
-		}
-	}
-}
-
-void ww(mnode_t* node)
-{
-	mnode_t* node_; // edi
-	mplane_t* plane; // eax
-	long double v3; // fst7
-	__int16 v4; // fps
-	bool v5; // c0
-	char v6; // c2
-	bool v7; // c3
-	int v8; // ebx
-	msurface_t* surf; // esi
-	__int16 v10; // fps
-	bool v11; // c0
-	char v12; // c2
-	bool v13; // c3
-	unsigned int v14; // ecx
-	texture_t* v15; // eax
-	msurface_s* v16; // ecx
-	int firstsurface_; // ecx
-	mnode_s* v20; // eax
-	int v21; // edx
-	int* v22; // esi
-	double v23; // [esp+Ch] [ebp-8h]
-	mnode_t* nodea; // [esp+1Ch] [ebp+8h]
-
-	node_ = node;
-
-	if (node->contents == CONTENTS_SOLID)
-		return; // hit a solid leaf
-
-	int side;
-	while (1)
-	{
-		if (node_->visframe != r_visframecount)
-			return;
-
-		if (R_CullBox(node_->minmaxs, &node_->minmaxs[3]))
-			return;
-
-		/*
-		if (node_->contents < 0)
-		{
-			mleaf_t* pleaf = (mleaf_t*)node;
-
-			msurface_t** mark = pleaf->firstmarksurface;
-
-			for (int i = 0; i < pleaf->nummarksurfaces; i++)
-			{
-				mark[i]->visframe = r_framecount;
-			}
-
-			if (pleaf->efrags)
-				R_StoreEfrags(&pleaf->efrags);
-			break;
-		}*/
-		if (node_->contents < 0)
-		{
-			firstsurface_ = *(DWORD*)&node_->firstsurface;
-			v20 = node_->children[1];
-			if (firstsurface_)
-			{
-				v21 = r_framecount;
-				do
-				{
-					v22 = (int*)v20->contents;
-					v20 = (mnode_s*)((char*)v20 + 4);
-					--firstsurface_;
-					*v22 = v21;
-				} while (firstsurface_);
-			}
-			if (node_->children[0])
-				R_StoreEfrags((efrag_t**)node_->children);
-			return;
-		}
-
-		plane = node_->plane;
-		if (plane->type)
-		{
-			if (plane->type == 1)
-			{
-				v3 = modelorg[1];
-			}
-			else
-			{
-				v3 = modelorg[2];
-				if (plane->type != 2)
-					v3 = v3 * plane->normal[2] + modelorg[1] * plane->normal[1] + modelorg[0] * plane->normal[0];
-			}
-		}
-		else
-		{
-			v3 = modelorg[0];
-		}
-		v23 = v3 - plane->dist;
-		v5 = v23 < 0.0;
-		v6 = 0;
-		v7 = v23 == 0.0;
-		v8 = v3 < 0.0;
-		R_RecursiveWorldNode(node_->children[v8]);
-		if (node_->numsurfaces)
-		{
-			surf = &g_pcl.worldmodel->surfaces[node_->firstsurface];
-			if (v23 >= -0.01)
-			{
-				v11 = v23 < 0.01;
-				v12 = 0;
-				v13 = v23 == 0.01;
-				if (v11 == 0)
-					v8 = 0;
-			}
-			else
-			{
-				v8 = 2;
-			}
-			nodea = (mnode_t*)node_->numsurfaces;
-			do
-			{
-				if (surf->visframe == r_framecount)
-				{
-					v14 = surf->flags;
-					if ((v14 & 0x80u) != 0 || v23 < 0.0 == ((v14 >> 1) & 1))
-					{
-						if (gl_texsort)
-						{
-							if (mirror == false || surf->texinfo->texture != g_pcl.worldmodel->textures[mirrortexturenum])
-							{
-								v15 = surf->texinfo->texture;
-								v16 = v15->texturechain;
-								v15->texturechain = surf;
-								surf->texturechain = v16;
-							}
-						}
-						else if ((v14 & 4) != 0)
-						{
-							surf->texturechain = skychain;
-							skychain = surf;
-						}
-						else if ((v14 & 0x10) != 0)
-						{
-							surf->texturechain = waterchain;
-							waterchain = surf;
-						}
-						else
-						{
-							R_DrawSequentialPoly(surf, 0);
-						}
-					}
-				}
-				++surf;
-				nodea = (mnode_t*)((char*)nodea - 1);
-			} while (nodea);
-		}
-		node_ = node_->children[v8 == 0];
-		if (node_->contents == -2)
-			return;
-	}
-}
-/*
-void R_RecursiveWorldNode(mnode_t* node)
-{
-	//return Call_Function<void, mnt*>(0x49220, node);
-
-	mplane_t* plane; // eax
-	long double v3; // fst7
-	__int16 v4; // fps
-	bool v5; // c0
-	char v6; // c2
-	bool v7; // c3
-	int v8; // ebx
-	msurface_t* surf; // esi
-	__int16 v10; // fps
-	bool v11; // c0
-	char v12; // c2
-	bool v13; // c3
-	unsigned int flags; // ecx
-	texture_t* v15; // eax
-	msurface_s* v16; // ecx
-	int firstsurface_; // ecx
-
-	int v21; // edx
-	int* v22; // esi
-	double v23; // [esp+Ch] [ebp-8h]
-
-	if (node->contents == CONTENTS_SOLID)
-		return; // hit a solid leaf
-
-	mnode_t* n = node;
-	int side;
-	while (1)
-	{
-		if (n->visframe != r_visframecount)
-			return;
-
-		if (R_CullBox(n->minmaxs, &n->minmaxs[3]))
-			return;
-
-		if (n->contents < 0)
-		{
-			mleaf_t* pleaf = (mleaf_t*)node;
-
-			msurface_t** mark = pleaf->firstmarksurface;
-
-			for (int i = 0; i < pleaf->nummarksurfaces; i++)
-			{
-				mark[i]->visframe = r_framecount;
-			}
-
-			if (pleaf->efrags)
-				R_StoreEfrags(&pleaf->efrags);
-			break;
-		}
-
-		plane = n->plane;
-		if (plane->type)
-		{
-			if (plane->type == 1)
-			{
-				v3 = modelorg[1];
-			}
-			else
-			{
-				v3 = modelorg[2];
-				if (plane->type != 2)
-					v3 = v3 * plane->normal[2] + modelorg[1] * plane->normal[1] + modelorg[0] * plane->normal[0];
-			}
-		}
-		else
-		{
-			v3 = modelorg[0];
-		}
-
-		float z = v3;
-		float dot = PlaneDiff(modelorg, node->plane);
-		dot = floor(dot * 10) / 10;
-		z = floor(z * 10) / 10;
-		if (z != dot)
-			printf(")");
-		side = (dot >= 0.0f) ? 0 : 1;
-
-		// recurse down the children, front side first
-		R_RecursiveWorldNode(n->children[side]);
-
-		if (n->numsurfaces)
-		{
-			surf = &g_pcl.worldmodel->surfaces[n->firstsurface];
+			msurface_t* surf = &g_pcl.worldmodel->surfaces[n->firstsurface];
 			if (dot >= -0.01)
 			{
-				v11 = dot < 0.01;
-				v12 = 0;
-				v13 = dot == 0.01;
-				if (v11 == 0)
-					v8 = 0;
+				side = dot >= 0 ? 1 : 0;
 			}
-			else
+			for (int i = 0; i < numsurfaces; i++, surf++)
 			{
-				v8 = 2;
-			}
-			
-			for (int i = 0; i < n->numsurfaces; i++)
-			{
-				if (surf[i].visframe != r_framecount)
+				if (surf->visframe != r_framecount)
 					continue;
-				flags = surf[i].flags;
-				if (flags & 0x80 || dot < 0.0 == ((flags >> 1) & 1))
+
+				int flags = surf->flags;
+				if ((flags & 0x80u) != 0 || ((flags & 2) != 0) == dot < 0)
 				{
 					if (gl_texsort)
 					{
-						if (mirror == false || surf[i].texinfo->texture != g_pcl.worldmodel->textures[mirrortexturenum])
+						mtexinfo_t* texinfo = surf->texinfo;
+						texture_t* texture = texinfo->texture;
+						if (mirror == false || texture != g_pcl.worldmodel->textures[mirrortexturenum])
 						{
-							v15 = surf[i].texinfo->texture;
-							v16 = v15->texturechain;
-							v15->texturechain = &surf[i];
-							surf[i].texturechain = v16;
+							surf->texturechain = texture->texturechain;
+							texinfo->texture->texturechain = surf;
 						}
 					}
-					else if (flags & SURF_DRAWSKY)
+					else if ((flags & 4) != 0)
 					{
 						surf->texturechain = skychain;
 						skychain = surf;
 					}
-					else if (flags & SURF_DRAWTURB)
+					else if ((flags & 0x10) != 0)
 					{
 						surf->texturechain = waterchain;
 						waterchain = surf;
@@ -1549,16 +930,18 @@ void R_RecursiveWorldNode(mnode_t* node)
 					else
 					{
 						R_DrawSequentialPoly(surf, 0);
+						dot = (double)dot;
 					}
 				}
 			}
 		}
-
-
-		n = n->children[v8]; side;
+		else
+		{
+			side = dot >= 0;
+		}
 	}
 }
-*/
+
 qboolean R_CullBox(vec_t* mins, vec_t* maxs)
 {
 	for (int i = 0; i < 4; i++)
@@ -1574,13 +957,12 @@ qboolean R_CullBox(vec_t* mins, vec_t* maxs)
 void R_StoreEfrags(efrag_t** ppefrag)
 {
 	efrag_t* efrag;
-	cl_entity_s* ent;
 
 	for (; *ppefrag; ppefrag = &efrag->leafnext)
 	{
 		efrag = *ppefrag;
 
-		ent = efrag->entity;
+		cl_entity_s* ent = efrag->entity;
 		if (ent->model->type > (unsigned int)mod_alias)
 			Sys_Error("%s Bad entity type %d\n", __func__, ent->model->type);
 		if (ent->visframe != r_framecount && cl_numvisedicts <= 511)
@@ -1593,20 +975,123 @@ void R_StoreEfrags(efrag_t** ppefrag)
 
 void R_BlendLightmaps()
 {
-	TO_IMPLEMENT;
-	return Call_Function<void>(0x48500);
+	//return Call_Function<void>(0x48500);
+
+	if (filterMode || r_fullbright.value != 0.0 || !gl_texsort)
+		return;	
+
+	qglDepthMask(GL_ZERO);
+	if (gl_lightmap_format == GL_LUMINANCE)
+	{
+		glBlendFunc(0, GL_ONE_MINUS_SRC_COLOR);
+	}
+	else if (gl_lightmap_format != GL_INTENSITY && gl_lightmap_format == GL_RGBA && gl_monolights.value == 0.0)
+	{
+		qglTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, 8448.0);
+		if (gl_overbright.value == 0)
+		{
+			qglBlendFunc(0, GL_SRC_COLOR);
+		}
+		else
+		{
+			qglBlendFunc(GL_DST_COLOR, GL_SRC_COLOR);
+			qglColor4f(0.66, 0.66, 0.66, 1.0);
+		}
+	}
+	else
+	{
+		qglTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, 8448.0);
+		qglColor4f(0, 0, 0, 1.0);
+		qglBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	}
+
+	if (r_lightmap.value == 0.0)
+		qglEnable(GL_BLEND);
+
+	for (int i = 0; i < LIGHTMAP_POLYGONS; i++)
+	{
+		glpoly_t* p = lightmap_polys[i];
+		if (p)
+		{
+			GL_Bind(lightmap_textures[i]);
+			qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, 9729.0);
+			qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, 9729.0);
+			if (lightmap_modified[i])
+			{
+				lightmap_modified[i] = false;
+				qglTexSubImage2D(GL_TEXTURE_2D, 0, 0,
+					0, 128, 128,
+					gl_lightmap_format, GL_UNSIGNALED,
+					&lightmaps[0x4000 * lightmap_bytes * i]);
+			}
+			for(;p != nullptr;p=p->chain)
+			{
+				int flags = p->flags;
+				if ((flags & 0x80u) == 0)
+				{
+					if ((flags & 0x10) != 0)
+					{
+						for (glpoly_t* poly = p; poly != nullptr; poly = poly->next)
+						{
+ 							qglBegin(GL_POLYGON);
+							qglColor3f(1.0, 1.0, 1.0);
+
+							for (int j = 0; j < poly->numverts; j++)
+							{
+								float* verts = (float*)poly->verts[j];
+								qglTexCoord2f(verts[5], verts[6]);
+								float tempVert[3];
+								tempVert[0] = verts[0];
+								tempVert[1] = verts[1];
+								float wateramp = gl_wateramp.value;
+								float nv = turbsin[(int)(g_pcl.time * 160.0 + verts[0] + verts[1])] * wateramp + verts[2];
+								nv += wateramp * 0.8 * turbsin[(int)(g_pcl.time * 171.0 + verts[0] * 5.0 - verts[1])];
+								tempVert[2] = nv;
+								qglVertex3fv(tempVert);
+							}
+							qglEnd();
+						}
+					}
+					else
+					{
+						qglBegin(GL_POLYGON);
+						for (int j = 0; j < p->numverts; j++)
+						{
+							float* verts = p->verts[j];
+
+							qglTexCoord2f(verts[5], verts[6]);
+							qglVertex3fv(verts);
+						}
+						qglEnd();
+					}
+				}
+				else
+				{
+					DrawGLWaterPolyLightmap(p);
+				}
+			}
+		}
+	}
+	qglDisable(GL_BLEND);
+	if (gl_lightmap_format == GL_LUMINANCE)
+	{
+		qglBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	}
+	else if (gl_lightmap_format == GL_INTENSITY || gl_monolights.value != 0.0)
+	{
+		qglTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, 7681);
+		qglColor4f(1.0, 1.0, 1.0, 1.0);
+	}
+	qglDepthMask(GL_ONE);
 }
 
 void R_DrawSequentialPoly(msurface_t* s, int face)
 {
 	//return Call_Function<void, msurface_t*, int>(0x47900, s, face);
 
-	int rendermode;
-	texture_t* animationtex;
-	int renderstate;
-	auto polygs = s->polys;
-	auto vert = polygs->verts;
-
+	glpoly_t* polygs = s->polys;
+	float (*vert)[7] = polygs->verts;
+	texture_t* texanimation;
 	if (currententity->curstate.rendermode == 1)
 	{
 		GL_DisableMultitexture();
@@ -1615,7 +1100,7 @@ void R_DrawSequentialPoly(msurface_t* s, int face)
 		int texnum = R_TextureAnimation(s)->gl_texturenum;
 		GL_Bind(texnum);
 		qglDisable(GL_TEXTURE_2D);
-		DrawGLSolidPoly(s->polys);
+		DrawGLSolidPoly(s->polys); // Implement
 		GL_EnableMultitexture();
 	}
 	else if ((s->flags & 0x94) != 0)
@@ -1625,7 +1110,7 @@ void R_DrawSequentialPoly(msurface_t* s, int face)
 			GL_DisableMultitexture();
 			int texnum = s->texinfo->texture->gl_texturenum;
 			GL_Bind(texnum);
-			EmitWaterPolys(s, face);
+			EmitWaterPolys(s, face); // Implement
 		}
 	}
 	else
@@ -1633,14 +1118,15 @@ void R_DrawSequentialPoly(msurface_t* s, int face)
 		if (!filterMode)
 			R_RenderDynamicLightmaps(s);
 
-		if (gl_mtexable && ((rendermode = currententity->curstate.rendermode) == 0 || rendermode == 4))
+		int rendermode;
+		if (gl_mtexable && ((rendermode = currententity->curstate.rendermode) == kRenderNormal || rendermode == kRenderTransAlpha))
 		{
-			animationtex = R_TextureAnimation(s);
+			texanimation = R_TextureAnimation(s);
 			GL_SelectTexture(TEXTURE0_SGIS);
-			GL_Bind(animationtex->gl_texturenum);
+			GL_Bind(texanimation->gl_texturenum);
 			qglTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, 8448);
 
-			if (currententity->curstate.rendermode == 1)
+			if (currententity->curstate.rendermode == kRenderFxPulseSlow)
 				qglDisable(GL_TEXTURE_2D);
 
 			GL_EnableMultitexture();
@@ -1658,7 +1144,7 @@ void R_DrawSequentialPoly(msurface_t* s, int face)
 				glRect_t* lmrect = &lightmap_rectchange[lmtexnum];
 
 				GLvoid* pixels = &lightmaps[lightmap_bytes * ((lightmap_rectchange[lmtexnum].t + (lmtexnum << 7)) << 7)];
-				glTexSubImage2D(GL_TEXTURE_2D, 0, 0,
+				qglTexSubImage2D(GL_TEXTURE_2D, 0, 0,
 					lightmap_rectchange[lmtexnum].t, 128,
 					lightmap_rectchange[lmtexnum].h, gl_lightmap_format,
 					GL_UNSIGNED_BYTE, pixels);
@@ -1669,7 +1155,7 @@ void R_DrawSequentialPoly(msurface_t* s, int face)
 
 			qglTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, 8448);
 
-			renderstate = DT_SetRenderState(animationtex->gl_texturenum);
+			int renderstate = DT_SetRenderState(texanimation->gl_texturenum);
 
 			qglBegin(GL_POLYGON);
 			
@@ -1702,7 +1188,7 @@ void R_DrawSequentialPoly(msurface_t* s, int face)
 					Sys_Error("%s: Too many decal surfaces!\n", __func__);
 
 				if (!currententity->curstate.rendermode)
-					R_DrawDecals(true);
+					R_DrawDecals(true); // Implement
 
 				if (gl_wireframe.value > 0)
 				{
@@ -1728,7 +1214,7 @@ void R_DrawSequentialPoly(msurface_t* s, int face)
 		else
 		{
 			GL_DisableMultitexture();
-			auto texanimation = R_TextureAnimation(s);
+			texanimation = R_TextureAnimation(s);
 			GL_Bind(texanimation->gl_texturenum);
 			if ((s->flags & 0x20) != 0)
 			{
@@ -1799,14 +1285,102 @@ void R_DrawSequentialPoly(msurface_t* s, int face)
 
 void DrawTextureChains()
 {
+	//return Call_Function<void>(0x48AB0);
+
+	int extraupdtcount = 100;
+
+	currententity = cl_entities;
+
+	if (!gl_texsort)
+	{
+		GL_DisableMultitexture();
+		if (skychain)
+		{
+			R_DrawSkyChain(skychain);
+			skychain = nullptr;
+		}
+		if (waterchain)
+		{
+			R_DrawWaterChain(waterchain);
+			waterchain = nullptr;
+		}
+	}
+
+	model_t* model = g_pcl.worldmodel;
+	for (int i = 0; i < model->numtextures; i++)
+	{
+		texture_t* texture = model->textures[i];
+		if (texture == nullptr)
+			continue;
+
+		msurface_t* chain = texture->texturechain;
+		if (chain == nullptr)
+			continue;
+
+		if (i == skytexturenum)
+		{
+			R_DrawSkyChain(chain);
+
+			texture->texturechain = 0;
+			;
+			if (extraupdtcount-- <= 0)
+			{
+				S_ExtraUpdate();
+				extraupdtcount = 100;
+			}
+		}
+		if (i != mirrortexturenum || r_mirroralpha.value == 1.0)
+		{
+			if ((chain->flags & 0x10) != 0 && r_wateralpha.value != 1.0)
+				continue;
+			do
+			{
+				R_RenderBrushPoly(chain);
+				chain = chain->texturechain;
+			} while (chain);
+
+			texture->texturechain = 0;
+			if (extraupdtcount-- <= 0)
+			{
+				S_ExtraUpdate();
+				extraupdtcount = 100;
+			}
+		}
+		R_MirrorChain(texture->texturechain);
+	}
+}
+
+void R_RenderBrushPoly(msurface_t* fa)
+{
 	TO_IMPLEMENT;
-	return Call_Function<void>(0x48AB0);
+	return Call_Function<void, msurface_t*>(0x488B0, fa);
+}
+
+void R_MirrorChain(msurface_t* s)
+{
+	if (!mirror)
+	{
+		mirror = true;
+		mirror_plane = s->plane;
+	}
 }
 
 void DrawGLSolidPoly(glpoly_t* p)
 {
 	TO_IMPLEMENT;
 	return Call_Function<void, glpoly_t*>(0x483C0, p);
+}
+
+void R_DrawSkyChain(msurface_t* s)
+{
+	TO_IMPLEMENT;
+	Call_Function<void, msurface_t*>(0x5054E, s);
+}
+
+void R_DrawWaterChain(msurface_t* pChain)
+{
+	TO_IMPLEMENT;
+	Call_Function<void, msurface_t*>(0x48A60, pChain);
 }
 
 texture_t* R_TextureAnimation(msurface_t* s)
@@ -1817,13 +1391,15 @@ texture_t* R_TextureAnimation(msurface_t* s)
 
 void EmitWaterPolys(msurface_t* fa, int direction)
 {
+	TO_IMPLEMENT;
 	return Call_Function<void, msurface_t*, int>(0x4F192, fa, direction);
 }
 
 void R_RenderDynamicLightmaps(msurface_t* fa)
 {
 	//return Call_Function<void, msurface_t*>(0x47F00, fa);
-	++c_brush_polys;
+
+	c_brush_polys++;
 	if ((fa->flags & 0x14) != 0)
 		return;
 
@@ -1953,13 +1529,8 @@ void R_BuildLightMap(msurface_t* psurf, uchar* dest, int stride)
 	size = smax * tmax;
 	psurf->dlightbits = psurf->cached_dlight = r_dlightactive & psurf->dlightbits;
 	if (smax * tmax > MAX_LIGHTMAP)
-		Sys_Error(
-			"Error: lightmap for texture% s too large(% d x % d = % d luxels); cannot exceed% d\n",
-			psurf->texinfo->texture->name,
-			smax,
-			tmax,
-			size,
-			MAX_LIGHTMAP);
+		Sys_Error("Error: lightmap for texture% s too large(% d x % d = % d luxels); cannot exceed% d\n",
+			psurf->texinfo->texture->name, smax, tmax, size, MAX_LIGHTMAP);
 
 	if (filterMode)
 	{
@@ -2004,7 +1575,7 @@ void R_BuildLightMap(msurface_t* psurf, uchar* dest, int stride)
 	{
 		for (int i = 0; i < size; i++)
 		{
-			blocklights[i].r = blocklights[i].g = blocklights[i].b = 65280;
+			blocklights[i].r = blocklights[i].g = blocklights[i].b = DEFAULT_BLOCKLIGHT;
 		}
 	}
 	if (gl_lightmap_format == GL_RGBA)
@@ -2016,10 +1587,10 @@ void R_BuildLightMap(msurface_t* psurf, uchar* dest, int stride)
 			{
 				for (int k = 0; k < 3; k++)
 				{
-					int index = (lightscale * *(&blocklights[(i * smax) + j].r + k)) / 16384;
-					if (index > 1023)
-						index = 1023;
-					lightmap[k] = lightgammatable[index] / 4;
+					int iLightgamma = (lightscale * *(&blocklights[(i * smax) + j].r + k)) / 16384;
+					if (iLightgamma > 1023)
+						iLightgamma = 1023;
+					lightmap[k] = lightgammatable[iLightgamma] / 4;
 				}
 
 				if (gl_monolights.value == 0.0)
@@ -2061,60 +1632,54 @@ void R_AddDynamicLights(msurface_t* surf)
 {
 	//return Call_Function<void, msurface_t*>(0x47110, surf);
 	
-	mtexinfo_t* texinfo;
-	long double v10;
-	vec3_t v18;
-	double radius;
-	int tmax;
-	int smax; 
-	float minlight;
+	mtexinfo_t* texinfo = surf->texinfo;
+	int smax = (surf->extents[0] / SAMPLE_SIZE) + 1;
+	int tmax = (surf->extents[1] / SAMPLE_SIZE) + 1;
 
-	texinfo = surf->texinfo;
-	smax = (surf->extents[0] / 16) + 1;
-
-	tmax = (surf->extents[1] / 16) + 1;
 	for (int lnum = 0; lnum < 32; ++lnum)
 	{
 		if (((1 << lnum) & surf->dlightbits) != 0)
 		{
-			VectorSubtract(cl_dlights[lnum].origin, currententity->origin, v18);
+			vec3_t origin_l;
+			VectorSubtract(cl_dlights[lnum].origin, currententity->origin, origin_l);
 
-			radius = cl_dlights[lnum].radius;
-			float v5 = abs(_DotProduct(v18, surf->plane->normal) - surf->plane->dist);
-			minlight = cl_dlights[lnum].minlight;
-			float v36 = radius - v5;
-			if (v36 >= minlight)
-			{
-				float v32 = v36 - minlight;
+			float radius = cl_dlights[lnum].radius;
+			float dist = abs(_DotProduct(origin_l, surf->plane->normal) - surf->plane->dist);
+			float minlight = cl_dlights[lnum].minlight;
+			float rad = radius - dist;
 
-				float v15 = _DotProduct(v18, texinfo->vecs[0]) + texinfo->vecs[0][3] - surf->texturemins[0];
-				float v17 = _DotProduct(v18, texinfo->vecs[1]) + texinfo->vecs[1][3] - surf->texturemins[1];
+			if (rad < minlight)
+				continue;
+
+				minlight = rad - minlight;
+
+				float tl = _DotProduct(origin_l, texinfo->vecs[0]) + texinfo->vecs[0][3] - surf->texturemins[0];
+				float sl = _DotProduct(origin_l, texinfo->vecs[1]) + texinfo->vecs[1][3] - surf->texturemins[1];
 
 				for (int i = 0; i < tmax; i++)
 				{
-					int v7 = abs(v17 - (i * 16));
+					int sd = abs(sl - (i * SAMPLE_SIZE));
 			
 					for (int j = 0; j < smax; j++)
 					{
-						int v9 = abs(v15 - (j * 16));
-						if (v9 <= v7)
-							v10 = v7 + (v9 / 2);
+						int td = abs(tl - (j * SAMPLE_SIZE));
+						double dist;
+						if (td <= sd)
+							dist = sd + (td / 2);
 						else
-							v10 = v9 + (v7 / 2);
+							dist = td + (sd / 2);
 
-						float v35 = v10;
-						if (v35 < v32)
+						if (dist < minlight)
 						{
-							int v11 = (v36 - v35) * 256;
 							int blindex = (i * smax) + j;
-							blocklights[blindex].r += (v11 * cl_dlights[lnum].color.r) / 256;
-							blocklights[blindex].g += (v11 * cl_dlights[lnum].color.g) / 256;
-							blocklights[blindex].b += (v11 * cl_dlights[lnum].color.b) / 256;
+							blocklights[blindex].r += ((int((rad - dist) * 256 * cl_dlights[lnum].color.r))) / 256;
+							blocklights[blindex].g += ((int((rad - dist) * 256 * cl_dlights[lnum].color.g))) / 256;
+							blocklights[blindex].b += ((int((rad - dist) * 256 * cl_dlights[lnum].color.b))) / 256;
 						}
 
 					}
 				}
-			}
+			
 		}
 	}
 }
@@ -2125,9 +1690,29 @@ void R_RenderDlight(dlight_t* light)
 	return Call_Function<void, dlight_t*>(0x42F90, light);
 }
 
+void DrawGLWaterPolyLightmap(glpoly_t* p)
+{
+	NOT_TESTED;
+
+	vec3_t nv;
+
+	qglBegin(GL_TRIANGLE_FAN);
+	for (int i = 0; i < p->numverts; i++)
+	{
+		float* verts = p->verts[i];
+		qglTexCoord2f(verts[5], verts[6]);
+
+		nv[0] = sin(0.05 * verts[1] + realtime) * 8.0 * sin(0.05 * verts[2] + realtime); + verts[0];
+		nv[1] = sin(verts[0] * 0.05 + realtime) * 8.0 * sin(0.05 * verts[2] + realtime) + verts[1];
+		nv[2] = verts[2];
+		qglVertex3fv(nv);
+	}
+	qglEnd();
+}
+
 void R_DrawWorld()
 {
-	// Call_Function<void>(0x49440);
+	 return Call_Function<void>(0x49440);
 
 	cl_entity_t ent;
 	Q_memset(&ent, 0, sizeof(cl_entity_t));
@@ -2164,14 +1749,14 @@ void R_DrawWorld()
 	}
 
 	gDecalSurfCount = 0;
-	R_RecursiveWorldNode(g_pcl.worldmodel->nodes);	// Under implement
+	R_RecursiveWorldNode(g_pcl.worldmodel->nodes);
 	gDecalSurfCount = 0;
-	DrawTextureChains(); // Implement
+	DrawTextureChains();
 	S_ExtraUpdate();
 	if (!CL_IsDevOverviewMode())
 	{
 		R_DrawDecals(false);	// Implement
-		R_BlendLightmaps();	// Implement
+		R_BlendLightmaps();
 	}
 }
 
@@ -2273,17 +1858,25 @@ void AllowFog(qboolean allowed)
 	}
 }
 
-float CalcFov(float* fov_x, float width, float height)
+float CalcFov(float fov_x, float width, float height)
 {
-	float x, half_fov_y;
+	float v; 
 
-	if (*fov_x < 1.0f || *fov_x > 179.0f)
-		*fov_x = 90.0f; // default value
-
-	x = width / tan(DEG2RAD(*fov_x) * 0.5f);
-	half_fov_y = atan(height / x);
-
-	return RAD2DEG(half_fov_y) * 2;
+	if (fov_x < 1.0)
+	{
+		v = 1;
+	}
+	else if (fov_x <= 179.0)
+	{
+		v = tan(fov_x / 360.0 * 3.141592653589793);
+	}
+	else
+	{
+		v = 1;
+	}
+	float focallen = width / v;
+	float x = height / focallen;
+	return atanf(x) * 360.0f / PI;
 }
 
 float ScrollOffset(msurface_t* psurface, cl_entity_t* pEntity)
@@ -2306,9 +1899,9 @@ void R_ConcatRotations(vec3_t* in1, vec3_t* in2, vec3_t* out)
 void ProjectPointOnPlane(vec_t* dst, const vec_t* p, const vec_t* normal)
 {
 	float v5 = 1.0f / _DotProduct(normal, normal);
-	float v7 = _DotProduct(normal, p) * v5;
+	float dist = _DotProduct(normal, p) * v5;
 	for (int i = 0; i < 3; i++)
-		dst[i] = p[i] - (normal[i] * v5 * v7);
+		dst[i] = p[i] - (normal[i] * dist * v5);
 }
 
 void PerpendicularVector(vec_t* dst, const vec_t* src)
@@ -2328,6 +1921,7 @@ void PerpendicularVector(vec_t* dst, const vec_t* src)
 void RotatePointAroundVector(vec3_t* dst, const vec_t* dir, const vec_t* point, float degrees)
 {
 	//return Call_Function<void, const vec_t*, const vec_t*, const vec_t*, float>(0x43A10, dst, dir, point, degrees);
+	
 	vec3_t m[3];
 	float im[3][3];
 	float zrot[3][3];
@@ -2378,7 +1972,7 @@ int SignbitsForPlane(mplane_t* out)
 	int sign = 0;
 	for (int i = 0; i < 3; ++i)
 	{
-		if (out->normal[i] < 0.0)
+		if (out->normal[i] < 0)
 			sign|= 1 << i;
 	}
 	return sign;

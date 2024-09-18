@@ -35,7 +35,7 @@ EXTERN_VAR(qboolean, g_bIsTerrorStrike);
 EXTERN_VAR(qboolean, g_bIsTFC);
 EXTERN_VAR(qboolean, g_bIsHL1);
 EXTERN_VAR(cvar_t, fs_perf_warnings);
-extern cl_entity_t* cl_entities;
+EXTERN_VAR(cl_entity_t*, cl_entities);
 
 extern efrag_t cl_efrags[MAX_EFRAGS];
 extern dlight_t cl_elights[MAX_ELIGHTS];

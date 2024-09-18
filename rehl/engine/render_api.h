@@ -55,6 +55,7 @@ EXTERN_VAR(cvar_t, gl_alphamin);
 EXTERN_VAR(cvar_t, gl_flipmatrix);
 EXTERN_VAR(cvar_t, gl_monolights);
 EXTERN_VAR(cvar_t, gl_fog);
+EXTERN_VAR(int, mirrortexturenum);
 
 
 void R_RenderView();
@@ -119,7 +120,15 @@ void R_DrawSequentialPoly(msurface_t* s, int face);
 
 void DrawTextureChains();
 
+void R_RenderBrushPoly(msurface_t* fa);
+
+void R_MirrorChain(msurface_t* s);
+
 void DrawGLSolidPoly(glpoly_t* p);
+
+void R_DrawSkyChain(msurface_t* s);
+
+void R_DrawWaterChain(msurface_t* pChain);
 
 texture_t* R_TextureAnimation(msurface_t* s);
 
@@ -155,9 +164,11 @@ void R_AddDynamicLights(msurface_t* surf);
 
 void R_RenderDlight(dlight_t* light);
 
+void DrawGLWaterPolyLightmap(glpoly_t* p);
+
 void AllowFog(qboolean allowed);
 
-float CalcFov(float* fov_x, float width, float height);
+float CalcFov(float fov_x, float width, float height);
 
 float ScrollOffset(msurface_t* psurface, cl_entity_t* pEntity);
 
