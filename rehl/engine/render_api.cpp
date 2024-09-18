@@ -766,7 +766,6 @@ void R_SetupGL()
 	{
 		glFrustum(screenaspect * -viewfield, viewfield * screenaspect, -viewfield, viewfield, NEAR_PLANE, movevars.zmax);
 	}
-	//Call_Function<void>(0x458D0);
 
 	if (mirror)
 	{
@@ -1321,7 +1320,7 @@ void DrawTextureChains()
 		{
 			R_DrawSkyChain(chain);
 
-			texture->texturechain = 0;
+			texture->texturechain = nullptr;
 			;
 			if (extraupdtcount-- <= 0)
 			{
@@ -1631,7 +1630,7 @@ void R_BuildLightMap(msurface_t* psurf, uchar* dest, int stride)
 void R_AddDynamicLights(msurface_t* surf)
 {
 	//return Call_Function<void, msurface_t*>(0x47110, surf);
-	
+
 	mtexinfo_t* texinfo = surf->texinfo;
 	int smax = (surf->extents[0] / SAMPLE_SIZE) + 1;
 	int tmax = (surf->extents[1] / SAMPLE_SIZE) + 1;
@@ -1651,35 +1650,34 @@ void R_AddDynamicLights(msurface_t* surf)
 			if (rad < minlight)
 				continue;
 
-				minlight = rad - minlight;
+			minlight = rad - minlight;
 
-				float tl = _DotProduct(origin_l, texinfo->vecs[0]) + texinfo->vecs[0][3] - surf->texturemins[0];
-				float sl = _DotProduct(origin_l, texinfo->vecs[1]) + texinfo->vecs[1][3] - surf->texturemins[1];
+			float tl = _DotProduct(origin_l, texinfo->vecs[0]) + texinfo->vecs[0][3] - surf->texturemins[0];
+			float sl = _DotProduct(origin_l, texinfo->vecs[1]) + texinfo->vecs[1][3] - surf->texturemins[1];
 
-				for (int i = 0; i < tmax; i++)
+			for (int i = 0; i < tmax; i++)
+			{
+				int sd = abs(sl - (i * SAMPLE_SIZE));
+
+				for (int j = 0; j < smax; j++)
 				{
-					int sd = abs(sl - (i * SAMPLE_SIZE));
-			
-					for (int j = 0; j < smax; j++)
+					int td = abs(tl - (j * SAMPLE_SIZE));
+					double dist;
+					if (td <= sd)
+						dist = sd + (td / 2);
+					else
+						dist = td + (sd / 2);
+
+					if (dist < minlight)
 					{
-						int td = abs(tl - (j * SAMPLE_SIZE));
-						double dist;
-						if (td <= sd)
-							dist = sd + (td / 2);
-						else
-							dist = td + (sd / 2);
-
-						if (dist < minlight)
-						{
-							int blindex = (i * smax) + j;
-							blocklights[blindex].r += ((int((rad - dist) * 256 * cl_dlights[lnum].color.r))) / 256;
-							blocklights[blindex].g += ((int((rad - dist) * 256 * cl_dlights[lnum].color.g))) / 256;
-							blocklights[blindex].b += ((int((rad - dist) * 256 * cl_dlights[lnum].color.b))) / 256;
-						}
-
+						int blindex = (i * smax) + j;
+						blocklights[blindex].r += ((int((rad - dist) * 256 * cl_dlights[lnum].color.r))) / 256;
+						blocklights[blindex].g += ((int((rad - dist) * 256 * cl_dlights[lnum].color.g))) / 256;
+						blocklights[blindex].b += ((int((rad - dist) * 256 * cl_dlights[lnum].color.b))) / 256;
 					}
+
 				}
-			
+			}
 		}
 	}
 }
@@ -1712,7 +1710,7 @@ void DrawGLWaterPolyLightmap(glpoly_t* p)
 
 void R_DrawWorld()
 {
-	 return Call_Function<void>(0x49440);
+	// return Call_Function<void>(0x49440);
 
 	cl_entity_t ent;
 	Q_memset(&ent, 0, sizeof(cl_entity_t));
@@ -1962,9 +1960,8 @@ void RotatePointAroundVector(vec3_t* dst, const vec_t* dir, const vec_t* point, 
 
 	R_ConcatRotations(m, zrot, tmpmat);
 	R_ConcatRotations(tmpmat, im, rot);
-	(*dst)[0] = rot[0][0] * *point + rot[0][1] * point[1] + rot[0][2] * point[2];
-	(*dst)[1] = rot[1][0] * *point + rot[1][1] * point[1] + rot[1][2] * point[2];
-	(*dst)[2] = rot[2][0] * *point + rot[2][1] * point[1] + rot[2][2] * point[2];
+	for (int i = 0; i < 3; i++)
+		(*dst)[i] = _DotProduct(rot[i], point);
 }
 
 int SignbitsForPlane(mplane_t* out)
@@ -1973,7 +1970,7 @@ int SignbitsForPlane(mplane_t* out)
 	for (int i = 0; i < 3; ++i)
 	{
 		if (out->normal[i] < 0)
-			sign|= 1 << i;
+			sign |= 1 << i;
 	}
 	return sign;
 }
