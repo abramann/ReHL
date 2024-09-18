@@ -1,5 +1,6 @@
 #include "precompiled.h"
 #include "render_api.h"
+#include "wrapsin.h"
 
 
 // TODO: Find good name for variables in ProjectPointOnPlane, BuildSurfaceDisplayList
@@ -83,7 +84,6 @@ VVAR(msurface_t*, waterchain, 0x493C3, nullptr);
 VVAR(int, r_dlightframecount, 0x43112, 0);
 VVAR(int, skytexturenum, 0x48B55, 0);
 VVAR(cl_entity_t*, cl_entities, 0x48AB5, nullptr);
-ARRAY(float, turbsin, [256], 0x4878C); // TODO: It's const, find way to export it from IDA
 VVAR(int, gLoadSky, 0x4F9C9, 0);
 
 // cvars
