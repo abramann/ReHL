@@ -74,7 +74,7 @@
 #include "r_part.h"
 #include "cl_tent.h"
 #include "cl_main.h"
-#include "gl_rsuf.h"
+#include "r_decal.h"
 #include "event_api.h"
 #include "cl_pred.h"
 #include "cl_ents.h"

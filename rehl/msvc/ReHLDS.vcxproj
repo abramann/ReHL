@@ -73,7 +73,7 @@
     <ClCompile Include="..\engine\gl_draw.cpp" />
     <ClCompile Include="..\engine\gl_hud.cpp" />
     <ClCompile Include="..\engine\gl_main.cpp" />
-    <ClCompile Include="..\engine\gl_rsuf.cpp" />
+    <ClCompile Include="..\engine\r_decal.cpp" />
     <ClCompile Include="..\engine\gl_screen.cpp" />
     <ClCompile Include="..\engine\gl_vidnt.cpp" />
     <ClCompile Include="..\engine\gl_warp.cpp" />
@@ -406,7 +406,7 @@
     <ClInclude Include="..\engine\gl_draw.h" />
     <ClInclude Include="..\engine\gl_hud.h" />
     <ClInclude Include="..\engine\gl_main.h" />
-    <ClInclude Include="..\engine\gl_rsuf.h" />
+    <ClInclude Include="..\engine\r_decal.h" />
     <ClInclude Include="..\engine\gl_screen.h" />
     <ClInclude Include="..\engine\gl_vidnt.h" />
     <ClInclude Include="..\engine\hashpak.h" />
@@ -735,6 +735,7 @@
       <UndefinePreprocessorDefinitions>SWDS;REHLDS_SSE;</UndefinePreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <PreprocessorDefinitions>REHLDS_OPT_PEDANTIC;REHLDS_SSE;REHLDS_SELF;HAVE_OPT_STRTOOLS;USE_BREAKPAD_HANDLER;DEDICATED;SHARED_GAME_DATA;_CRT_SECURE_NO_WARNINGS;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AssemblerOutput>AssemblyCode</AssemblerOutput>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -767,6 +768,7 @@
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>precompiled.h</PrecompiledHeaderFile>
       <UndefinePreprocessorDefinitions>SWDS;REHLDS_SSE;</UndefinePreprocessorDefinitions>
+      <AssemblerOutput>AssemblyCode</AssemblerOutput>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -800,6 +802,7 @@
       <PrecompiledHeaderFile>precompiled.h</PrecompiledHeaderFile>
       <EnableEnhancedInstructionSet>NoExtensions</EnableEnhancedInstructionSet>
       <UndefinePreprocessorDefinitions>SWDS;REHLDS_SSE;</UndefinePreprocessorDefinitions>
+      <AssemblerOutput>AssemblyCode</AssemblerOutput>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -830,6 +833,7 @@
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>precompiled.h</PrecompiledHeaderFile>
       <UndefinePreprocessorDefinitions>SWDS;REHLDS_SSE;</UndefinePreprocessorDefinitions>
+      <AssemblerOutput>AssemblyCode</AssemblerOutput>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -863,6 +867,7 @@
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>precompiled.h</PrecompiledHeaderFile>
       <UndefinePreprocessorDefinitions>SWDS;REHLDS_SSE;</UndefinePreprocessorDefinitions>
+      <AssemblerOutput>AssemblyCode</AssemblerOutput>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -904,6 +909,7 @@
       <UndefinePreprocessorDefinitions>SWDS;REHLDS_SSE; </UndefinePreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <PreprocessorDefinitions>REHLDS_OPT_PEDANTIC;REHLDS_SELF;HAVE_OPT_STRTOOLS;USE_BREAKPAD_HANDLER;DEDICATED;SHARED_GAME_DATA;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AssemblerOutput>AssemblyCode</AssemblerOutput>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>

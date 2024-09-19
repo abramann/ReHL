@@ -1,7 +1,7 @@
 #pragma once
 #include "cl_entity.h"
 #include "model.h"
-
+#include "decal.h"
 
 typedef struct cshift_s
 {
@@ -130,9 +130,17 @@ void R_DrawSkyChain(msurface_t* s);
 
 void R_DrawWaterChain(msurface_t* pChain);
 
+void R_DrawSkyBox();
+
+void ClipSkyPolygon(int nump, vec_t* vecs, int stage);
+
 texture_t* R_TextureAnimation(msurface_t* s);
 
 void EmitWaterPolys(msurface_t* fa, int direction);
+
+void EmitWireFrameWaterPolys(msurface_t* fa, int direction);
+
+void D_SetFadeColor(int r, int g, int b, int fog);
 
 void R_RenderDynamicLightmaps(msurface_t* fa);
 

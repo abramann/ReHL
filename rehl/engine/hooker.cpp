@@ -101,7 +101,8 @@ void SetupHooks()
 	DirectHook(0x89220, tri_GL_RenderMode);
 	DirectHook(0x47900, R_DrawSequentialPoly); // *
 	DirectHook(0x47F00, R_RenderDynamicLightmaps); // *
-
+	DirectHook(0x47750, R_TextureAnimation); // static
+	DirectHook(0x4F192, EmitWaterPolys); // *
 	// Mod
 	//DirectHook(0x40030, Mod_LoadModel);
 	//DirectHook(0x3FD50, Mod_PointInLeaf);

@@ -446,7 +446,7 @@
     <ClCompile Include="..\engine\cl_tent.cpp">
       <Filter>engine\client</Filter>
     </ClCompile>
-    <ClCompile Include="..\engine\gl_rsuf.cpp">
+    <ClCompile Include="..\engine\r_decal.cpp">
       <Filter>engine\client</Filter>
     </ClCompile>
     <ClCompile Include="..\common\net_api.cpp">
@@ -1313,7 +1313,7 @@
     <ClInclude Include="..\engine\cl_servercache.h">
       <Filter>engine\client</Filter>
     </ClInclude>
-    <ClInclude Include="..\engine\gl_rsuf.h">
+    <ClInclude Include="..\engine\r_decal.h">
       <Filter>engine\client</Filter>
     </ClInclude>
     <ClInclude Include="..\engine\cl_pred.h">

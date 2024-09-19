@@ -86,28 +86,31 @@ void R_DecalShoot(int textureIndex, int entity, int modelIndex, vec_t * position
 
 void R_DecalVertsLight(float * v, msurface_t * psurf, int vertCount)
 {
-	NOT_IMPLEMENTED;
+	TO_IMPLEMENT;
+	return Call_Function<void, float*, msurface_t*, int>(0x4B410, v, psurf, vertCount);
 }
 
 float* R_DecalVertsClip(float *poutVerts, decal_t *pdecal, msurface_t *psurf, texture_t *ptexture, int *pvertCount)
 {
-	NOT_IMPLEMENTED;
-	return nullptr;
+	TO_IMPLEMENT;
+	return Call_Function<float*, float*, decal_t*, msurface_t*, texture_t*, int*>(0x4B510, poutVerts, pdecal, psurf, ptexture, pvertCount);
 }
 float* R_DecalVertsNoclip(decal_t *pdecal, msurface_t *psurf, texture_t *ptexture, qboolean bMultitexture)
 {
-	NOT_IMPLEMENTED;
-	return nullptr;
+	TO_IMPLEMENT;;
+	return Call_Function<float*, decal_t*, msurface_t*, texture_t*, qboolean>(0x4B720, pdecal, psurf, ptexture, bMultitexture);
 }
 
 void R_DecalPoly(float *v, texture_t *ptexture, msurface_t *psurf, int vertCount)
 {
-	NOT_IMPLEMENTED;
+	TO_IMPLEMENT;
+	return Call_Function<void, float*, texture_t*, msurface_t*, int>(0x4B780, v, ptexture, psurf, vertCount);
 }
 
 void R_DecalMPoly(float *v, texture_t *ptexture, msurface_t *psurf, int vertCount)
 {
-	NOT_IMPLEMENTED;
+	TO_IMPLEMENT;
+	return Call_Function<void, float*, texture_t*, msurface_t*, int>(0x4B7E0, v, ptexture, psurf, vertCount);
 }
 
 void R_DecalRemoveNonPermanent(int textureIndex)

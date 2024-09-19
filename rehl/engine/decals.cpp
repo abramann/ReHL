@@ -358,9 +358,11 @@ const char *Draw_DecalName(int number)
 	return NULL;
 }
 
-NOXREF texture_t *Draw_DecalTexture(int index)
+texture_t *Draw_DecalTexture(int index)
 {
-	NOXREFCHECK;
+	//return Call_Function<texture_t*, int>(0x2F890, index);
+	// This function was implemented by ReHLDS.
+
 	texture_t *retval;
 	customization_t *pCust;
 
@@ -622,9 +624,9 @@ qboolean CustomDecal_Init(struct cachewad_s *wad, void *raw, int nFileSize, int 
 	return bret;
 }
 
-NOXREF void *Draw_CacheGet(cachewad_t *wad, int index)
-{
-	NOXREFCHECK;
+void *Draw_CacheGet(cachewad_t *wad, int index)
+{	
+	// This function was implemented by ReHLDS. Probably different
 	int i;
 	void *dat;
 	char *path;

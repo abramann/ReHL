@@ -27,7 +27,6 @@
 */
 
 #include "precompiled.h"
-#include "gl_rsuf.h"
 #include "cl_pred.h"
 #include "cl_ents.h"
 

@@ -13,6 +13,9 @@ const int MAX_LIGHTMAP = 324;
 const int MAX_DECAL_SURFACES = 512;
 const int SAMPLE_SIZE = 16;
 const int LIGHTMAP_POLYGONS = 64;
+const int MOD_FRAMES = 20;
+const int MAX_SIGNED_SHORT = 32767;
+const float TURBSCALE = 256.0f / (PI * 2);
 const cvar_t gl_envmapsize = { "gl_envmapsize", "256" };
 const cvar_t gl_flipmtrix = { "gl_flipmatrix", "0" };
 const cvar_t gl_flashblend = { "gl_flashblend", "0" };
@@ -85,6 +88,9 @@ VVAR(int, r_dlightframecount, 0x43112, 0);
 VVAR(int, skytexturenum, 0x48B55, 0);
 VVAR(cl_entity_t*, cl_entities, 0x48AB5, nullptr);
 VVAR(int, gLoadSky, 0x4F9C9, 0);
+VVAR(int, c_sky, 0x50565, 0)
+VARRAY(int, skytexorder, [6], 0x508F3, { 0, 2, 1, 3, 4, 5 });
+VVAR(qboolean, g_bFogSkybox, 0x5080A, true)
 
 // cvars
 VVAR(cvar_t, r_cachestudio, 0x46BD4, { "r_cachestudio" COMMA "1" COMMA 0 COMMA 0.0f COMMA nullptr });
@@ -871,6 +877,7 @@ void R_RecursiveWorldNode(mnode_t* node)
 		}
 		mplane_t* plane = n->plane;
 		byte type = plane->type;
+		
 		double dot;
 		if (type == 1)
 		{
@@ -1372,26 +1379,213 @@ void DrawGLSolidPoly(glpoly_t* p)
 
 void R_DrawSkyChain(msurface_t* s)
 {
-	TO_IMPLEMENT;
-	Call_Function<void, msurface_t*>(0x5054E, s);
+	//	Call_Function<void, msurface_t*>(0x5054E, s);
+	if (CL_IsDevOverviewMode())
+		return;
+
+	vec_t verts[64][3];
+
+	c_sky = 0;
+	for (msurface_t* surf = s; surf; surf = surf->texturechain)
+	{
+		for (glpoly_t* poly = surf->polys; poly; poly = poly->next)
+		{
+			for (int i = 0; i < poly->numverts; i++)
+			{
+				float* polyverts = poly->verts[i];
+				VectorSubtract(polyverts, r_origin, verts[i]);
+			}
+			ClipSkyPolygon(poly->numverts, (vec_t*)verts, 0); // Implement
+		}
+	}
+	R_DrawSkyBox();	// Implement
 }
 
 void R_DrawWaterChain(msurface_t* pChain)
 {
+	//Call_Function<void, msurface_t*>(0x48A60, pChain);
+	
+	if (pChain == nullptr)
+		return;
+
+	qglColor4ub(255, 255, 255, 255);
+
+	for(; pChain != nullptr; pChain = pChain->texturechain)
+	{
+		int texnum = pChain->texinfo->texture->gl_texturenum;
+		GL_Bind(texnum);
+		EmitWaterPolys(pChain, 0);
+	}
+}
+
+void R_DrawSkyBox()
+{
 	TO_IMPLEMENT;
-	Call_Function<void, msurface_t*>(0x48A60, pChain);
+	return Call_Function<void>(0x507AE);
+}
+
+void ClipSkyPolygon(int nump, vec_t* vecs, int stage)
+{
+	TO_IMPLEMENT;
+	return Call_Function<void, int, vec_t*, int>(0x4FFE2, nump, vecs, stage);
 }
 
 texture_t* R_TextureAnimation(msurface_t* s)
 {
-	TO_IMPLEMENT;
-	return Call_Function<texture_t*, msurface_t*>(0x47750, s);
+	//return Call_Function<texture_t*, msurface_t*>(0x47750, s);
+	
+	static int rtable[MOD_FRAMES][MOD_FRAMES] = { 0 };
+	
+	texture_t* base = s->texinfo->texture;
+	if (rtable[0][0] == 0)
+	{
+		for (int i = 0; i < MOD_FRAMES; i++)
+			for (int j = 0; j < MOD_FRAMES; j++)
+				rtable[i][j] = RandomLong(0, MAX_SIGNED_SHORT);
+	}
+	if (currententity->curstate.frame != 0.0 && base->alternate_anims)
+		base = base->alternate_anims;
+
+	int anim_total = base->anim_total;
+	if (!anim_total)
+		return base;
+
+	int reletive;
+	int i = 0;
+	if (base->name[0] == '-')
+	{
+		int	tx = ((s->texturemins[0] + (base->width << 16)) / base->width) % MOD_FRAMES;
+		int	ty = ((s->texturemins[1] + (base->height << 16)) / base->height) % MOD_FRAMES;
+		reletive = rtable[tx][ty] % base->anim_total;
+	}
+	else
+	{
+		float speed = 10;
+		reletive = (int)(g_pcl.time * speed) % anim_total;
+	}
+	while (base->anim_min > reletive || base->anim_max <= reletive)
+	{
+		base = base->anim_next;
+		if (base == nullptr)
+			Sys_Error("%s: broken cycle", __func__);
+		if (++i > 100)
+			Sys_Error("%s: infinite cycle", __func__);
+	}
+	return base;
 }
 
 void EmitWaterPolys(msurface_t* fa, int direction)
 {
-	TO_IMPLEMENT;
-	return Call_Function<void, msurface_t*, int>(0x4F192, fa, direction);
+	float tempVert[3];
+
+	uchar* pPal = fa->texinfo->texture->pPal;
+
+	glpoly_t* poly = fa->polys;
+
+	float scale = currententity->curstate.scale;
+
+	D_SetFadeColor(pPal[9], pPal[10], pPal[11], pPal[12]);
+
+	if (r_refdef.vieworg[2] <= poly->verts[0][2])
+		scale = -scale;
+
+	for (; poly != nullptr; poly = poly->next)
+	{
+		qglBegin(GL_POLYGON);
+
+		int numverts = poly->numverts;
+		float* verts;
+		if (direction)
+			verts = poly->verts[numverts - 1];
+		else
+			verts = (float*)poly->verts;
+	
+		for (int i = 0; i < numverts; i++)
+		{
+			tempVert[0] = *verts;
+			tempVert[1] = verts[1];
+			float time = g_pcl.time;
+			float nv = turbsin[(uchar)(time * 160.0 + verts[0] + verts[1])] + 8.0;
+			nv += (turbsin[(uchar)(time * 171.0 + verts[0] * 5.0 - verts[1])] + 8.0) * 0.8;
+
+			tempVert[2] = nv * scale + verts[2];
+
+			float t = (verts[4] + turbsin[(uchar)((time + 0.125 * verts[3]) * TURBSCALE)])
+				* 0.015625;
+			float s = (turbsin[(uchar)((0.125 * verts[4] + time) * TURBSCALE)] + verts[3])
+				* 0.015625;
+
+			qglTexCoord2f(s, t);
+
+			qglVertex3fv(tempVert);
+			if (direction)
+				verts -= 7;
+			else
+				verts += 7;
+		}
+		qglEnd();
+	}
+	EmitWireFrameWaterPolys(fa, direction);
+}
+
+void EmitWireFrameWaterPolys(msurface_t* fa, int direction)
+{
+	//return Call_Function<void, msurface_t*, int>(0x4F002, fa, direction);
+	
+	if (gl_wireframe.value == 0)
+		return;
+
+	float tempVert[3];
+	
+	float scale;
+	if (r_refdef.vieworg[2] <= fa->polys->verts[0][2])
+		scale = -currententity->curstate.scale;
+	else
+		scale = currententity->curstate.scale;
+	
+	if (gl_wireframe.value == 2)
+		qglDisable(GL_DEPTH_TEST);
+
+	qglColor3f(1.0, 1.0, 1.0);
+	for (glpoly_t* poly = fa->polys; poly != nullptr; poly = poly->next)
+	{
+		qglBegin(GL_POINT_BIT);
+		int numverts = poly->numverts;
+		float* verts;
+		if (direction)
+			verts = poly->verts[numverts - 1];
+		else
+			verts = (float*)poly->verts;
+
+		for (int i = 0; i < numverts; i++)
+		{
+			tempVert[0] = verts[0];
+			tempVert[1] = verts[1];
+			float nv = turbsin[(uchar)(g_pcl.time * 160.0 + verts[0] + verts[1])] + 8;
+			nv += (turbsin[(uchar)(g_pcl.time * 171.0 + verts[0] * 5.0 - verts[1])] + 8) * 0.8f;
+			tempVert[2] = nv * scale + verts[2];
+			qglVertex3fv(tempVert);
+			if (direction)
+				verts -= 7;
+			else
+				verts += 7;
+		}
+		qglEnd();
+	}
+	if (gl_wireframe.value == 2)
+		qglEnable(GL_DEPTH_TEST);
+}
+
+void D_SetFadeColor(int r, int g, int b, int fog)
+{
+	gWaterColor.r = r;
+	gWaterColor.g = g;
+	gWaterColor.b = b;
+
+	cshift_water.destcolor[0] = r;
+	cshift_water.destcolor[1] = g;
+	cshift_water.destcolor[2] = b;
+	cshift_water.percent = fog;
 }
 
 void R_RenderDynamicLightmaps(msurface_t* fa)
@@ -1458,10 +1652,73 @@ void R_RenderDynamicLightmaps(msurface_t* fa)
 		lightmap_bytes << 7);
 }
 
+
 void R_DrawDecals(qboolean bMultitexture)
 {
-	TO_IMPLEMENT;
-	return Call_Function<void, qboolean>(0x4B890, bMultitexture);
+	//return Call_Function<void, qboolean>(0x4B890, bMultitexture);
+
+	if (gDecalSurfCount <= 0)
+		return;
+
+	qglEnable(GL_BLEND);
+	qglEnable(GL_ALPHA_TEST);
+	qglBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	qglDepthMask(GL_ZERO);
+	float polyoffset = gl_polyoffset.value;
+	if (polyoffset != 0.0)
+	{
+		qglEnable(GL_POLYGON_OFFSET_FILL);
+		float polyoffset = gl_polyoffset.value;
+		if (gl_ztrick.value == 0.0 || gldepthmin < 0.5)
+		{
+			qglPolygonOffset(-1.0, -polyoffset);
+		}
+		else
+		{
+			qglPolygonOffset(1.0, polyoffset);
+		}
+	}
+
+	for (int i = 0; i < gDecalSurfCount; i++)
+	{
+		msurface_t* surf = gDecalSurfs[i];
+		if (surf->pdecals == nullptr)
+			continue;
+
+		for (decal_t* decal = surf->pdecals; decal != nullptr; decal = decal->pnext)
+		{
+			texture_t* ptexture = Draw_DecalTexture(decal->texture); // Check
+			float* verts = nullptr;
+			int vertCount = 0;
+			if ((decal->flags & 0x40) == 0)
+			{
+				verts = R_DecalVertsClip(0, decal, surf, ptexture, &vertCount); // Implement
+				if (vertCount > 0 && bMultitexture)
+				{
+					R_DecalVertsLight(verts, surf, vertCount); // Implement
+				}
+				if (vertCount == 0)
+					continue;
+			}
+			else
+			{
+				verts = R_DecalVertsNoclip(decal, surf, ptexture, bMultitexture); // Implement
+				vertCount = 4;
+			}
+			if (bMultitexture)
+				R_DecalMPoly(verts, ptexture, surf, vertCount); // Implement
+			else
+				R_DecalPoly(verts, ptexture, surf, vertCount); // Implement
+		}
+	}
+
+	if (polyoffset != 0.0)
+		qglDisable(GL_POLYGON_OFFSET_FILL);
+
+	qglDisable(GL_ALPHA_TEST);
+	qglDisable(GL_BLEND);
+	qglDepthMask(GL_ONE);
+	gDecalSurfCount = 0;
 }
 
 void R_DrawTEntitiesOnList(qboolean clientOnly)
@@ -1700,7 +1957,7 @@ void DrawGLWaterPolyLightmap(glpoly_t* p)
 		float* verts = p->verts[i];
 		qglTexCoord2f(verts[5], verts[6]);
 
-		nv[0] = sin(0.05 * verts[1] + realtime) * 8.0 * sin(0.05 * verts[2] + realtime); + verts[0];
+		nv[0] = sin(0.05 * verts[1] + realtime) * 8.0 * sin(0.05 * verts[2] + realtime) + verts[0];
 		nv[1] = sin(verts[0] * 0.05 + realtime) * 8.0 * sin(0.05 * verts[2] + realtime) + verts[1];
 		nv[2] = verts[2];
 		qglVertex3fv(nv);

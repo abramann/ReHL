@@ -87,17 +87,22 @@ void GL_BuildLightmaps()
 void GL_CreateSurfaceLightmap(msurface_t *surf)
 {
 	//return Call_Function<void, msurface_t*>(0x49B50, surf);
+	
+	int smax = (surf->extents[0] / 16) + 1;
+	int tmax = (surf->extents[1] / 16) + 1;
 	int flags = surf->flags;
 	if ((flags & 0x14) == 0 && ((flags & 0x20) == 0 || (surf->texinfo->flags & 1) == 0))
 	{
-		int texnum = surf->lightmaptexturenum = AllocBlock((surf->extents[0] / 16) + 1, (surf->extents[1] / 16) + 1, &surf->light_s, &surf->light_t);
-		int bytes = lightmap_bytes;
-		R_BuildLightMap(surf, &lightmaps[bytes * (surf->light_s + ((surf->light_t + (texnum *128)) * 128))], bytes * 128);
+		int texnum = surf->lightmaptexturenum = AllocBlock(smax, tmax, &surf->light_s, &surf->light_t);
+		R_BuildLightMap(surf, &lightmaps[lightmap_bytes * (surf->light_s + ((surf->light_t + (texnum *128)) * 128))], lightmap_bytes * 128);
 	}
 }
 
 void BuildSurfaceDisplayList(msurface_t* fa)
 {
+	// TODO: Figure out why size of glpoly_t treated as 28 not 128
+	// TODO: Find variables names
+	//CHECK_REQUIRED;
 	int numedges = fa->numedges;
 
 	mvertex_t* vertexbase;
@@ -105,7 +110,7 @@ void BuildSurfaceDisplayList(msurface_t* fa)
 	texture_t* texture = texinfo->texture;
 	medge_t* pedges = currentmodel->edges;
 
-	glpoly_t* poly = (glpoly_t*)Hunk_Alloc(28 * numedges + 16);	// Why 28!=sizeof(glpoly_t)
+	glpoly_t* poly = (glpoly_t*)Hunk_Alloc(28 * numedges + 16);	// Why 28 since 128=sizeof(glpoly_t)
 	poly->next = fa->polys;
 	poly->flags = fa->flags;
 	fa->polys = poly;
@@ -145,7 +150,7 @@ void BuildSurfaceDisplayList(msurface_t* fa)
 
 		poly->verts[0][5] = v22 * 0.00048828125;
 		poly->verts[0][6] = 0.00048828125 * v23;
-		poly = (glpoly_t*)((char*)poly + 28);
+		poly = (glpoly_t*)((char*)poly + 28);	// Why 28 since 128=sizeof(glpoly_t)
 	}
 }
 
@@ -164,11 +169,11 @@ int AllocBlock(int w, int h, int* x, int* y)
 			int j;
 			for (j = 0; j < w; j++)
 			{
-				int* loc = (int*)allocated + i + k + j;
-				if (*loc >= best2)
+				int* alloc = (int*)allocated + i + k + j;
+				if (*alloc >= best2)
 					break;
-				if (*loc > best)
-					best = *loc;
+				if (*alloc > best)
+					best = *alloc;
 			}
 			if (j == w)
 			{
