@@ -70,7 +70,7 @@ void SetupHooks()
 	DirectHook(0x5DFD0, Info_ValueForKey);	// *
 	DirectHook(0x134A0, CL_Particle);	// *
 	DirectHook(0x58190, SV_GetPlayerHulls);
-
+	
 	//Host_Init
 	DirectHook(0xB180, ClientDLL_Init);
 	DirectHook(0x1A830, HookServerMsg); // *
@@ -103,6 +103,9 @@ void SetupHooks()
 	DirectHook(0x47F00, R_RenderDynamicLightmaps); // *
 	DirectHook(0x47750, R_TextureAnimation); // static
 	DirectHook(0x4F192, EmitWaterPolys); // *
+	DirectHook(0x5061E, MakeSkyVec);	// DrawSkyBox
+	DirectHook(0x4FFE2, ClipSkyPolygon);  // DrawSkyBox
+	DirectHook(0x4FDA2, DrawSkyPolygon);
 	// Mod
 	//DirectHook(0x40030, Mod_LoadModel);
 	//DirectHook(0x3FD50, Mod_PointInLeaf);

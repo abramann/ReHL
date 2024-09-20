@@ -16,6 +16,8 @@ const int LIGHTMAP_POLYGONS = 64;
 const int MOD_FRAMES = 20;
 const int MAX_SIGNED_SHORT = 32767;
 const float TURBSCALE = 256.0f / (PI * 2);
+const int MAX_CLIP_VERTS = 128; // skybox clip vertices
+
 const cvar_t gl_envmapsize = { "gl_envmapsize", "256" };
 const cvar_t gl_flipmtrix = { "gl_flipmatrix", "0" };
 const cvar_t gl_flashblend = { "gl_flashblend", "0" };
@@ -32,8 +34,30 @@ const int dottexture[8][8] =
 	{ 0, 0, 0, 0, 0, 0, 0, 0 },
 };
 
+const int vec_to_st[6][3] =
+{
+  { -2, 3, 1 },
+  { 2, 3, -1 },
+  { 1, 3, 2 },
+  { -1, 3, -2 },
+  { -2, -1, 3 },
+  { -2, 1, -3 }
+};
+
+ARRAY(int, st_to_vec, [6][3], 0x506B2);
+/*
+const int st_to_vec[6][3] =
+{
+  { 3, -1, 2 },
+  { -3, 1, 2 },
+  { 1, 3, 2 },
+  { -1, -3, 2 },
+  { -2, -1, 3 },
+  { 2, -1, -3 }
+};
+*/
 VVAR(int, r_framecount, 0x42E55, 0);
-VVAR(int, trickframe_25783, 0x45D68, 0);
+VVAR(int, trickframe, 0x45D68, 0);
 ARRAY(int, playertextures, [16], 0x46D8B);	// Probably not needed, single xref
 VVAR(qboolean, gl_texsort, 0x494F2, true);
 VAR(int, r_numparticles, 0x7ABDA);
@@ -50,7 +74,7 @@ VVAR(qboolean, g_bUserFogOn, 0x463B8, false);
 VVAR(qboolean, isFogEnabled, 0x44FE4, false);
 VVAR(mleaf_t *, r_oldviewleaf, 0x456BE, nullptr;);
 VVAR(mleaf_t *, r_viewleaf, 0x456C8, nullptr;);
-VAR(vec3_t, vpn, 0x4568B);
+VAR(vec3_t, vpn, 0x26DC6);
 VAR(vec3_t, vright, 0x45686);
 VAR(vec3_t, vup, 0x45677);
 VAR(cshift_t, cshift_water, 0x4EFD4);
@@ -72,11 +96,11 @@ VVAR(cl_entity_t*, currententity, 0x4949D, nullptr;);
 VAR(vec3_t, modelorg, 0x4947B);
 VAR(colorVec, gWaterColor, 0x4948B);
 ARRAY(glpoly_t*, lightmap_polys, [LIGHTMAP_POLYGONS], 0x494E0);
-ARRAY(float, skymins, [2][6], 0x505FC);
-ARRAY(float, skymaxs, [2][6], 0x5060E);
+ARRAY(float, skymins, [2][6], 0x4FEEA);
+ARRAY(float, skymaxs, [2][6], 0x4FEFE);
 VAR(int, gDecalSurfCount, 0x49577);
 VARRAY(msurface_t*, gDecalSurfs, [500], 0x47D74 ,{ nullptr });
-VVAR(int, gRenderMode, 0x89257);
+VAR(int, gRenderMode, 0x89257);
 ARRAY(mplane_t, frustum, [4], 0x452DC);
 VVAR(int, r_dlightactive, 0x47403, 0);
 VARRAY(colorVec, blocklights, [MAX_LIGHTMAP], 0x4761D, { 0 });
@@ -89,8 +113,10 @@ VVAR(int, skytexturenum, 0x48B55, 0);
 VVAR(cl_entity_t*, cl_entities, 0x48AB5, nullptr);
 VVAR(int, gLoadSky, 0x4F9C9, 0);
 VVAR(int, c_sky, 0x50565, 0)
-VARRAY(int, skytexorder, [6], 0x508F3, { 0, 2, 1, 3, 4, 5 });
-VVAR(qboolean, g_bFogSkybox, 0x5080A, true)
+VARRAY(int, skytexorder, [6], 0x508F3, { 0 COMMA 2 COMMA 1 COMMA 3 COMMA 4 COMMA 5 });
+VVAR(qboolean, g_bFogSkybox, 0x5080A, true);
+VAR(GLuint, gSkyTexNumber, 0x4FACF);
+ARRAY(vec_t, skyclip, [6][3], 0x50037);
 
 // cvars
 VVAR(cvar_t, r_cachestudio, 0x46BD4, { "r_cachestudio" COMMA "1" COMMA 0 COMMA 0.0f COMMA nullptr });
@@ -625,7 +651,7 @@ void R_Clear()
 		{
 			if (gl_clear.value != 0.0)
 				qglClear(GL_COLOR_BUFFER_BIT);
-			if ((++trickframe_25783 & 1) != 0)
+			if ((++trickframe & 1) != 0)
 			{
 				gldepthmin = 0.0f;
 				gldepthmax = 5.0f;
@@ -936,7 +962,6 @@ void R_RecursiveWorldNode(mnode_t* node)
 					else
 					{
 						R_DrawSequentialPoly(surf, 0);
-						dot = (double)dot;
 					}
 				}
 			}
@@ -953,9 +978,7 @@ qboolean R_CullBox(vec_t* mins, vec_t* maxs)
 	for (int i = 0; i < 4; i++)
 	{
 		if (BoxOnPlaneSide(mins, maxs,&frustum[i]) == 2)
-		{
 			return true;
-		}
 	}
 	return false;
 }
@@ -1030,7 +1053,7 @@ void R_BlendLightmaps()
 					gl_lightmap_format, GL_UNSIGNALED,
 					&lightmaps[0x4000 * lightmap_bytes * i]);
 			}
-			for(;p != nullptr;p=p->chain)
+			for (; p != nullptr; p = p->chain)
 			{
 				int flags = p->flags;
 				if ((flags & 0x80u) == 0)
@@ -1424,10 +1447,186 @@ void R_DrawSkyBox()
 	return Call_Function<void>(0x507AE);
 }
 
+void MakeSkyVec(float s, float t, int axis)
+{
+	//return Call_Function<void, float, float, int>(0x5061E, s, t, axis);
+	
+	int	j, k, farclip;
+	vec3_t	v, b;
+
+	farclip = movevars.zmax;
+
+	b[0] = s * (farclip >> 1);
+	b[1] = t * (farclip >> 1);
+	b[2] = (farclip >> 1);
+
+	for (j = 0; j < 3; j++)
+	{
+		k = st_to_vec[axis][j];
+		v[j] = (k < 0) ? -b[-k - 1] : b[k - 1];
+		v[j] += r_origin[j];
+	}
+
+	// avoid bilerp seam
+	s = (s + 1.0f) * 0.5f;
+	t = (t + 1.0f) * 0.5f;
+
+	if (s < 1.0f / 512.0f)
+		s = 1.0f / 512.0f;
+	else if (s > 511.0f / 512.0f)
+		s = 511.0f / 512.0f;
+	if (t < 1.0f / 512.0f)
+		t = 1.0f / 512.0f;
+	else if (t > 511.0f / 512.0f)
+		t = 511.0f / 512.0f;
+
+	t = 1.0f - t;
+
+	qglTexCoord2f(s, t);
+	qglVertex3fv(v);
+}
+
 void ClipSkyPolygon(int nump, vec_t* vecs, int stage)
 {
-	TO_IMPLEMENT;
-	return Call_Function<void, int, vec_t*, int>(0x4FFE2, nump, vecs, stage);
+	//return Call_Function<void, int, vec_t*, int>(0x4FFE2, nump, vecs, stage);
+
+	const float* norm;
+	float* v, d, e;
+	qboolean front, back;
+	float	dists[MAX_CLIP_VERTS + 1];
+	int	sides[MAX_CLIP_VERTS + 1];
+	vec3_t newv[2][MAX_CLIP_VERTS + 1];
+	int	newc[2];
+	int	i, j;
+
+	if (nump > MAX_CLIP_VERTS)
+		Sys_Error("%s: MAX_CLIP_VERTS\n", __func__);
+loc1:
+	if (stage == 6)
+	{
+		// fully clipped, so draw it
+		DrawSkyPolygon(nump, vecs);
+		return;
+	}
+
+	front = back = false;
+	norm = skyclip[stage];
+	for (i = 0, v = vecs; i < nump; i++, v += 3)
+	{
+		d = _DotProduct(v, norm);
+		if (d > ON_EPSILON)
+		{
+			front = true;
+			sides[i] = SIDE_FRONT;
+		}
+		else if (d < -ON_EPSILON)
+		{
+			back = true;
+			sides[i] = SIDE_BACK;
+		}
+		else
+		{
+			sides[i] = SIDE_ON;
+		}
+		dists[i] = d;
+	}
+
+	if (!front || !back)
+	{
+		// not clipped
+		stage++;
+		goto loc1;
+	}
+
+	// clip it
+	sides[i] = sides[0];
+	dists[i] = dists[0];
+	VectorCopy(vecs, (vecs + (i * 3)));
+	newc[0] = newc[1] = 0;
+
+	for (i = 0, v = vecs; i < nump; i++, v += 3)
+	{
+		switch (sides[i])
+		{
+		case SIDE_FRONT:
+			VectorCopy(v, newv[0][newc[0]]);
+			newc[0]++;
+			break;
+		case SIDE_BACK:
+			VectorCopy(v, newv[1][newc[1]]);
+			newc[1]++;
+			break;
+		case SIDE_ON:
+			VectorCopy(v, newv[0][newc[0]]);
+			newc[0]++;
+			VectorCopy(v, newv[1][newc[1]]);
+			newc[1]++;
+			break;
+		}
+
+		if (sides[i] == SIDE_ON || sides[i + 1] == SIDE_ON || sides[i + 1] == sides[i])
+			continue;
+
+		d = dists[i] / (dists[i] - dists[i + 1]);
+		for (j = 0; j < 3; j++)
+		{
+			e = v[j] + d * (v[j + 3] - v[j]);
+			newv[0][newc[0]][j] = e;
+			newv[1][newc[1]][j] = e;
+		}
+		newc[0]++;
+		newc[1]++;
+	}
+
+	// continue
+	ClipSkyPolygon(newc[0], newv[0][0], stage + 1);
+	ClipSkyPolygon(newc[1], newv[1][0], stage + 1);
+}
+
+void DrawSkyPolygon(int nump, vec3_t vecs)
+{
+	//return Call_Function<void, int, vec_t*>(0x4FDA2, nump, vecs);
+
+	int	i, j, axis;
+	float	s, t, dv, * vp;
+	vec3_t	v, av;
+
+	c_sky++;
+	// decide which face it maps to
+	VectorCopy(vec3_origin, v);
+
+	for (i = 0, vp = vecs; i < nump; i++, vp += 3)
+		VectorAdd(vp, v, v);
+
+	av[0] = fabs(v[0]);
+	av[1] = fabs(v[1]);
+	av[2] = fabs(v[2]);
+
+	if (av[0] > av[1] && av[0] > av[2])
+		axis = (v[0] < 0) ? 1 : 0;
+	else if (av[1] > av[2] && av[1] > av[0])
+		axis = (v[1] < 0) ? 3 : 2;
+	else axis = (v[2] < 0) ? 5 : 4;
+	
+	// project new texture coords
+	for (i = 0; i < nump; i++, vecs += 3)
+	{
+		j = vec_to_st[axis][2];
+		dv = (j > 0) ? vecs[j - 1] : -vecs[-j - 1];
+
+		if (dv == 0.0f) continue;
+
+		j = vec_to_st[axis][0];
+		s = (j < 0) ? -vecs[-j - 1] / dv : vecs[j - 1] / dv;
+
+		j = vec_to_st[axis][1];
+		t = (j < 0) ? -vecs[-j - 1] / dv : vecs[j - 1] / dv;
+
+		if (s < skymins[0][axis]) skymins[0][axis] = s;
+		if (t < skymins[1][axis]) skymins[1][axis] = t;
+		if (s > skymaxs[0][axis]) skymaxs[0][axis] = s;
+		if (t > skymaxs[1][axis]) skymaxs[1][axis] = t;
+	}
 }
 
 texture_t* R_TextureAnimation(msurface_t* s)
@@ -1761,6 +1960,7 @@ void R_MarkLights(dlight_t* light, int bit, mnode_t* node)
 
 void R_DrawParticles()
 {
+	TO_IMPLEMENT;
 	return Call_Function<void>(0x7CB20);
 }
 
@@ -2010,7 +2210,7 @@ void R_DrawWorld()
 	S_ExtraUpdate();
 	if (!CL_IsDevOverviewMode())
 	{
-		R_DrawDecals(false);	// Implement
+		R_DrawDecals(false);
 		R_BlendLightmaps();
 	}
 }
@@ -2023,6 +2223,7 @@ void DrawGLPolyScroll(msurface_t* psurface, cl_entity_t* pEntity)
 
 void R_DrawEntitiesOnList()
 {
+	TO_IMPLEMENT;
 	return Call_Function<void>(0x44860);
 }
 
@@ -2115,28 +2316,34 @@ void AllowFog(qboolean allowed)
 
 float CalcFov(float fov_x, float width, float height)
 {
-	float v; 
-
-	if (fov_x < 1.0)
-	{
-		v = 1;
-	}
-	else if (fov_x <= 179.0)
-	{
-		v = tan(fov_x / 360.0 * 3.141592653589793);
-	}
+	float plane; 
+	if (fov_x < 1.0 || fov_x > 179.0)
+		plane = 1;
 	else
-	{
-		v = 1;
-	}
-	float focallen = width / v;
+		plane = tan(fov_x / 360.0 * PI);
+
+	float focallen = width / plane;
 	float x = height / focallen;
 	return atanf(x) * 360.0f / PI;
 }
 
 float ScrollOffset(msurface_t* psurface, cl_entity_t* pEntity)
 {
-	return Call_Function<float, msurface_t*, cl_entity_t*>(0x482A0, psurface, pEntity);
+	//return Call_Function<float, msurface_t*, cl_entity_t*>(0x482A0, psurface, pEntity);
+
+	NOT_TESTED;
+
+	float sOffset = (pEntity->curstate.rendercolor.b + (pEntity->curstate.rendercolor.g << 8)) * 0.0625;
+	
+	byte r = pEntity->curstate.rendercolor.r;
+	if (r <= 0)
+		sOffset = -sOffset;
+
+	float sOffseta = 1.0 / (double)(unsigned int)psurface->texinfo->texture->width * sOffset * g_pcl.time;
+	
+	int power = (sOffseta < 0) ? -1 : 1;
+
+	return fmod(sOffseta, power);
 }
 
 void R_ConcatRotations(vec3_t* in1, vec3_t* in2, vec3_t* out)

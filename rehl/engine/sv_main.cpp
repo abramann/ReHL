@@ -34,25 +34,15 @@ typedef struct full_packet_entities_s
 	entity_state_t entities[MAX_PACKET_ENTITIES];
 } full_packet_entities_t;
 
+VVAR(int, sv_decalnamecount, 0x2FE6A, 0)
+ARRAY(decalname_t, sv_decalnames, [MAX_BASE_DECALS], 0x2FE90);
+VAR(server_static_t, g_psvs, 0x59943)
+VVAR(server_t, g_psv, 0x6946F)
+VVAR(redirect_t, sv_redirected, 0x97F77)
+ARRAY(char, localmodels, [MAX_MODELS][5], 0x9E971);
+ARRAY(char, outputbuf, [MAX_ROUTEABLE_PACKET], 0x97F87);
+
 #ifdef SHARED_GAME_DATA
-server_static_t* sp_g_psvs = ADDRESS_OF_DATA(server_static_t *, 0x59943);
-server_static_t & g_psvs = *sp_g_psvs;
-
-int* sp_sv_decalnamecount = ADDRESS_OF_DATA(int*, 0x2FE6A);
-int& sv_decalnamecount = *sp_sv_decalnamecount;
-
-server_t * sp_g_psv = ADDRESS_OF_DATA(server_t *, 0x6946F);
-server_t & g_psv = *sp_g_psv;
-
-char(*sp_localmodels)[MAX_MODELS][5] = ADDRESS_OF_DATA(char(*)[MAX_MODELS][5], 0x9E971);
-char(&localmodels)[MAX_MODELS][5] = *sp_localmodels;
-
-redirect_t * sp_sv_redirected = ADDRESS_OF_DATA(redirect_t *, 0x97F77);
-redirect_t & sv_redirected = *sp_sv_redirected;
-
-char(*sp_outputbuf)[MAX_ROUTEABLE_PACKET] = ADDRESS_OF_DATA(char(*)[MAX_ROUTEABLE_PACKET], 0x97F87);
-char(&outputbuf)[MAX_ROUTEABLE_PACKET] = *sp_outputbuf;
-
 qboolean* sp_g_bCS_CZ_Flags_Initialized = ADDRESS_OF_DATA(qboolean*, 0x9B711);
 qboolean& g_bCS_CZ_Flags_Initialized = *sp_g_bCS_CZ_Flags_Initialized;
 
@@ -74,11 +64,6 @@ qboolean & g_bIsTFC = *sp_g_bIsTFC;
 qboolean * sp_g_bIsHL1 = ADDRESS_OF_DATA(qboolean *, 0x9B7FF);
 qboolean & g_bIsHL1 = *sp_g_bIsHL1; 
 #else
-server_static_t g_psvs;
-server_t g_psv;
-char localmodels[MAX_MODELS][5];
-redirect_t sv_redirected;
-char outputbuf[MAX_ROUTEABLE_PACKET];
 qboolean g_bIsCSZero = false;
 qboolean g_bIsCStrike = false;
 qboolean g_bIsCZero = false;
@@ -110,8 +95,6 @@ float g_LastScreenUpdateTime;
 globalvars_t gGlobalVariables;
 
 rehlds_server_t g_rehlds_sv;
-
-decalname_t sv_decalnames[MAX_BASE_DECALS];
 
 UserMsg *sv_gpNewUserMsgs;
 UserMsg *sv_gpUserMsgs;

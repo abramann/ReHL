@@ -28,7 +28,7 @@
 
 #include "precompiled.h"
 
-VAR(cachewad_t *, decal_wad, 0x2FB50);
+VAR(cachewad_t *, decal_wad, 0x2F2F1);
 VAR(qboolean, m_bDrawInitialized, 0x3C342);
 VAR(cachewad_t *, menu_wad, 0x3C3E2);
 ARRAY(char, decal_names, [MAX_DECALS][16], 0x3C43B);
@@ -535,6 +535,7 @@ void Decal_MergeInDecals(cachewad_t *pwad, const char *pathID)
 	Mem_Free(pwad);
 }
 
+
 void Decal_Init(void)
 {
 	// A tiny different in implement makes this function cause error
@@ -575,7 +576,7 @@ void Decal_Init(void)
 		Decal_MergeInDecals(decal_wad_temp, pszPathID[i]);
 		FS_Close(hfile);
 	}
-
+	
 	if (decal_wad)
 	{
 		sv_decalnamecount = Draw_DecalCount();
@@ -592,7 +593,7 @@ void Decal_Init(void)
 	else
 	{
 		sv_decalnamecount = 0;
-	}
+	}sv_decalnamecount = 1;
 }
 
 qboolean CustomDecal_Validate(void *raw, int nFileSize)

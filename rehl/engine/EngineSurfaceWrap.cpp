@@ -267,7 +267,6 @@ void EngineSurfaceWrap::enableMouseCapture(bool state)
 }
 EngineSurfaceWrap::EngineSurfaceWrap(vgui::Panel * embeddedPanel, IEngineSurface * engineSurface) : SurfaceBase::SurfaceBase(embeddedPanel)
 {
-	auto xa = sizeof(SurfaceBase);
 	//Call_Method<void*, EngineSurfaceWrap, vgui::Panel*, IEngineSurface*>(0xB8F50, this, embeddedPanel, engineSurface);
 	vgui::FileInputStream *inputStream;
 	_engineSurface = engineSurface;

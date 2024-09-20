@@ -132,7 +132,11 @@ void R_DrawWaterChain(msurface_t* pChain);
 
 void R_DrawSkyBox();
 
+void MakeSkyVec(float s, float t, int axis);
+
 void ClipSkyPolygon(int nump, vec_t* vecs, int stage);
+
+void DrawSkyPolygon(int nump, vec_t* vecs);
 
 texture_t* R_TextureAnimation(msurface_t* s);
 

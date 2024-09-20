@@ -53,6 +53,11 @@ enum
 #define DEG2RAD(x)	((float)(x) * (float)(M_PI / 180.f))
 #define PlaneDiff(point,plane) (((plane)->type < 3 ? (point)[(plane)->type] : _DotProduct((point), (plane)->normal)) - (plane)->dist)
 
+#define SIDE_FRONT		0
+#define SIDE_BACK		1
+#define SIDE_ON		2
+#define SIDE_CROSS		-2
+
 #define BOX_ON_PLANE_SIDE(emins, emaxs, p)      \
 	(((p)->type < 3) ?                          \
 	(                                           \
