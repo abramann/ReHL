@@ -2451,7 +2451,12 @@ void R_DrawEntitiesOnList()
 
 				if (e->player)
 				{
-					return;
+					DEBUG_BREAK_IF_PRESENT;
+					// TODO: Find passed parameter
+					MessageBoxA(0, "Unresolved parameter", "ReHL", MB_OK);
+					//pStudioAPI->StudioDrawPlayer(
+					//	3,
+						//&g_pcl.predicted_origins[47][4270 * (g_pcl.parsecount & CL_UPDATE_MASK) + 2 + 85 * e->index]);
 				}
 				else if (e->curstate.movetype == 12)
 				{
@@ -2474,7 +2479,14 @@ void R_DrawEntitiesOnList()
 
 					currententity = e;
 					if (currententity->player)
-						return;
+					{
+						DEBUG_BREAK_IF_PRESENT;
+						// TODO: Find passed parameter
+						MessageBoxA(0, "Unresolved parameter", "ReHL", MB_OK);
+						//pStudioAPI->StudioDrawPlayer(
+						//	0,
+						//	&g_pcl.predicted_origins[47][4270 * (g_pcl.parsecount & CL_UPDATE_MASK) + 2 + 85 * v6->index]);
+					}
 					else
 						pStudioAPI->StudioDrawModel(0);
 
