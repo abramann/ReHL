@@ -196,6 +196,7 @@ int AllocBlock(int w, int h, int* x, int* y)
 
 void GL_DisableMultitexture()
 {
+	//return Call_Function<void>(0x478A0);
 	if (mtexenabled)
 	{
 		qglDisable(GL_TEXTURE_2D);

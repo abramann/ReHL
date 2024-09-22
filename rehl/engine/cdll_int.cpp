@@ -479,6 +479,7 @@ void ClientDLL_CreateEntities()
 
 void ClientDLL_DrawNormalTriangles()
 {
+	//return Call_Function<void>(0xBA90);
 	if (cl_funcs.pDrawNormalTriangles)
 		cl_funcs.pDrawNormalTriangles();
 

@@ -9,6 +9,12 @@ typedef struct cshift_s
 	int percent;
 } cshift_t;
 
+struct transObjRef
+{
+	cl_entity_t* pEnt;
+	float distance;
+};
+
 EXTERN_VAR(qboolean, gl_texsort);
 EXTERN_VAR(cl_entity_t , r_worldentity);
 EXTERN_VAR(int , c_brush_polys);
@@ -137,6 +143,18 @@ void MakeSkyVec(float s, float t, int axis);
 void ClipSkyPolygon(int nump, vec_t* vecs, int stage);
 
 void DrawSkyPolygon(int nump, vec_t* vecs);
+
+void AddTEntity(cl_entity_t* pEnt);
+
+void R_DrawBrushModel(cl_entity_t* e);
+
+float* R_GetAttachmentPoint(int entity, int attachment);
+
+void R_DrawSpriteModel(cl_entity_t* e);
+
+void R_SpriteColor(colorVec* pColor, cl_entity_t* pEntity, int alpha);
+
+void R_GetSpriteAxes(cl_entity_t* pEntity, int type, vec_t* forward, vec_t* right, vec_t* up);
 
 texture_t* R_TextureAnimation(msurface_t* s);
 

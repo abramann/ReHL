@@ -506,9 +506,8 @@ void NORETURN Sys_Error(const char *error, ...)
 	exit(-1);
 }
 
-NOXREF void Sys_Warning(const char *pszWarning, ...)
+void Sys_Warning(const char *pszWarning, ...)
 {
-	NOXREFCHECK;
 	va_list argptr;
 	char text[1024];
 

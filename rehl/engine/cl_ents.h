@@ -8,6 +8,8 @@ const int CL_UPDATE_MASK = 63;
 
 const int CL_UPDATE_BACKUP = 64;
 
+EXTERN_VAR(int, cl_numvisedicts);
+
 extern double parsecounttime;
 
 qboolean CL_IsPlayerIndex(int index);

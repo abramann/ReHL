@@ -2,10 +2,22 @@
 #include "cl_main.h"
 #include "chase.h"
 
+
 const int MAX_TEX_GAMMA = 256;
 const int MAX_LIGHT_GAMMA = 1024;
 
-screenshake_t gVShake;
+typedef struct
+{
+	float time;
+	float duration;
+	float amplitude;
+	float frequency;
+	float nextShake;
+	vec3_t offset;
+	float angle;
+	vec3_t appliedOffset;
+	float appliedAngle;
+} Shake_t;
 
 float oldgammavalue_25911;
 float oldlightgamma_25912;
@@ -20,6 +32,7 @@ ARRAY(int, screengammatable, [1024], 0xC1999);
 ARRAY(int, lightgammatable, [1024], 0xC1919);
 ARRAY(uchar, texgammatable, [256], 0xC1847);
 ARRAY(float, v_blend, [4], 0xC1A53);
+VAR(screenshake_t, gVShake, 0xC2857);
 
 VVAR(cvar_t, v_texgamma, 0xC2819, { "texgamma" COMMA "2.0" });
 VVAR(cvar_t, v_brightness, 0xC164F, { "brightness" COMMA "0.0" COMMA FCVAR_ARCHIVE });
@@ -93,14 +106,74 @@ void V_ApplyShake(float* origin, float* angles, float factor)
 
 int V_ScreenShake(const char* pszName, int iSize, void* pbuf)
 {
-	NOT_IMPLEMENTED;
-	return 0;
+	struct shake_s
+	{
+		unsigned short amplitude, duration, frequency;
+	}; 
+
+	shake_s* shake = (shake_s*)pbuf;
+
+	gVShake.duration = shake->duration * 0.00024414062;
+	gVShake.time = gVShake.duration + g_pcl.time;
+
+	float amplitude = 0.00024414062 * shake->amplitude;
+
+	if (amplitude > gVShake.amplitude)
+		gVShake.amplitude = amplitude;
+
+	gVShake.nextShake = 0;
+	gVShake.frequency = shake->frequency * 0.00390625;
+	return 1;
 }
 
 int V_ScreenFade(const char* pszName, int iSize, void* pbuf)
 {
-	NOT_IMPLEMENTED;
-	return 0;
+	struct fade_s
+	{
+		unsigned short fadeend, fadereset, flags;
+		uchar fader;
+		uchar fadeg;
+		uchar fadeb;
+		uchar fadealpha;
+	};
+
+	fade_s* fade = (fade_s*)pbuf;
+	if (fade == nullptr)
+		return 1;
+
+	float rate = 4096.0;
+
+	if ((fade->flags & 8) != 0)
+		rate = 256.0;
+	
+	g_pcl.sf.fader = fade->fader;// *((BYTE*)pbuf + 6);
+	g_pcl.sf.fadeSpeed = 0.0;
+	g_pcl.sf.fadeg = fade->fadeg;// *((BYTE*)pbuf + 7);
+	g_pcl.sf.fadeb = fade->fadeb;// *((BYTE*)pbuf + 8);
+	g_pcl.sf.fadealpha = fade->fadealpha;// *((BYTE*)pbuf + 9);
+	g_pcl.sf.fadeFlags = fade->flags; 
+	g_pcl.sf.fadeEnd = fade->fadeend / rate;
+	g_pcl.sf.fadeReset = fade->fadereset / rate;
+	if (fade->fadeend == 0)
+		return 1;
+	if ((fade->flags & 1) == 0)
+	{
+		if (g_pcl.sf.fadeEnd != 0.0)
+		{
+			g_pcl.sf.fadeSpeed = (float)fade->fadealpha / g_pcl.sf.fadeEnd;
+		}
+		g_pcl.sf.fadeReset = g_pcl.sf.fadeReset + g_pcl.time;
+		g_pcl.sf.fadeEnd = g_pcl.sf.fadeReset + g_pcl.sf.fadeEnd;
+		return 1;
+	}
+	if (g_pcl.sf.fadeEnd != 0)
+	{
+		g_pcl.sf.fadeSpeed = -(fade->fadealpha / g_pcl.sf.fadeEnd);
+	}
+	g_pcl.sf.fadeEnd = g_pcl.sf.fadeEnd + g_pcl.time;
+	g_pcl.sf.fadeTotalEnd = g_pcl.sf.fadeEnd;
+	g_pcl.sf.fadeReset = g_pcl.sf.fadeReset + g_pcl.sf.fadeEnd;
+	return 1;
 }
 
 void BuildGammaTable(float g)

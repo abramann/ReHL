@@ -132,9 +132,10 @@ void R_RenderFog(float* flFogColor, float flStart, float flEnd, int bOn)
 
 void R_RenderFinalFog()
 {
+	//return Call_Function<void>(0x88E60);
 	if (gD3DMode != 1)
 	{
-		glEnable(GL_FOG);
+		qglEnable(GL_FOG);
 		qglFogi(GL_FOG_MODE, GL_EXP2);
 		qglFogf(GL_FOG_DENSITY, flFogDensity);
 		qglHint(GL_FOG_HINT, GL_NICEST);

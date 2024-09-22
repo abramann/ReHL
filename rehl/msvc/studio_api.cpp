@@ -1,8 +1,7 @@
 #include "precompiled.h"
 
-r_studio_interface_t studio;
-
-r_studio_interface_t* pStudioAPI;
+VAR(r_studio_interface_t, studio, 0x885D6);
+r_studio_interface_t* pStudioAPI = &studio;
 
 float lighttransform[128][3][4];
 

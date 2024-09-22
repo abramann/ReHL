@@ -3,7 +3,7 @@
 #include "wrapsin.h"
 
 
-// TODO: Find good name for variables in ProjectPointOnPlane, BuildSurfaceDisplayList
+// TODO: Find good name for variables in ProjectPointOnPlane, BuildSurfaceDisplayList, CalcFov
 
 const float PI = 3.141592653589793f;
 const float DEFAULT_BLOCKLIGHT = 65280.0f;
@@ -104,7 +104,6 @@ VAR(int, gRenderMode, 0x89257);
 ARRAY(mplane_t, frustum, [4], 0x452DC);
 VVAR(int, r_dlightactive, 0x47403, 0);
 VARRAY(colorVec, blocklights, [MAX_LIGHTMAP], 0x4761D, { 0 });
-VVAR(int, cl_numvisedicts, 0xBBB3, 0);
 VVAR(int, mirrortexturenum, 0x4938D, 0);
 VVAR(msurface_t*, skychain, 0x48AD7, nullptr);
 VVAR(msurface_t*, waterchain, 0x493C3, nullptr);
@@ -117,6 +116,12 @@ VARRAY(int, skytexorder, [6], 0x508F3, { 0 COMMA 2 COMMA 1 COMMA 3 COMMA 4 COMMA
 VVAR(qboolean, g_bFogSkybox, 0x5080A, true);
 VAR(GLuint, gSkyTexNumber, 0x4FACF);
 ARRAY(vec_t, skyclip, [6][3], 0x50037);
+VARRAY(cl_entity_t*, cl_visedicts, [512], 0x4488C, nullptr);
+VVAR(float, r_blend, 0x483C7, 0);
+VAR(vec3_t, r_entorigin, 0x886DF);
+VVAR(transObjRef*, transObjects, 0x885F4, nullptr);
+VAR(int, numTransObjs, 0x888E0);
+VAR(int, maxTransObjs, 0x888D7);
 
 // cvars
 VVAR(cvar_t, r_cachestudio, 0x46BD4, { "r_cachestudio" COMMA "1" COMMA 0 COMMA 0.0f COMMA nullptr });
@@ -171,33 +176,19 @@ void R_DrawViewModel()
 void R_RenderScene()
 {
 	if (CL_IsDevOverviewMode())
-		CL_SetDevOverView(&r_refdef);	// Implement
+		CL_SetDevOverView(&r_refdef);
 
 	R_SetupFrame();
 	R_SetFrustum();
 	R_SetupGL();
 	R_MarkLeaves();
-	if (r_refdef.onlyClientDraws == false)
-	{
-		if (CL_IsDevOverviewMode())
-		{
-			qglClearColor(0.0, 1.0, 0.0, 0.0);
-			qglClear(GL_COLOR_BUFFER_BIT);
-		}
-		R_DrawWorld();	// Under implement
-		S_ExtraUpdate();
-		R_DrawEntitiesOnList();	// Implement
-	}
-	if (g_bUserFogOn)
-		R_RenderFinalFog();
-
-	isFogEnabled = qglIsEnabled(GL_FOG);
+	
 	if (r_refdef.onlyClientDraws == false)
 	{
 		if (CL_IsDevOverviewMode())
 		{
 			qglClearColor(0, 1, 0, 0);
-			qglClear(GL_DEPTH_BUFFER_BIT6_QCOM);
+			qglClear(GL_COLOR_BUFFER_BIT);
 		}
 		R_DrawWorld();
 		S_ExtraUpdate();
@@ -209,20 +200,19 @@ void R_RenderScene()
 	AllowFog(false);
 	ClientDLL_DrawNormalTriangles();
 	AllowFog(true);
-
-	if (g_pcl.waterlevel > 2 && r_refdef.onlyClientDraws == false || !g_bUserFogOn)
+	
+	if (g_pcl.waterlevel > 2 && !r_refdef.onlyClientDraws || !g_bUserFogOn)
 		qglDisable(GL_FOG);
-
-	R_DrawTEntitiesOnList(r_refdef.onlyClientDraws);	// Implement
+	
+	R_DrawTEntitiesOnList(r_refdef.onlyClientDraws);
 	S_ExtraUpdate();
-	if (r_refdef.onlyClientDraws == false)
+	if (!r_refdef.onlyClientDraws)
 	{
 		R_RenderDlights();
 		GL_DisableMultitexture();
-		R_DrawParticles();	// Implement
+		R_DrawParticles();
 	}
 }
-
 void R_PolyBlend()
 {
 	return Call_Function<void>(0x45000);
@@ -1125,7 +1115,7 @@ void R_DrawSequentialPoly(msurface_t* s, int face)
 	{
 		GL_DisableMultitexture();
 		qglBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-		glEnable(GL_BLEND);
+		qglEnable(GL_BLEND);
 		int texnum = R_TextureAnimation(s)->gl_texturenum;
 		GL_Bind(texnum);
 		qglDisable(GL_TEXTURE_2D);
@@ -1139,7 +1129,7 @@ void R_DrawSequentialPoly(msurface_t* s, int face)
 			GL_DisableMultitexture();
 			int texnum = s->texinfo->texture->gl_texturenum;
 			GL_Bind(texnum);
-			EmitWaterPolys(s, face); // Implement
+			EmitWaterPolys(s, face);
 		}
 	}
 	else
@@ -1217,7 +1207,7 @@ void R_DrawSequentialPoly(msurface_t* s, int face)
 					Sys_Error("%s: Too many decal surfaces!\n", __func__);
 
 				if (!currententity->curstate.rendermode)
-					R_DrawDecals(true); // Implement
+					R_DrawDecals(true);
 
 				if (gl_wireframe.value > 0)
 				{
@@ -1314,8 +1304,6 @@ void R_DrawSequentialPoly(msurface_t* s, int face)
 
 void DrawTextureChains()
 {
-	//return Call_Function<void>(0x48AB0);
-
 	int extraupdtcount = 100;
 
 	currententity = cl_entities;
@@ -1402,7 +1390,7 @@ void DrawGLSolidPoly(glpoly_t* p)
 
 void R_DrawSkyChain(msurface_t* s)
 {
-	//	Call_Function<void, msurface_t*>(0x5054E, s);
+	//	reyurn Call_Function<void, msurface_t*>(0x5054E, s);
 	if (CL_IsDevOverviewMode())
 		return;
 
@@ -1418,7 +1406,7 @@ void R_DrawSkyChain(msurface_t* s)
 				float* polyverts = poly->verts[i];
 				VectorSubtract(polyverts, r_origin, verts[i]);
 			}
-			ClipSkyPolygon(poly->numverts, (vec_t*)verts, 0); // Implement
+			ClipSkyPolygon(poly->numverts, (vec_t*)verts, 0);
 		}
 	}
 	R_DrawSkyBox();	// Implement
@@ -1426,7 +1414,7 @@ void R_DrawSkyChain(msurface_t* s)
 
 void R_DrawWaterChain(msurface_t* pChain)
 {
-	//Call_Function<void, msurface_t*>(0x48A60, pChain);
+	//return Call_Function<void, msurface_t*>(0x48A60, pChain);
 	
 	if (pChain == nullptr)
 		return;
@@ -1629,6 +1617,217 @@ void DrawSkyPolygon(int nump, vec3_t vecs)
 	}
 }
 
+void AddTEntity(cl_entity_t* pEnt)
+{
+	//return Call_Function<void, cl_entity_t*>(0x888D0, pEnt);
+
+	model_s* model;
+	vec3_t v;
+	float distance; 
+
+	if (numTransObjs >= maxTransObjs)
+		Sys_Error("%s: Too many objects", __func__);
+
+	model = pEnt->model;
+	if (model && model->type == mod_brush && pEnt->curstate.rendermode == 4)
+	{
+		distance = 1000000000;
+	}
+	else
+	{
+		VectorAdd(model->maxs, model->mins, v);
+		VectorScale(v, 0.5, v);
+		VectorAdd(pEnt->origin, v, v);
+		VectorSubtract(r_origin, v, v);
+		distance = _DotProduct(v, v);
+	}
+
+	int i = numTransObjs;
+	transObjRef* pObj = &transObjects[i - 1];
+
+	for (i = numTransObjs; i > 0; i--)
+	{
+		if (distance < pObj->distance)
+			break;
+
+		pObj[1].distance = pObj->distance;
+		pObj[1].pEnt = pObj->pEnt;
+		pObj--;
+	}
+
+	numTransObjs++;
+	transObjects[i].pEnt = pEnt;
+	transObjects[i].distance = distance;	
+}
+
+void R_DrawBrushModel(cl_entity_t* e)
+{
+	TO_IMPLEMENT;
+	return Call_Function<void, cl_entity_t*>(0x48D30, e);
+}
+
+float* R_GetAttachmentPoint(int entity, int attachment)
+{
+	if (attachment > 0)
+		return &cl_entities[entity].angles[3 * attachment];
+	return cl_entities[entity].origin;
+}
+
+void R_DrawSpriteModel(cl_entity_t* e)
+{
+	//return Call_Function<void, cl_entity_t*>(0x43D70, e);
+
+	float scale;
+	colorVec color;
+	vec3_t point;
+	vec3_t forward;
+	vec3_t right;
+	vec3_t up;
+
+	msprite_t* pSprite = (msprite_t*)e->model->cache.data;
+	mspriteframe_t* pSpriteFrame = R_GetSpriteFrame(pSprite, e->curstate.frame);
+	if (!pSpriteFrame)
+	{
+		Sys_Warning("%s: couldn't get sprite frame for %s\n", __func__, e->model->name);
+		return;
+	}
+
+	scale = e->curstate.scale;
+	if (scale <= 0)
+		scale = 1;
+
+	int rendermode = e->curstate.rendermode;
+	if (rendermode == kRenderNormal)
+		r_blend = 1.0;
+
+	R_SpriteColor(&color, e, r_blend * 255);	// Implement
+
+	if (gl_spriteblend.value == 0.0 && rendermode == kRenderNormal)
+	{
+		GL_TEXTURE_MAG_FILTER;
+		qglTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, 8448.0);
+		qglColor4ub(color.r, color.g, color.b, 255);
+		qglDisable(GL_BLEND);
+	}
+	else
+	{
+		switch (rendermode)
+		{
+		case kRenderTransColor:
+			qglBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+			qglTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, 6406);
+			qglColor4ub(color.r, color.g, color.b, 255 * r_blend);
+			break;
+
+		case kRenderTransAdd:
+			qglTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, 8448);
+			qglBlendFunc(GL_ONE, GL_ONE);
+			qglColor4ub(color.r, color.g, color.b, 255);
+			qglDepthMask(GL_ZERO);
+			break;
+		case kRenderGlow:
+			qglTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, 8448);
+			qglBlendFunc(GL_ONE, GL_ONE);
+			qglColor4ub(color.r, color.g, color.b, 255);
+			qglDisable(GL_DEPTH_TEST);
+			qglDepthMask(GL_ZERO);
+			break;
+		case kRenderTransAlpha:
+			qglTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, 8448);
+			qglBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+			qglColor4ub(color.r, color.g, color.b, 255 * r_blend);
+			qglDepthMask(GL_ZERO);
+			break;
+
+		default:
+			qglTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, 8448);
+			qglBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+			qglColor4ub(color.r, color.g, color.b, 255 * r_blend);
+		}
+		qglEnable(GL_BLEND);
+	}
+
+	R_GetSpriteAxes(e, pSprite->type, forward, right, up);
+
+	GL_DisableMultitexture();
+
+	GL_Bind(pSpriteFrame->gl_texturenum);
+
+	qglEnable(GL_ALPHA_TEST);
+	qglBegin(GL_QUADS);
+	qglTexCoord2f(0.0, 1.0);
+
+	VectorMA(r_entorigin, scale * pSpriteFrame->down, up, point);
+	VectorMA(point, scale * pSpriteFrame->left, right, point);
+	qglVertex3fv(point);
+
+	qglTexCoord2f(0, 0);
+
+	VectorMA(r_entorigin, scale * pSpriteFrame->up, up, point);
+	VectorMA(point, scale * pSpriteFrame->left, right, point);
+	qglVertex3fv(point);
+
+	qglTexCoord2f(1, 0);
+
+	VectorMA(r_entorigin, scale * pSpriteFrame->up, up, point);
+	VectorMA(point, scale * pSpriteFrame->right, right, point);
+	qglVertex3fv(point);
+
+	qglTexCoord2f(1, 1);
+
+	VectorMA(r_entorigin, scale * pSpriteFrame->down, up, point);
+	VectorMA(point, scale * pSpriteFrame->right, right, point);
+	qglVertex3fv(point);
+
+	qglEnd();
+	qglDisable(GL_ALPHA_TEST);
+	qglDepthMask(GL_ONE);
+	if (e->curstate.rendermode || gl_spriteblend.value != 0)
+	{
+		qglTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, 7681);
+		qglDisable(GL_BLEND);
+		qglEnable(GL_DEPTH_TEST);
+	}
+}
+
+void R_SpriteColor(colorVec* pColor, cl_entity_t* pEntity, int alpha)
+{
+	//return Call_Function<void, colorVec*, cl_entity_t*, int>(0x26F90, pColor, pEntity, alpha);
+
+	int rendermode = pEntity->curstate.rendermode;
+	uint a = 255;
+	if (rendermode == kRenderTransAdd || rendermode == kRenderGlow)
+		a = alpha;
+
+	if (pEntity->curstate.rendercolor.r || pEntity->curstate.rendercolor.g || pEntity->curstate.rendercolor.b)
+	{
+		pColor->r = (a * pEntity->curstate.rendercolor.r) >> 8;
+		pColor->g = (a * pEntity->curstate.rendercolor.g) >> 8;
+		pColor->b = (a * pEntity->curstate.rendercolor.b) >> 8;
+
+		if (filterMode)
+		{
+			pColor->r *= filterColorRed;
+			pColor->g *= filterColorGreen;
+			pColor->b *= filterColorBlue;
+		}
+	}
+	else
+	{
+		pColor->r = (255 * a) >> 8;
+		pColor->g = (255 * a) >> 8;
+		pColor->b = (255 * a) >> 8;
+	}
+
+}
+
+void R_GetSpriteAxes(cl_entity_t* pEntity, int type, vec_t* forward, vec_t* right, vec_t* up)
+{
+	TO_IMPLEMENT;
+	return Call_Function<void, cl_entity_t*, int, vec_t*, vec_t*, vec_t*>(0x26D20,
+		pEntity, type, forward, right, up);
+}
+
 texture_t* R_TextureAnimation(msurface_t* s)
 {
 	//return Call_Function<texture_t*, msurface_t*>(0x47750, s);
@@ -1796,7 +1995,7 @@ void R_RenderDynamicLightmaps(msurface_t* fa)
 		return;
 
 	int lmtexnum = fa->lightmaptexturenum;
-	auto polys = fa->polys;
+	glpoly_t* polys = fa->polys;
 	uint* cached_light = (uint*)fa->cached_light;
 	polys->chain = lightmap_polys[lmtexnum];
 	lightmap_polys[lmtexnum] = polys;
@@ -1850,7 +2049,6 @@ void R_RenderDynamicLightmaps(msurface_t* fa)
 	R_BuildLightMap(fa, &lightmaps[lightmap_bytes * (fa->light_s + ((fa->light_t + (lmtexnum << 7)) << 7))],
 		lightmap_bytes << 7);
 }
-
 
 void R_DrawDecals(qboolean bMultitexture)
 {
@@ -2141,7 +2339,7 @@ void R_AddDynamicLights(msurface_t* surf)
 
 void R_RenderDlight(dlight_t* light)
 {
-	// Never executed code since gl_flashblend never changed
+	// called by R_RenderDlights which is nvever executed 
 	return Call_Function<void, dlight_t*>(0x42F90, light);
 }
 
@@ -2167,7 +2365,7 @@ void DrawGLWaterPolyLightmap(glpoly_t* p)
 
 void R_DrawWorld()
 {
-	// return Call_Function<void>(0x49440);
+	//return Call_Function<void>(0x49440);
 
 	cl_entity_t ent;
 	Q_memset(&ent, 0, sizeof(cl_entity_t));
@@ -2217,14 +2415,104 @@ void R_DrawWorld()
 
 void DrawGLPolyScroll(msurface_t* psurface, cl_entity_t* pEntity)
 {
-	TO_IMPLEMENT;
-	return Call_Function<void, msurface_t*, cl_entity_t*>(0x48350, psurface,pEntity);
+	//return Call_Function<void, msurface_t*, cl_entity_t*>(0x48350, psurface,pEntity);
+	
+	NOT_TESTED;
+	float sOffset = ScrollOffset(psurface, pEntity);
+	glpoly_t* poly = psurface->polys;
+	qglBegin(GL_POLYGON);
+	for (int i = 0; i < poly->numverts; i++)
+	{
+		auto verts = poly->verts[i];
+		qglTexCoord2f(sOffset + verts[3], verts[4]);
+		qglVertex3fv(verts);
+	}
+	qglEnd();
 }
 
 void R_DrawEntitiesOnList()
-{
-	TO_IMPLEMENT;
-	return Call_Function<void>(0x44860);
+{	
+	//return Call_Function<void>(0x44860);
+
+	cl_entity_t* e;
+
+	for (int i = 0; i < cl_numvisedicts; ++i)
+	{
+		currententity = e = cl_visedicts[i];
+		if (e->curstate.rendermode != kRenderNormal)
+		{
+			AddTEntity(e);
+		}
+		else
+		{
+			modtype_t type = e->model->type;
+			if (type == mod_studio)
+			{
+
+				if (e->player)
+				{
+					return;
+				}
+				else if (e->curstate.movetype == 12)
+				{
+
+					if (cl_numvisedicts <= 0)
+						continue;
+
+					e = nullptr;
+
+					for (int k = 0; k < cl_numvisedicts; k++)
+					{
+						if (cl_visedicts[k]->index == e->curstate.aiment)
+						{
+							e = cl_visedicts[k];
+							break;
+						}
+					}
+					if (e == nullptr)
+						continue;
+
+					currententity = e;
+					if (currententity->player)
+						return;
+					else
+						pStudioAPI->StudioDrawModel(0);
+
+					currententity = cl_visedicts[i];
+					pStudioAPI->StudioDrawModel(3);
+				}
+				else
+				{
+					pStudioAPI->StudioDrawModel(3);
+				}
+
+			}
+			else if (type == mod_brush)
+			{
+				R_DrawBrushModel(e);
+			}
+		}
+	}
+
+	r_blend = 1.0;
+	for (int i = 0; i < cl_numvisedicts; i++)
+	{
+		currententity = e = cl_visedicts[i];
+		if (e->curstate.rendermode == kRenderNormal && e->model->type == mod_sprite)
+		{
+			if (e->curstate.body)
+			{
+				vec_t* attach = R_GetAttachmentPoint(e->curstate.skin, e->curstate.body);
+				VectorCopy(attach, r_entorigin);
+			}
+			else
+			{
+				VectorCopy(e->origin, r_entorigin);
+			}
+
+			R_DrawSpriteModel(e);
+		}
+	}
 }
 
 void R_CheckVariables()
@@ -2301,6 +2589,7 @@ void GL_LoadFilterTexture(float r, float g, float b, float brightness)
 
 void AllowFog(qboolean allowed)
 {
+	//return Call_Function<void, int>(0x44FB0, allowed);
 	if (allowed)
 	{
 		if (isFogEnabled)
@@ -2316,14 +2605,14 @@ void AllowFog(qboolean allowed)
 
 float CalcFov(float fov_x, float width, float height)
 {
-	float plane; 
+	float v1; 
 	if (fov_x < 1.0 || fov_x > 179.0)
-		plane = 1;
+		v1 = 1;
 	else
-		plane = tan(fov_x / 360.0 * PI);
+		v1 = tan(fov_x / 360.0 * PI);
 
-	float focallen = width / plane;
-	float x = height / focallen;
+	float v2 = width / v1;
+	float x = height / v2;
 	return atanf(x) * 360.0f / PI;
 }
 
@@ -2368,14 +2657,17 @@ void ProjectPointOnPlane(vec_t* dst, const vec_t* p, const vec_t* normal)
 
 void PerpendicularVector(vec_t* dst, const vec_t* src)
 {
-	int i;
-	for (i = 0; i < 3; i++)
+	vec3_t tempvec = { 0 };
+
+	for (int i = 0; i < 3; i++)
 	{
 		if (src[i] <= src[0] && src[i] <= src[1] && src[i] <= src[2])
+		{
+			tempvec[i] = 1;
 			break;
+		}
 	}
-	vec3_t tempvec = { 0 };
-	tempvec[i] = 1;
+
 	ProjectPointOnPlane(dst, tempvec, src);
 	VectorNormalize(dst);
 }
