@@ -33,7 +33,7 @@ int scr_fullupdate = 0;
 
 float scr_centertime_start = 0;
 
-float gWorldToScreen[16] = { 0 };
+VARRAY(float, gWorldToScreen, [16], 0x45CB9, { 0 });
 char scr_centerstring[1024] = {};
 
 float scr_con_current = 0;

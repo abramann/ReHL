@@ -215,6 +215,12 @@ void GL_EnableMultitexture()
 	}
 }
 
+void SCR_BeginLoadingPlaque(qboolean reconnect)
+{
+	NOT_IMPLEMENTED;
+	return Call_Function<void, qboolean>(0x4C130, reconnect);
+}
+
 void GL_Dump_f()
 {
 	NOT_IMPLEMENTED;

@@ -45,6 +45,15 @@ void BOPS_Error(void)
 	Sys_Error("%s: Bad signbits", __func__);
 }
 
+qboolean BoundsAndSphereIntersect(const vec3_t mins, const vec3_t maxs, const vec3_t origin, float radius)
+{
+	if (mins[0] > origin[0] + radius || mins[1] > origin[1] + radius || mins[2] > origin[2] + radius)
+		return false;
+	if (maxs[0] < origin[0] - radius || maxs[1] < origin[1] - radius || maxs[2] < origin[2] - radius)
+		return false;
+	return true;
+}
+
 int InvertMatrix(vec4_t* out, const vec4_t* in1)
 {
 	float* temp;
@@ -561,10 +570,10 @@ void VectorMA(const vec_t *veca, float scale, const vec_t *vecm, vec_t *out)
 	out[2] = scale * vecm[2] + veca[2];
 }
 
-real_t _DotProduct(const vec_t *v1, const vec_t *v2)
-{
-	return v1[0] * v2[0] + v1[1] * v2[1] + v1[2] * v2[2];
-}
+//vec_t _DotProduct(const vec_t *v1, const vec_t *v2)
+//{
+//	return v1[0] * v2[0] + v1[1] * v2[1] + v1[2] * v2[2];
+//}
 
 void CrossProduct(const vec_t *v1, const vec_t *v2, vec_t *cross)
 {

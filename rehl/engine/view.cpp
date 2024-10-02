@@ -436,3 +436,9 @@ void V_CalcBlend()
 	for (int i = 0; i < ARRAYSIZE(v_blend); i++)
 		v_blend[i] = 0;
 }
+
+int V_FadeAlpha()
+{
+	TO_IMPLEMENT;
+	return Call_Function<int>(0xC2700);
+}

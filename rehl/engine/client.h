@@ -303,6 +303,7 @@ void CL_SendConnectPacket();
 void CL_StopPlayback();
 void CL_UpdateSoundFade();
 void CL_AdjustClock();
+int CL_FxBlend(cl_entity_t* ent);
 void CL_Save(const char *name);
 void CL_HudMessage(const char *pMessage);
 void CL_MoveToOnHandList(resource_t *pResource);

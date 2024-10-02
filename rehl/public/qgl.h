@@ -81,8 +81,6 @@ void GL_Shutdown(SDL_Window* mainwindow, HDC hdc, HGLRC hglrc);
 
 bool VID_Init(unsigned short* palette);
 
-model_t* R_LoadMapSprite(const char* szFilename);
-
 void GL_Dump_f();
 
 void R_InitTextures();

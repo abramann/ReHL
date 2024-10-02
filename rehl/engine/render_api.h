@@ -22,6 +22,10 @@ EXTERN_VAR(int , c_alias_polys);
 EXTERN_VAR(qboolean , mirror);
 EXTERN_VAR(int, r_framecount);
 EXTERN_VAR(int, gRenderMode);
+EXTERN_VAR(int, mirrortexturenum);
+EXTERN_VAR(particle_t*, active_particles);
+EXTERN_VAR(particle_t*, free_particles);
+EXTERN_VAR(unsigned short*, host_basepal);
 
 EXTERN_VAR(cvar_t, ati_npatch);
 EXTERN_VAR(cvar_t, gl_wireframe);
@@ -61,8 +65,6 @@ EXTERN_VAR(cvar_t, gl_alphamin);
 EXTERN_VAR(cvar_t, gl_flipmatrix);
 EXTERN_VAR(cvar_t, gl_monolights);
 EXTERN_VAR(cvar_t, gl_fog);
-EXTERN_VAR(int, mirrortexturenum);
-
 
 void R_RenderView();
 
@@ -81,6 +83,12 @@ void R_UploadEmptyTex();
 void R_Clear();
 
 void R_PreDrawViewModel();
+
+qboolean RecursiveLightPoint(colorVec* out, mnode_t* node, vec_t* start, vec_t* end);
+
+colorVec R_LightVec(vec_t* start, vec_t* end);
+
+colorVec R_LightPoint(vec3_t p0);
 
 void R_DrawViewModel();
 
@@ -132,6 +140,8 @@ void R_MirrorChain(msurface_t* s);
 
 void DrawGLSolidPoly(glpoly_t* p);
 
+void DrawGLWaterPoly(glpoly_t* p);
+
 void R_DrawSkyChain(msurface_t* s);
 
 void R_DrawWaterChain(msurface_t* pChain);
@@ -147,6 +157,10 @@ void DrawSkyPolygon(int nump, vec_t* vecs);
 void AddTEntity(cl_entity_t* pEnt);
 
 void R_DrawBrushModel(cl_entity_t* e);
+
+void R_SetRenderMode(cl_entity_t* pEntity);
+
+void R_RotateForEntity(vec_t* origin, cl_entity_t* e);
 
 float* R_GetAttachmentPoint(int entity, int attachment);
 
@@ -170,11 +184,45 @@ void R_DrawDecals(qboolean bMultitexture);
 
 void R_DrawTEntitiesOnList(qboolean clientOnly);
 
+float GlowBlend(cl_entity_t* pEntity);
+
+void R_DrawAliasModel(cl_entity_t* e);
+
 void R_RenderDlights();
 
 void R_MarkLights(dlight_t* light, int bit, mnode_t* node);
 
+void R_FreeDeadParticles(particle_t** ppparticles);
+
 void R_DrawParticles();
+
+void R_BeamDrawList();
+
+void R_DrawBeamEntList(float frametime);
+
+void R_BeamSetup(BEAM* pbeam, vec_t* start, vec_t* end, int modelIndex, float life, float width, float amplitude, float brightness, float speed);
+
+int R_BeamCull(vec_t* start, vec_t* end, int pvsOnly);
+
+void Noise(float* noise, int divs);
+
+void SineNoise(float* noise, int divs);
+
+cl_entity_t* R_GetBeamAttachmentEntity(int index);
+
+void R_BeamDraw(BEAM* pbeam, float frametime);
+
+void R_DrawSegs(vec_t* source, vec_t* delta, float width, float scale, float freq, float speed, int segments, int flags);
+
+void R_DrawTorus(vec_t* source, vec_t* delta, float width, float scale, float freq, float speed, int segments);
+
+void R_DrawDisk(vec_t* source, vec_t* delta, float width, float scale, float freq, float speed, int segments);
+
+void R_DrawCylinder(vec_t* source, vec_t* delta, float width, float scale, float freq, float speed, int segments);
+
+void R_DrawRing(vec_t* source, vec_t* delta, float width, float amplitude, float freq, float speed, int segments);
+
+void R_DrawBeamFollow(BEAM* pbeam);
 
 void R_DrawEntitiesOnList();
 

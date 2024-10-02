@@ -25,6 +25,7 @@ void V_RenderView();
 void V_SetRefParams(ref_params_t *pparams);
 void V_GetRefParams(ref_params_t *pparams);
 void V_CalcBlend();
+int V_FadeAlpha();
 void FilterLightParams();
 void BuildGammaTable(float g);
 

@@ -9,6 +9,7 @@ const int CL_UPDATE_MASK = 63;
 const int CL_UPDATE_BACKUP = 64;
 
 EXTERN_VAR(int, cl_numvisedicts);
+EXTERN_VAR(int, cl_numbeamentities);
 
 extern double parsecounttime;
 

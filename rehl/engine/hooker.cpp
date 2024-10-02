@@ -90,25 +90,30 @@ void SetupHooks()
 	//(0x3E320, GL_Upload32);	// * Correct implement
 	DirectHook(0x3E630, GL_Upload16);	// *
 
-	//DirectHook(0x46440, R_RenderView);	// *
+	DirectHook(0x46440, R_RenderView);	// *
 	//R_RenderView functions
-	DirectHook(0x47390, R_BuildLightMap);
-	DirectHook(0x49BC0, GL_BuildLightmaps);
-	DirectHook(0x1A3E0, CL_GetModelByIndex);
+	DirectHook(0x47390, R_BuildLightMap); // *
+	DirectHook(0x49BC0, GL_BuildLightmaps); // *
+	DirectHook(0x1A3E0, CL_GetModelByIndex); // *
 
 	DirectHook(0x46350, R_RenderScene);
-	
+
 	// R_RenderScene is the home for most rendering functions
 	DirectHook(0x89220, tri_GL_RenderMode);
-	DirectHook(0x47900, R_DrawSequentialPoly); // *
 	DirectHook(0x47F00, R_RenderDynamicLightmaps); // *
 	DirectHook(0x47750, R_TextureAnimation); // static
-	DirectHook(0x4F192, EmitWaterPolys); // *
-	DirectHook(0x5061E, MakeSkyVec);	// DrawSkyBox
-	DirectHook(0x48350, DrawGLPolyScroll);
-	//DirectHook(0x43D70, R_DrawSpriteModel);
-	//DirectHook(0x888D0, AddTEntity);
-	
+	DirectHook(0x48350, DrawGLPolyScroll);	// Not tested
+
+	// R_DrawParticles
+	// TODO: remove these after correcting R_BeamDrawList
+	DirectHook(0x7AE20, R_FreeDeadParticles); // *
+	DirectHook(0x7F6C0, R_BeamDraw);
+	DirectHook(0x7ECC0, R_DrawBeamFollow);
+	DirectHook(0x7E260, R_DrawSegs);
+	DirectHook(0x7D640, R_BeamSetup); R_BeamDrawList;
+	//(0x7D770, R_DrawBeamEntList);
+	DirectHook(0x7F600, R_BeamCull);
+
 	// Mod
 	//DirectHook(0x40030, Mod_LoadModel);
 	//DirectHook(0x3FD50, Mod_PointInLeaf);

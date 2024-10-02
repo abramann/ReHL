@@ -1,9 +1,6 @@
 #include "precompiled.h"
 #include <cmodel.h>
 
-particle_t* free_particles;
-particle_t* active_particles;
-
 particle_t* R_AllocParticle(void(*callback)(particle_t*, float))
 {
 	particle_s* particles = free_particles; // eax

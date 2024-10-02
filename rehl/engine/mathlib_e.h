@@ -51,7 +51,8 @@ enum
 
 #define RAD2DEG(x)	((float)(x) * (float)(180.f / M_PI))
 #define DEG2RAD(x)	((float)(x) * (float)(M_PI / 180.f))
-#define PlaneDiff(point,plane) (((plane)->type < 3 ? (point)[(plane)->type] : _DotProduct((point), (plane)->normal)) - (plane)->dist)
+#define PlaneDiff(point,plane) (_DotProduct((point), (plane)->normal)) - (plane)->dist
+#define VectorLerp( v1, lerp, v2, c ) ((c)[0] = (v1)[0] + (lerp) * ((v2)[0] - (v1)[0]), (c)[1] = (v1)[1] + (lerp) * ((v2)[1] - (v1)[1]), (c)[2] = (v1)[2] + (lerp) * ((v2)[2] - (v1)[2]))
 
 #define SIDE_FRONT		0
 #define SIDE_BACK		1
@@ -149,6 +150,7 @@ inline bool VectorIsZero(const vec_t *in)
 float anglemod(float a);
 void BOPS_Error(void);
 
+qboolean BoundsAndSphereIntersect(const vec3_t mins, const vec3_t maxs, const vec3_t origin, float radius);
 int BoxOnPlaneSide(vec_t *emins, vec_t *emaxs, mplane_t *p);
 int InvertMatrix(vec4_t* out, const vec4_t* in1);
 void AngleVectors_ext(const vec_t *angles, vec_t *forward, vec_t *right, vec_t *up);
@@ -161,7 +163,8 @@ NOBODY void InterpolateAngles(float *start, float *end, float *output, float fra
 void VectorTransform(const vec_t *in1, float (*in2)[4], vec_t *out);
 qboolean VectorCompare(const vec_t *v1, const vec_t *v2);
 void VectorMA(const vec_t *veca, float scale, const vec_t *vecm, vec_t *out);
-real_t _DotProduct(const vec_t *v1, const vec_t *v2);
+//vec_t _DotProduct(const vec_t *v1, const vec_t *v2);
+#define _DotProduct(x,y) ((x)[0]*(y)[0]+(x)[1]*(y)[1]+(x)[2]*(y)[2])
 NOBODY void _VectorSubtract(vec_t *veca, vec_t *vecb, vec_t *out);
 void _VectorAdd(vec_t *veca, vec_t *vecb, vec_t *out);
 NOBODY void _VectorCopy(vec_t *in, vec_t *out);

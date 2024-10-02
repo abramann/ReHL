@@ -55,12 +55,20 @@ void CL_InitClosest(void) { NOT_IMPLEMENTED; }
 void CL_PrintLogos(void) { NOT_IMPLEMENTED; }
 void CL_UpdateSoundFade(void) { NOT_IMPLEMENTED; }
 void CL_AdjustClock(void)
-{ 
+{
+	NOT_IMPLEMENTED;
+
 	if (g_clockdelta == 0)
 		return;
 
-	NOT_IMPLEMENTED; 
 }
+
+int CL_FxBlend(cl_entity_t* ent)
+{
+	TO_IMPLEMENT;
+	return Call_Function<int, cl_entity_t*>(0x267F0, ent);
+}
+
 int DispatchDirectUserMsg(const char *pszName, int iSize, void *pBuf) { NOT_IMPLEMENTED; return 0; }
 void Sequence_OnLevelLoad(const char* mapName) { NOT_IMPLEMENTED; }
 void CL_WriteMessageHistory(int starting_count, int cmd) { NOT_IMPLEMENTED; }

@@ -7,14 +7,15 @@ void CL_LinkPacketEntities();
 void CL_FireEvents();
 long double CL_LerpPoint();
 
-VAR(particle_t*, free_particles, 0x134A4);
-VAR(particle_t*, active_particles, 0x13513);
+//VAR(particle_t*, free_particles, 0x134A4);
+//VAR(particle_t*, active_particles, 0x13513);
 VVAR(int, cl_numvisedicts, 0xBB9D, 0);
+VAR(int, cl_numbeamentities, 0x7FC8E);
+
 //VVAR(int, cl_numvisedicts, 0xBBB3, 0);
 
 double g_flLatency;
 int last_incoming_sequence = 0;
-int cl_numbeamentities;
 mleaf_t *r_oldviewleaf;
 
 cl_entity_t* cl_visedicts[512];

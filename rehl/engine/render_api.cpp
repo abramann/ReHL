@@ -3,7 +3,8 @@
 #include "wrapsin.h"
 
 
-// TODO: Find good name for variables in ProjectPointOnPlane, BuildSurfaceDisplayList, CalcFov
+// TODO: Find good name for variables in
+// ProjectPointOnPlane, BuildSurfaceDisplayList, R_MarkLights, CalcFov, R_DrawSkyBox
 
 const float PI = 3.141592653589793f;
 const float DEFAULT_BLOCKLIGHT = 65280.0f;
@@ -17,10 +18,17 @@ const int MOD_FRAMES = 20;
 const int MAX_SIGNED_SHORT = 32767;
 const float TURBSCALE = 256.0f / (PI * 2);
 const int MAX_CLIP_VERTS = 128; // skybox clip vertices
+const float GLARE_FALLOFF = 19000.0f;
+const int ramp3[8] = { 109, 107, 6, 5, 4, 3, 0, 0 }; 
+const int ramp2[8] = { 111, 110, 109, 108, 107, 106, 104, 102 }; 
+const int ramp1[8] = { 111, 109, 107, 105, 103, 101, 99, 97 }; 
+const int gSparkRamp[9] = { 254, 253, 252, 111, 110, 109, 108, 103, 96 };
 
 const cvar_t gl_envmapsize = { "gl_envmapsize", "256" };
 const cvar_t gl_flipmtrix = { "gl_flipmatrix", "0" };
 const cvar_t gl_flashblend = { "gl_flashblend", "0" };
+const cvar_t gl_watersides = { "gl_watersides", "0" };
+const cvar_t egon_amplitude = { "egon_amplitude", "0" };
 
 const int dottexture[8][8] =
 {
@@ -122,6 +130,16 @@ VAR(vec3_t, r_entorigin, 0x886DF);
 VVAR(transObjRef*, transObjects, 0x885F4, nullptr);
 VAR(int, numTransObjs, 0x888E0);
 VAR(int, maxTransObjs, 0x888D7);
+VAR(alight_t, r_viewlighting, 0x44CC2);
+VAR(float, r_shadows_value, 0x44C5A)
+VAR(vec3_t, lightspot, 0x435A9);
+VAR(particle_t*, active_particles, 0x7CBAC);
+VVAR(particle_t*, free_particles, 0x7AE99, nullptr);
+VVAR(BEAM*, gpActiveBeams, 0x7FC85, nullptr);
+VVAR(BEAM*, gpFreeBeams, 0x7FD0D, nullptr);
+ARRAY(float, gNoise, [129], 0x7F472);
+VAR(particle_t*, gpActiveTracers, 0x7B5A1);
+ARRAY(cl_entity_t*, cl_beamentities, [64], 0x7D78E);
 
 // cvars
 VVAR(cvar_t, r_cachestudio, 0x46BD4, { "r_cachestudio" COMMA "1" COMMA 0 COMMA 0.0f COMMA nullptr });
@@ -162,15 +180,249 @@ VVAR(cvar_t, gl_monolights, 0x46D3D, { "gl_monolights" COMMA "0" COMMA FCVAR_ARC
 VVAR(cvar_t, ati_npatch, 0x46BC0, { "ati_npatch" COMMA "1.0"  COMMA FCVAR_ARCHIVE });
 VVAR(cvar_t, gl_wireframe, 0x46BCA, { "gl_wireframe" COMMA "0" COMMA 40 });
 VVAR(cvar_t, gl_fog, 0x46D4A, { "gl_fog" COMMA "0" COMMA FCVAR_ARCHIVE });
+VAR(cvar_t, tracerLength, 0x20F15);
 
 void R_PreDrawViewModel()
 {
-	return Call_Function<void>(0x44E40);
+	//return Call_Function<void>(0x44E40);
+
+	currententity = &g_pcl.viewent;
+	if (r_drawviewmodel.value == 0.0
+		|| ClientDLL_IsThirdPerson()
+		|| chase_active.value != 0
+		|| envmap
+		|| r_drawentities.value == 0.0
+		|| g_pcl.stats[0] <= 0)
+		return;
+
+
+	model_s* model = currententity->model;
+	if (!model || model->type != mod_studio)
+		return;
+
+	if (g_pcl.viewentity > g_pcl.maxclients)
+		return;
+	if (g_pcl.weaponstarttime == 0)
+		g_pcl.weaponstarttime = g_pcl.time;
+
+	currententity->curstate.frame = 0;
+	currententity->curstate.framerate = 1.0;
+	currententity->curstate.sequence = g_pcl.weaponsequence;
+	currententity->curstate.animtime = g_pcl.weaponstarttime;
+
+	cl_entity_t* ent = &cl_entities[currententity->index];
+	for (int i = 0; i < 4; i++)
+		VectorCopy(currententity->attachment[i], ent->origin);
+
+	pStudioAPI->StudioDrawModel(2);
+}
+
+qboolean RecursiveLightPoint(colorVec* out, mnode_t* node, vec_t* start, vec_t* end)
+{
+	//return Call_Function<colorVec*, colorVec*, mnode_t*, vec_t*, vec_t*>(0x43420, out, node, start, end);
+
+	// didn't hit anything
+	if (!node || node->contents < 0)
+	{
+		out->r = out->g = out->b = out->a = 0;
+		return false;
+	}
+
+	// calculate mid point
+	float front = PlaneDiff(start, node->plane);
+	float back = PlaneDiff(end, node->plane);
+
+	int side = front < 0;
+	if ((back < 0) == side)
+		return RecursiveLightPoint(out, node->children[side], start, end);
+
+	float frac = front / (front - back);
+	vec3_t	mid; 
+	VectorLerp(start, frac, end, mid);
+ 
+	RecursiveLightPoint(out, node->children[side], start, mid);
+
+	if ((back < 0) == side)
+	{
+		out->r = out->g = out->b = out->a = 0;
+		return false; // didn't hit anything
+	}
+
+	// check for impact on this node
+	msurface_t* surf = &g_pcl.worldmodel->surfaces[node->firstsurface];
+	VectorCopy(mid, lightspot);
+
+	for(int i = 0; i <= node->numsurfaces; i++, surf++)
+	{
+		if (surf->flags & SURF_DRAWTILED)
+			continue; // no lightmaps
+
+		mtexinfo_t* tex = surf->texinfo;
+
+		float s = _DotProduct(mid, tex->vecs[0]) + tex->vecs[0][3];
+		float t = _DotProduct(mid, tex->vecs[1]) + tex->vecs[1][3];
+
+		if (s < surf->texturemins[0] || t < surf->texturemins[1])
+			continue;
+
+		int ds = s - surf->texturemins[0];
+		int dt = t - surf->texturemins[1];
+
+		if (ds > surf->extents[0] || dt > surf->extents[1])
+			continue;
+
+		if (!surf->samples)
+			return 0;
+
+		ds >>= 4;
+		dt >>= 4;
+
+		color24* lightmap = surf->samples;
+		colorVec col = { 0 };
+		if (lightmap)
+		{
+			lightmap += dt * ((surf->extents[0] >> 4) + 1) + ds;
+			for (int maps = 0; maps < MAXLIGHTMAPS && surf->styles[maps] != 255;
+				maps++)
+			{
+				uint scale = d_lightstylevalue[surf->styles[maps]];
+				out->r += lightmap->r * scale;
+				out->g += lightmap->g * scale;
+				out->b += lightmap->b * scale;
+				lightmap += ((surf->extents[0] >> 4) + 1) *
+					((surf->extents[1] >> 4) + 1);
+			}
+
+			out->r >>= 8;
+			out->g>>= 8;
+			out->b >>= 8;
+		}
+
+		return true;
+	}
+
+	// go down back side
+	return RecursiveLightPoint(out, node->children[!side], mid, end);
+}
+
+colorVec R_LightVec(vec_t* start, vec_t* end)
+{
+	colorVec light;
+
+	model_s* worldmodel = g_pcl.worldmodel;
+	if (worldmodel->lightdata)
+	{
+		RecursiveLightPoint(&light, worldmodel->nodes, start, end);
+
+		light.r += r_refdef.ambientlight.r;
+		light.g += r_refdef.ambientlight.g;
+		light.b += r_refdef.ambientlight.b;
+
+		light.r = min(light.r, 255u);
+		light.g = min(light.g, 255u);
+		light.b = min(light.b, 255u);
+	}
+	else
+	{
+		light.a = 0;
+		light.r = light.g = light.b = 255;
+	}
+	return light;
+}
+
+colorVec R_LightPoint(vec3_t p0)
+{
+	vec3_t	p1 = { p0[0], p0[1], p0[2] - 2048.0f };
+	return R_LightVec(p0, p1);
 }
 
 void R_DrawViewModel()
 {
-	return Call_Function<void>(0x44AA0);
+	//return Call_Function<void>(0x44AA0);
+
+	colorVec light;
+	vec3_t lightvec;
+	lightvec[0] = -1.0;
+	lightvec[1] = lightvec[2] = 0;
+	
+	currententity = &g_pcl.viewent;
+	if (r_drawviewmodel.value == 0)
+	{
+		light = R_LightPoint(g_pcl.viewent.origin);
+		g_pcl.light_level = (light.g + light.b + light.r) / 3;
+		return;
+	}
+	if ((ClientDLL_IsThirdPerson() || chase_active.value != 0.0 || envmap || r_drawentities.value == 0.0) ||
+		(g_pcl.stats[0] <= 0 || !currententity->model || g_pcl.viewentity > g_pcl.maxclients))
+	{
+		light = R_LightPoint(currententity->origin);
+		g_pcl.light_level = (light.g + light.b + light.r) / 3;
+		return;
+	}
+
+	qglDepthRange(gldepthmin, (gldepthmax - gldepthmin) * 0.3 + gldepthmin);
+
+	int modtype = currententity->model->type;
+	float tmp;
+	int shadelight;
+	switch (modtype)
+	{
+	case mod_alias:
+		light = R_LightPoint(currententity->origin);
+		shadelight = (light.g + light.r + light.b) / 3;
+		if (shadelight <= 23)
+			shadelight = 24;
+
+		r_viewlighting.ambientlight = shadelight;
+		r_viewlighting.shadelight = shadelight;
+		for (int i = 0; i < ARRAYSIZE(cl_dlights); i++)
+		{
+			dlight_t* dlight = &cl_dlights[i];
+
+			if (dlight->radius != 0 && g_pcl.time <= dlight->die)
+			{
+				vec3_t dist;
+				VectorSubtract(currententity->origin, dlight->origin, dist);
+			  
+				if (Length(dist) > dlight->radius)
+				{
+					r_viewlighting.ambientlight += Length(dist) - dlight->radius;
+				}
+			}
+		}
+		r_viewlighting.ambientlight = min(r_viewlighting.ambientlight, 128);
+		
+		if (r_viewlighting.ambientlight + r_viewlighting.shadelight > 192)
+			r_viewlighting.shadelight = 192 - r_viewlighting.ambientlight;
+
+		r_viewlighting.plightvec = lightvec;
+		R_DrawAliasModel(currententity);
+		break;
+	case mod_studio:
+		if (g_pcl.weaponstarttime == 0)
+			g_pcl.weaponstarttime = g_pcl.time;
+
+		currententity->curstate.frame = 0;
+		currententity->curstate.framerate = 1;
+		currententity->curstate.sequence = g_pcl.weaponsequence;
+		currententity->curstate.animtime = g_pcl.weaponstarttime;
+		currententity->curstate.colormap = g_pcl.players[g_pcl.playernum].topcolor;
+		currententity->curstate.colormap = g_pcl.players[g_pcl.playernum].topcolor | (g_pcl.players[g_pcl.playernum].bottomcolor << 8);
+		
+		light = R_LightPoint(currententity->origin);
+		
+		tmp = r_shadows_value;
+		r_shadows_value = 0.0;
+		g_pcl.light_level = (light.r + light.g + light.b) / 3;
+		pStudioAPI->StudioDrawModel(1);
+		r_shadows_value = tmp;
+		break;
+	case mod_brush:
+		R_DrawBrushModel(currententity);
+		break;
+	}
+	qglDepthRange(gldepthmin, gldepthmax);
+	qglTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 }
 
 void R_RenderScene()
@@ -210,12 +462,67 @@ void R_RenderScene()
 	{
 		R_RenderDlights();
 		GL_DisableMultitexture();
-		R_DrawParticles();
+		R_DrawParticles();	// Implement
 	}
 }
+
 void R_PolyBlend()
 {
-	return Call_Function<void>(0x45000);
+	//return Call_Function<void>(0x45000);
+
+	uchar color[4];
+
+	int	alpha = V_FadeAlpha();
+	if (alpha <= 0)
+		return;
+
+	GL_DisableMultitexture();
+	qglDisable(GL_ALPHA_TEST);
+	qglEnable(GL_BLEND);
+	qglDisable(GL_DEPTH_TEST);
+	qglDisable(GL_TEXTURE_2D);
+	if ((g_pcl.sf.fadeFlags & 2) != 0)
+	{
+		qglBlendFunc(0, GL_SRC_COLOR);
+		color[3] = -1;
+		color[0] = color[1] = color[2] = (alpha * (g_pcl.sf.fader - 255) - 511) >> 8;
+	}
+	else
+	{
+		qglBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		color[3] = alpha;
+		color[0] = color[1] = color[2] = g_pcl.sf.fadeb;
+	}
+
+	isFogEnabled = qglIsEnabled(GL_FOG);
+	if (isFogEnabled)
+		qglDisable(GL_FOG);
+
+	qglViewport(glx, gly, glwidth, glheight);
+	qglMatrixMode(GL_PROJECTION);
+	qglPushMatrix();
+	qglLoadIdentity();
+	qglOrtho(0, glwidth, glheight, 0, -99999.0, 99999.0);
+	qglMatrixMode(GL_MODELVIEW);
+	qglPushMatrix();
+	qglLoadIdentity();
+	qglDisable(GL_MODELVIEW);
+	qglColor4ubv(color);
+	qglBegin(GL_QUADS);
+	qglVertex2f(0, 0);
+	qglVertex2f(0, glheight);
+	qglVertex2f(glwidth, glheight);
+	qglVertex2f(glwidth, 0);
+	qglEnd();
+	qglPopMatrix();
+	qglMatrixMode(GL_PROJECTION);
+	qglPopMatrix();
+	qglEnable(GL_DEPTH_TEST);
+	qglEnable(GL_CULL_FACE);
+	qglEnable(GL_TEXTURE_2D);
+	qglEnable(GL_ALPHA_TEST);
+	if (isFogEnabled)
+		qglEnable(GL_FOG);
 }
 
 void R_Init()
@@ -352,7 +659,7 @@ void R_InitParticleTexture()
 	else
 		qglTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA2, 8, 8, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
 
-	qglTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, 8448.0);
+	qglTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 	qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, 9729.0);
 	qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, 9729.0);
 	qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY, gl_ansio.value);
@@ -373,47 +680,6 @@ void R_UploadEmptyTex()
 
 	r_notexture_mip->gl_texturenum = GL_LoadTexture("**empty**", GLT_SYSTEM, width, height,
 		(unsigned char*)&r_notexture_mip[1], 1, 0, (unsigned char*)pPal);
-}
-
-void R_TimeRefresh_f(void)
-{
-	if (g_pcl.worldmodel)
-	{
-		if (sv_cheats.value == 0.0)
-		{
-			Con_Printf("sv_cheats not enabled\n");
-		}
-		else
-		{
-			qglDrawBuffer(GL_FRONT);
-			qglFinish();
-			float begintime = Sys_FloatTime();
-			for (int i = 0; i < 128; i++)
-			{
-				r_refdef.viewangles[1] = i * 0.0078125 * 360.0;
-				R_RenderView();
-			}
-			qglFinish();
-			float delta = Sys_FloatTime() - begintime;
-			Con_Printf("%f seconds (%f fps)\n", delta, (double)(128.0 / (delta)));
-			qglDrawBuffer(GL_BACK);
-			GL_EndRendering();
-		}
-	}
-	else
-	{
-		Con_Printf("No map loaded\n");
-	}
-}
-
-void R_Envmap_f(void)
-{
-	NOT_IMPLEMENTED;
-}
-
-void R_ReadPointFile_f(void)
-{
-	NOT_IMPLEMENTED;
 }
 
 void R_RenderView()
@@ -532,12 +798,6 @@ void R_ForceCVars(qboolean multiplayer)
 	}
 }
 
-void SCR_BeginLoadingPlaque(qboolean reconnect)
-{
-	NOT_IMPLEMENTED;
-	return Call_Function<void, qboolean>(0x4C130, reconnect);
-}
-
 void R_InitSky() 
 { 
 	gLoadSky = 1;
@@ -612,12 +872,6 @@ void R_InitTextures()
 			}
 		}
 	}
-}
-
-model_t* R_LoadMapSprite(const char* szFilename)
-{
-	NOT_IMPLEMENTED;
-	return nullptr;
 }
 
 void R_Clear()
@@ -894,8 +1148,8 @@ void R_RecursiveWorldNode(mnode_t* node)
 		mplane_t* plane = n->plane;
 		byte type = plane->type;
 		
-		double dot;
-		if (type == 1)
+		double dot = PlaneDiff(modelorg, plane);
+		/*if (type == 1)
 		{
 			dot = modelorg[1] - plane->dist;
 		}
@@ -904,15 +1158,14 @@ void R_RecursiveWorldNode(mnode_t* node)
 			if (type == 2)
 				dot = modelorg[2] - plane->dist;
 			else
-				dot = _DotProduct(modelorg,plane->normal) - plane->dist;
+				dot =  _DotProduct(modelorg, plane->normal) - plane->dist;
 		}
 		else
 		{
 			dot = modelorg[0] - plane->dist;
-		}
+		}*/
 		R_RecursiveWorldNode(n->children[dot < 0]);
 		int numsurfaces = n->numsurfaces;
-		dot = (double)dot;
 		if (n->numsurfaces)
 		{
 			side = 0;
@@ -927,7 +1180,7 @@ void R_RecursiveWorldNode(mnode_t* node)
 					continue;
 
 				int flags = surf->flags;
-				if ((flags & 0x80u) != 0 || ((flags & 2) != 0) == dot < 0)
+				if ((flags & 0x80u) != 0 || ((flags & SURF_PLANEBACK) != 0) == dot < 0)
 				{
 					if (gl_texsort)
 					{
@@ -939,12 +1192,12 @@ void R_RecursiveWorldNode(mnode_t* node)
 							texinfo->texture->texturechain = surf;
 						}
 					}
-					else if ((flags & 4) != 0)
+					else if ((flags & SURF_DRAWSKY) != 0)
 					{
 						surf->texturechain = skychain;
 						skychain = surf;
 					}
-					else if ((flags & 0x10) != 0)
+					else if ((flags & SURF_DRAWTURB) != 0)
 					{
 						surf->texturechain = waterchain;
 						waterchain = surf;
@@ -1002,11 +1255,11 @@ void R_BlendLightmaps()
 	qglDepthMask(GL_ZERO);
 	if (gl_lightmap_format == GL_LUMINANCE)
 	{
-		glBlendFunc(0, GL_ONE_MINUS_SRC_COLOR);
+		qglBlendFunc(0, GL_ONE_MINUS_SRC_COLOR);
 	}
 	else if (gl_lightmap_format != GL_INTENSITY && gl_lightmap_format == GL_RGBA && gl_monolights.value == 0.0)
 	{
-		qglTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, 8448.0);
+		qglTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 		if (gl_overbright.value == 0)
 		{
 			qglBlendFunc(0, GL_SRC_COLOR);
@@ -1019,7 +1272,7 @@ void R_BlendLightmaps()
 	}
 	else
 	{
-		qglTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, 8448.0);
+		qglTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 		qglColor4f(0, 0, 0, 1.0);
 		qglBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	}
@@ -1143,7 +1396,7 @@ void R_DrawSequentialPoly(msurface_t* s, int face)
 			texanimation = R_TextureAnimation(s);
 			GL_SelectTexture(TEXTURE0_SGIS);
 			GL_Bind(texanimation->gl_texturenum);
-			qglTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, 8448);
+			qglTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 
 			if (currententity->curstate.rendermode == kRenderFxPulseSlow)
 				qglDisable(GL_TEXTURE_2D);
@@ -1172,7 +1425,7 @@ void R_DrawSequentialPoly(msurface_t* s, int face)
 				lmrect->h = lmrect->w = 0;
 			}
 
-			qglTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, 8448);
+			qglTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 
 			int renderstate = DT_SetRenderState(texanimation->gl_texturenum);
 
@@ -1369,8 +1622,66 @@ void DrawTextureChains()
 
 void R_RenderBrushPoly(msurface_t* fa)
 {
-	TO_IMPLEMENT;
 	return Call_Function<void, msurface_t*>(0x488B0, fa);
+
+	NOT_TESTED;
+	
+	int flags = fa->flags;
+	if ((flags & 0x80u) != 0)
+	{
+		DrawGLWaterPoly(fa->polys);
+	}
+	else if (currententity->curstate.rendermode == kRenderTransColor)
+	{
+		qglDisable(GL_TEXTURE_2D);
+		DrawGLSolidPoly(fa->polys);
+		qglEnable(GL_TEXTURE_2D);
+	}
+	else if ((flags & SURF_DRAWTILED) != 0)
+	{
+		DrawGLPolyScroll(fa, currententity);
+	}
+	else
+	{
+		glpoly_t* poly = fa->polys;
+		qglBegin(GL_POLYGON);
+		for (int i = 0; i < poly->numverts; i++)
+		{
+			float* verts = poly->verts[i];
+			qglTexCoord2f(verts[3], verts[4]);
+			qglVertex3fv(verts);
+		}
+		qglEnd();
+	}
+	fa->polys->chain = lightmap_polys[fa->lightmaptexturenum];
+	lightmap_polys[fa->lightmaptexturenum] = fa->polys;
+	if (fa->pdecals)
+	{
+		gDecalSurfs[gDecalSurfCount] = fa;
+		if (++gDecalSurfCount > 500)
+			Sys_Error("Too many decal surfaces!\n");
+	}
+	bool diff = false;
+	for (int i = 0; i < 4; i++)
+	{
+		uchar style = fa->styles[i];
+
+		if (style == 255)
+			continue;
+		if (d_lightstylevalue[i] != fa->cached_light[i])
+		{
+			diff = true;
+			break;
+		}
+	}
+	if (r_dynamic.value != 0 && (diff || fa->dlightframe == r_framecount || fa->cached_dlight))
+	{
+		lightmap_modified[fa->lightmaptexturenum] = true;
+		R_BuildLightMap(
+			fa,
+			&lightmaps[0x4000 * lightmap_bytes * fa->lightmaptexturenum + lightmap_bytes * (fa->light_s + (fa->light_t << 7))],
+			lightmap_bytes << 7);
+	}
 }
 
 void R_MirrorChain(msurface_t* s)
@@ -1384,8 +1695,57 @@ void R_MirrorChain(msurface_t* s)
 
 void DrawGLSolidPoly(glpoly_t* p)
 {
-	TO_IMPLEMENT;
-	return Call_Function<void, glpoly_t*>(0x483C0, p);
+	NOT_TESTED;
+	//return Call_Function<void, glpoly_t*>(0x483C0, p);
+
+	float b = currententity->curstate.rendercolor.b * 0.00390625;
+	float g = currententity->curstate.rendercolor.g * 0.00390625;
+	float r = 0.00390625 * currententity->curstate.rendercolor.r;
+	qglColor4f(r, g, b, r_blend);
+
+	qglBegin(GL_POLYGON);
+	for (int i = 0; i < p->numverts; i++)
+	{
+		qglVertex3fv(p->verts[i]);
+	}
+
+	qglEnd();
+
+	if (gl_wireframe.value != 0)
+	{
+		if (gl_wireframe.value == 2)
+			qglDisable(0xB71u);
+
+		qglColor3f(1, 1, 1);
+		qglBegin(GL_CLIENT_VERTEX_ARRAY_BIT);
+		for (int i = 0; i < p->numverts; i++)
+		{
+			qglVertex3fv(p->verts[i]);
+		}
+		qglEnd();
+		if (gl_wireframe.value == 2)
+			qglEnable(GL_DEPTH_TEST);
+	}
+}
+
+void DrawGLWaterPoly(glpoly_t* p)
+{
+	//return Call_Function<void, glpoly_t*>(0x48070, p);
+	NOT_TESTED;
+	vec3_t nv;
+	qglBegin(GL_TRIANGLE_FAN);
+	for (int i = 0; i < p->numverts; i++)
+	{
+		float* v = p->verts[i];
+		qglTexCoord2f(v[3], v[4]);
+		float s = sin(0.05 * v[1] + realtime);
+		float s2 = sin(0.05 * v[2] + realtime);
+		nv[0] = s * 8.0 * s2 + v[0];
+		nv[1] = sin(v[0] * 0.05 + realtime) * 8.0 * s2 + v[1];
+		nv[2] = v[2];
+		qglVertex3fv(nv);
+	}
+	qglEnd();
 }
 
 void R_DrawSkyChain(msurface_t* s)
@@ -1431,26 +1791,93 @@ void R_DrawWaterChain(msurface_t* pChain)
 
 void R_DrawSkyBox()
 {
-	TO_IMPLEMENT;
-	return Call_Function<void>(0x507AE);
+	//return Call_Function<void>(0x507AE);
+
+	float r = 1;
+	float g = 1;
+	float b = 1;
+	qboolean FogWasOn = false;
+
+	if (filterMode)
+	{
+		r = filterBrightness * filterColorRed;
+		g = filterColorGreen * filterBrightness;
+		b = filterColorBlue * filterBrightness;
+	}
+	GL_DisableMultitexture();
+	if (!g_bFogSkybox && qglIsEnabled(GL_FOG))
+	{
+		FogWasOn = true;
+		qglDisable(GL_FOG);
+	}
+
+	for (int i = 0; i < 6; i++)
+	{
+		if (skymins[0][i] >= skymaxs[0][i] || skymins[1][i] >= skymaxs[1][i])
+			continue;
+
+		const int unk[] = { 1, -1, 2, -2, 3, -3 };
+
+		float v13 = 0.0;
+		float v14 = 0.0;
+		float v15 = 0.0;
+		switch (unk[i])
+		{
+		case -3:
+			v15 = -1.0;
+			break;
+		case -2:
+			v14 = -1.0;
+			break;
+		case -1:
+			v13 = -1.0;
+			break;
+		case 1:
+			v13 = 1.0;
+			break;
+		case 2:
+			v14 = 1.0;
+			break;
+		case 3:
+			v15 = 1.0;
+			break;
+		default:
+			break;
+	}
+
+		if (vpn[2] * v15 + vpn[1] * v14 + vpn[0] * v13 < -0.29289322)
+			continue;
+
+		GL_Bind(gSkyTexNumber + skytexorder[i]);
+		qglColor3f(r, g, b);
+		qglBegin(GL_QUADS);
+		MakeSkyVec(skymins[0][i], skymins[1][i], i);
+		MakeSkyVec(skymins[0][i], skymaxs[1][i], i);
+		MakeSkyVec(skymaxs[0][i], skymaxs[1][i], i);
+		MakeSkyVec(skymaxs[0][i], skymins[1][i], i);
+		qglEnd();
+	}
+
+	if (FogWasOn)
+		qglEnable(GL_FOG);
 }
 
 void MakeSkyVec(float s, float t, int axis)
 {
 	//return Call_Function<void, float, float, int>(0x5061E, s, t, axis);
 	
-	int	j, k, farclip;
-	vec3_t	v, b;
 
-	farclip = movevars.zmax;
+	const int farclip = movevars.zmax;
+
+	vec3_t	v, b;
 
 	b[0] = s * (farclip >> 1);
 	b[1] = t * (farclip >> 1);
 	b[2] = (farclip >> 1);
 
-	for (j = 0; j < 3; j++)
+	for (int j = 0; j < 3; j++)
 	{
-		k = st_to_vec[axis][j];
+		int k = st_to_vec[axis][j];
 		v[j] = (k < 0) ? -b[-k - 1] : b[k - 1];
 		v[j] += r_origin[j];
 	}
@@ -1478,7 +1905,6 @@ void ClipSkyPolygon(int nump, vec_t* vecs, int stage)
 {
 	//return Call_Function<void, int, vec_t*, int>(0x4FFE2, nump, vecs, stage);
 
-	const float* norm;
 	float* v, d, e;
 	qboolean front, back;
 	float	dists[MAX_CLIP_VERTS + 1];
@@ -1498,7 +1924,7 @@ loc1:
 	}
 
 	front = back = false;
-	norm = skyclip[stage];
+	const float* norm = skyclip[stage];
 	for (i = 0, v = vecs; i < nump; i++, v += 3)
 	{
 		d = _DotProduct(v, norm);
@@ -1662,8 +2088,168 @@ void AddTEntity(cl_entity_t* pEnt)
 
 void R_DrawBrushModel(cl_entity_t* e)
 {
-	TO_IMPLEMENT;
-	return Call_Function<void, cl_entity_t*>(0x48D30, e);
+	//return Call_Function<void, cl_entity_t*>(0x48D30, e);
+	
+	currententity = e;
+	currenttexture = -1;
+	model_s* model = e->model;
+	qboolean rotated = false;
+	currententity = e;
+
+	vec3_t mins, maxs;
+	if (VectorIsZero(e->angles))
+	{
+		VectorAdd(model->mins, e->origin, mins);
+		VectorAdd(model->maxs, e->origin, maxs);
+	}
+	else
+	{
+		rotated = true;
+		float radius = model->radius;
+		for (int i = 0; i < 3; i++)
+		{
+			mins[i] = e->origin[i] - radius;
+			maxs[i] = e->origin[i] + radius;
+		}
+	}
+
+	if (R_CullBox(mins, maxs))
+		return;
+
+	qglColor3f(1.0, 1.0, 1.0);
+	Q_memset(lightmap_polys, 0, 256);
+
+	VectorSubtract(r_refdef.vieworg, e->origin, modelorg);
+	if (rotated)
+	{
+		vec3_t tmp;
+		VectorCopy(modelorg, tmp);
+		vec3_t forward, right, up;
+		AngleVectors(e->angles, forward, right, up);
+		modelorg[0] = _DotProduct(tmp, forward);
+		modelorg[1] = -_DotProduct(tmp, right);
+		modelorg[2] = _DotProduct(tmp, up);
+	}
+
+	int firstmodelsurface = model->firstmodelsurface;
+	if (firstmodelsurface && gl_flashblend.value == 0)
+	{
+		for (int i = 0; i < ARRAYSIZE(cl_dlights); i++)
+		{
+			dlight_t* dlight = &cl_dlights[i];
+			if (g_pcl.time > dlight->die || dlight->radius == 0)
+				continue;
+
+			vec3_t tmp;
+			VectorCopy(dlight->origin, tmp);
+			VectorSubtract(dlight->origin, e->origin, dlight->origin);
+			R_MarkLights(dlight, 1 << i, &model->nodes[model->hulls->firstclipnode]);
+			VectorCopy(tmp, dlight->origin);
+		}
+	}
+	qglPushMatrix();
+	R_RotateForEntity(e->origin, e);
+	R_SetRenderMode(e);
+
+	msurface_t* surf = &model->surfaces[firstmodelsurface];
+	for (int i = 0; i < model->nummodelsurfaces; i++, surf++)
+	{
+		int flags = surf->flags;
+		mplane_t* plane = surf->plane;
+		if ((flags & SURF_DRAWTURB) == 0
+			|| (plane->type == 2 || gl_watersides.value != 0.0)
+			&& mins[2] + 1.0 < plane->dist)
+		{
+			float dot = PlaneDiff(modelorg, plane);
+
+			if ((!(flags & SURF_PLANEBACK) || dot >= -0.01) && ((flags & SURF_PLANEBACK) || dot <= 0.01))
+			{
+				if (flags & SURF_DRAWTURB)
+				{
+					R_SetRenderMode(e);
+					R_DrawSequentialPoly(surf, 1);
+				}
+			}
+			else if (gl_texsort)
+			{
+				R_RenderBrushPoly(surf);
+			}
+			else
+			{
+				R_SetRenderMode(e);
+				R_DrawSequentialPoly(surf, 0);
+			}
+		}
+	}
+	if (currententity->curstate.rendermode != kRenderNormal)
+	{
+		qglTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+		qglDisable(GL_BLEND);
+	}
+	if (gl_texsort || currententity->curstate.rendermode == kRenderTransColor)
+	{
+		if (currententity->curstate.rendermode == kRenderTransAlpha)
+		{
+			if (gl_lightholes.value != 0)
+			{
+				qglDepthFunc(GL_EQUAL);
+				R_BlendLightmaps();
+				if (gl_ztrick.value == 0 || gldepthmin < 0.5)
+					qglDepthFunc(GL_LEQUAL);
+				else
+					qglDepthFunc(GL_GEQUAL);
+			}
+		}
+		else
+		{
+			R_DrawDecals(false);
+			if (currententity->curstate.rendermode == kRenderNormal)
+				R_BlendLightmaps();
+		}
+	}
+
+	qglPopMatrix();
+	qglDepthMask(GL_ONE);
+	qglDisable(GL_ALPHA_TEST);
+	qglAlphaFunc(GL_NOTEQUAL, 0);
+	qglDisable(GL_BLEND);
+}
+
+void R_SetRenderMode(cl_entity_t* pEntity)
+{
+	int rendermode = pEntity->curstate.rendermode;
+	
+	switch (rendermode)
+	{
+	case kRenderNormal:
+		qglColor4f(1.0, 1.0, 1.0, 1.0);
+		break;
+		GL_TEXTURE_ENV_MODE;
+	case kRenderTransColor:
+		qglBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		qglTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, 6406);
+		qglEnable(GL_BLEND);
+		break;
+	case kRenderTransAlpha:
+		qglEnable(GL_ALPHA_TEST);
+		qglTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+		qglColor4f(1.0, 1.0, 1.0, 1.0);
+		qglDisable(GL_BLEND);
+		qglAlphaFunc(GL_GREATER, gl_alphamin.value);
+		break;
+	default:
+		qglTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+		qglBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		qglColor4f(1.0, 1.0, 1.0, r_blend);
+		qglDepthMask(0);
+		qglEnable(GL_BLEND);
+	}
+	
+}
+
+void R_RotateForEntity(vec_t* origin, cl_entity_t* e)
+{
+	return Call_Function<void, vec_t*, cl_entity_t*>(0x43BD0, origin, e);
 }
 
 float* R_GetAttachmentPoint(int entity, int attachment)
@@ -1705,7 +2291,7 @@ void R_DrawSpriteModel(cl_entity_t* e)
 	if (gl_spriteblend.value == 0.0 && rendermode == kRenderNormal)
 	{
 		GL_TEXTURE_MAG_FILTER;
-		qglTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, 8448.0);
+		qglTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 		qglColor4ub(color.r, color.g, color.b, 255);
 		qglDisable(GL_BLEND);
 	}
@@ -1720,27 +2306,27 @@ void R_DrawSpriteModel(cl_entity_t* e)
 			break;
 
 		case kRenderTransAdd:
-			qglTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, 8448);
+			qglTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 			qglBlendFunc(GL_ONE, GL_ONE);
 			qglColor4ub(color.r, color.g, color.b, 255);
 			qglDepthMask(GL_ZERO);
 			break;
 		case kRenderGlow:
-			qglTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, 8448);
+			qglTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 			qglBlendFunc(GL_ONE, GL_ONE);
 			qglColor4ub(color.r, color.g, color.b, 255);
 			qglDisable(GL_DEPTH_TEST);
 			qglDepthMask(GL_ZERO);
 			break;
 		case kRenderTransAlpha:
-			qglTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, 8448);
+			qglTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 			qglBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 			qglColor4ub(color.r, color.g, color.b, 255 * r_blend);
 			qglDepthMask(GL_ZERO);
 			break;
 
 		default:
-			qglTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, 8448);
+			qglTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 			qglBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 			qglColor4ub(color.r, color.g, color.b, 255 * r_blend);
 		}
@@ -1823,9 +2409,76 @@ void R_SpriteColor(colorVec* pColor, cl_entity_t* pEntity, int alpha)
 
 void R_GetSpriteAxes(cl_entity_t* pEntity, int type, vec_t* forward, vec_t* right, vec_t* up)
 {
-	TO_IMPLEMENT;
-	return Call_Function<void, cl_entity_t*, int, vec_t*, vec_t*, vec_t*>(0x26D20,
-		pEntity, type, forward, right, up);
+	// TODO: Find sprite types
+	// 
+	//return Call_Function<void, cl_entity_t*, int, vec_t*, vec_t*, vec_t*>(0x26D20,
+	//	pEntity, type, forward, right, up);
+
+	if ((type != SPR_FWD_PARALLEL || pEntity->angles[2] == 0) && type != SPR_FWD_PARALLEL_ORIENTED)
+	{
+		float v, dot;
+		switch (type)
+		{
+		case 0:
+			if (vpn[2] > 0.999848 || vpn[2] < -0.999848)
+				break;
+			up[0] = 0.0;
+			up[1] = 0.0;
+			up[2] = 1.0;
+			
+			right[0] = vpn[1];
+			right[1] = -vpn[0];
+			right[2] = 0;
+			
+			VectorNormalize(right);
+			forward[0] = -right[1];
+			forward[1] = right[0];
+			forward[2] = 0;
+			break;
+		case 1:
+			v = -modelorg[0];
+			dot = -modelorg[2];
+			VectorNormalize(&v);
+			if (dot > 0.999848 || dot < -0.999848)
+				break;
+
+			up[0] = 0;
+			up[1] = 0;
+			up[2] = 1;
+
+			right[0] = -modelorg[1];
+			right[1] = -v;
+			right[2] = 0;
+			VectorNormalize(right);
+			forward[0] = -right[1];
+			forward[1] = right[0];
+			forward[2] = 0;
+			break;
+		case 2:
+			VectorCopy(vup, up);
+			VectorCopy(vright, right);
+			VectorCopy(vpn, forward);
+			break;
+		case 3:
+			AngleVectors(pEntity->angles, forward, right, up);
+			break;
+		default:
+			Sys_Error("R_DrawSprite: Bad sprite type %d", type);
+		}
+	}
+	else
+	{
+		float error = 0.0174532925199433 * currententity->angles[2];
+		float s = sin(error);
+		float c = cos(error);;
+
+		for (int i = 0; i < 3; i++)
+		{
+			forward[i] = vpn[i];
+			right[i] = vright[i] * c + vup[i] * s;
+			up[i] = vright[i] * -s + vup[i] * c;
+		}
+	}
 }
 
 texture_t* R_TextureAnimation(msurface_t* s)
@@ -2120,7 +2773,171 @@ void R_DrawDecals(qboolean bMultitexture)
 
 void R_DrawTEntitiesOnList(qboolean clientOnly)
 {
-	return Call_Function<void, qboolean>(0x88AF0, clientOnly);
+	//return Call_Function<void, qboolean>(0x88AF0, clientOnly);
+	if (r_drawentities.value == 0)
+		return;
+
+	if (clientOnly == false)
+	{
+		for (int i = 0; i < numTransObjs; i++)
+		{
+			qglDisable(GL_FOG);
+			currententity = transObjects[i].pEnt;
+			r_blend = CL_FxBlend(currententity);
+			if (r_blend > 0.0)
+			{
+				r_blend *= 0.00392156862745098;
+				int rendermode = currententity->curstate.rendermode;
+				if (rendermode == kRenderGlow && currententity->model->type != mod_sprite)
+				{
+					Con_DPrintf("Non-sprite set to glow!\n");
+				}
+				switch (currententity->model->type)
+				{
+				case mod_brush:
+					if (g_bUserFogOn && rendermode != kRenderGlow && rendermode != kRenderTransAdd)
+					{
+						qglEnable(GL_FOG);
+					}
+
+					R_DrawBrushModel(currententity);
+					break;
+
+				case mod_sprite:
+					if (currententity->curstate.body > 0)
+					{
+						vec_t* attach = R_GetAttachmentPoint(currententity->curstate.skin, currententity->curstate.body);
+						VectorCopy(attach, r_entorigin);
+					}
+					else
+					{
+						VectorCopy(currententity->origin, r_entorigin);
+					}
+
+					if (rendermode == kRenderGlow)
+					{
+						r_blend *= GlowBlend(currententity);
+					}
+					if (r_blend != 0)
+						R_DrawSpriteModel(currententity);
+					break;
+				case mod_alias:
+					R_DrawAliasModel(currententity);
+					break;
+				case mod_studio:
+					if (currententity->curstate.renderamt)
+					{
+						if (currententity->player)
+						{
+							DEBUG_BREAK_IF_PRESENT;
+							// TODO: Find passed parameter
+							MessageBoxA(0, "Unresolved parameter", "ReHL", MB_OK);
+							((void(__cdecl*)(int, vec_t*))pStudioAPI->StudioDrawPlayer)(
+								3,
+								&g_pcl.predicted_origins[48][4270 * (g_pcl.parsecount & CL_UPDATE_MASK)
+								+ 85 * currententity->index]);
+						}
+						else if (currententity->curstate.movetype == MOVETYPE_FOLLOW)
+						{
+							if (numTransObjs > 0)
+							{
+								int j;
+								for (j = 0; j < numTransObjs; j++)
+								{
+									if (transObjects[j].pEnt->index == currententity->curstate.aiment)
+										break;
+								}
+								if (j == numTransObjs)
+									continue;
+
+								currententity = transObjects[j].pEnt;
+								if (currententity->player)
+								{
+									DEBUG_BREAK_IF_PRESENT;
+									// TODO: Find passed parameter
+									MessageBoxA(0, "Unresolved parameter", "ReHL", MB_OK);
+									//pStudioAPI->StudioDrawPlayer(0,
+									//	&g_pcl.predicted_origins[48][4270 * (g_pcl.parsecount & CL_UPDATE_MASK) + 85 * v12->index]);
+								}
+								else
+									pStudioAPI->StudioDrawModel(0);
+
+								currententity = transObjects[i].pEnt;
+								pStudioAPI->StudioDrawModel(3);
+							}
+						}
+						else
+						{
+							pStudioAPI->StudioDrawModel(3);
+						}
+					}
+					break;
+				default:
+					break;
+				}
+			}
+		}
+	}
+
+	GL_DisableMultitexture();
+
+	qglEnable(GL_ALPHA_TEST);
+
+	qglTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+
+	if (g_bUserFogOn)
+		qglDisable(GL_FOG);
+
+	ClientDLL_DrawTransparentTriangles();
+
+	if (g_bUserFogOn)
+		qglEnable(GL_FOG);
+
+	numTransObjs = 0;
+	r_blend = 1;
+}
+
+float GlowBlend(cl_entity_t* pEntity)
+{
+	//return Call_Function<float, cl_entity_t*>(0x88670, pEntity);
+
+	vec3_t tmp;
+
+	VectorSubtract(r_entorigin, r_origin, tmp);
+ 
+	float len = Length(tmp);
+	
+	pmove->usehull = 2;
+
+	int traceFlags = (r_traceglow.value == 0.0) ? 5 : 4;
+	
+	pmtrace_t trace = PM_PlayerTrace(r_origin, r_entorigin, traceFlags, -1);
+
+	if ((1 - trace.fraction) * len > 8)
+		return 0;
+
+	float brightness;
+	if (pEntity->curstate.renderfx == kRenderFxNoDissipation)
+	{
+		brightness = pEntity->curstate.renderamt * 0.00392156862745098;
+	}
+	else
+	{
+		brightness = GLARE_FALLOFF / (pow(len, 2));
+	
+		brightness = max(brightness, 0.05f);
+		brightness = min(brightness, 1.0f);
+
+		pEntity->curstate.scale = len * 0.005;
+	}
+	return brightness;
+}
+
+void R_DrawAliasModel(cl_entity_t* e)
+{
+	// Never used?
+	NOT_IMPLEMENTED;
+	return Call_Function<void, cl_entity_t*>(0x44410, e);
 }
 
 void R_RenderDlights()
@@ -2153,13 +2970,1016 @@ void R_RenderDlights()
 
 void R_MarkLights(dlight_t* light, int bit, mnode_t* node)
 {
-	return Call_Function<void, dlight_t*, int, mnode_t*>(0x431D0, light, bit, node);
+	//return Call_Function<void, dlight_t*, int, mnode_t*>(0x431D0, light, bit, node);
+
+	for (; node->contents >= 0; node = node->children[1])
+	{
+		float dist;
+		while (true)
+		{
+			mplane_t* plane = node->plane;
+			dist = _DotProduct(light->origin, plane->normal) - plane->dist;
+			if (dist <= light->radius)
+				break;
+			node = node->children[0];
+			if (node->contents < 0)
+				return;
+		}
+
+		if (-light->radius > dist)
+			continue;
+
+		msurface_t* surf = &g_pcl.worldmodel->surfaces[node->firstsurface];
+		for (int i = 0; i < node->numsurfaces; i++, surf++)
+		{
+			if (light->minlight > light->radius - dist)
+				continue;
+
+			float v = light->radius - dist - light->minlight;
+			float* vecs = surf->texinfo->vecs[0];
+			float dp = _DotProduct(vecs, light->origin) + vecs[3] - surf->texturemins[0];
+			if (dp <= -v)
+				continue;
+
+			vecs = surf->texinfo->vecs[1];
+			float dp2 = _DotProduct(vecs, light->origin) + vecs[3] - surf->texturemins[1];
+
+			if (dp2 <= -v || dp > v + surf->extents[0] || dp2 > surf->extents[1] + v)
+				continue;
+
+			if (surf->dlightframe != r_dlightframecount)
+				surf->dlightframe = r_dlightframecount;
+
+			surf->dlightbits |= bit;
+		}
+		R_MarkLights(light, bit, node->children[0]);
+		//R_MarkLights(light, bit, node->children[1]);
+	}
+}
+
+void R_FreeDeadParticles(particle_t** ppparticles)
+{
+	particle_t* p, * kill;
+
+	// kill all the ones hanging direcly off the base pointer
+	while (1)
+	{
+		kill = *ppparticles;
+		if (kill && kill->die < g_pcl.time)
+		{
+			if (kill->deathfunc)
+				kill->deathfunc(kill);
+			kill->deathfunc = NULL;
+			*ppparticles = kill->next;
+			kill->next = free_particles;
+			free_particles = kill;
+			continue;
+		}
+		break;
+	}
+
+	// kill off all the others
+	for (p = *ppparticles; p; p = p->next)
+	{
+		while (1)
+		{
+			kill = p->next;
+			if (kill && kill->die < g_pcl.time)
+			{
+				if (kill->deathfunc)
+					kill->deathfunc(kill);
+				kill->deathfunc = NULL;
+				p->next = kill->next;
+				kill->next = free_particles;
+				free_particles = kill;
+				continue;
+			}
+			break;
+		}
+	}
 }
 
 void R_DrawParticles()
 {
-	TO_IMPLEMENT;
-	return Call_Function<void>(0x7CB20);
+	//return Call_Function<void>(0x7CB20);
+
+	particle_t* active_particle;
+	ptype_t type; 
+	double scale;
+	unsigned __int16* col;
+	void (*callback)(particle_s*, float);
+	long double ramp;
+	GLfloat texnum;
+	GLfloat x;
+	GLfloat y; 
+	GLfloat z; 
+	float frametime;
+	float grav;
+	float dvel;
+	vec_t point;
+	vec3_t up; 
+	vec3_t right;
+	vec_t out[3];
+	vec_t screen[3];
+	uchar rgba[4];
+
+	GL_Bind(particletexture);
+	qglEnable(GL_ALPHA_TEST);
+	qglEnable(GL_BLEND);
+	qglTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+	qglBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	qglBegin(GL_TRIANGLES);
+	VectorScale(vup, 1.5, up);
+	VectorScale(vright, 1.5, right);
+	frametime = g_pcl.time - g_pcl.oldtime;
+	float time2 = frametime * 10.0;
+	grav = frametime * movevars.gravity * 0.05;
+	dvel = frametime * 4.0;
+	R_FreeDeadParticles(&active_particles);
+	active_particle = active_particles;
+
+	for (; active_particle; active_particle = active_particle->next)
+	{
+		type = active_particle->type;
+		if (type == pt_blob)
+			break;
+
+		vec3_t d;
+		VectorSubtract(active_particle->org, r_origin, d);
+		scale = _DotProduct(d, vpn);
+		if (scale < 20)
+			scale = 1.0;
+		else
+			scale = scale * 0.004 + 1.0;
+
+		col = &host_basepal[(int)(4 * active_particle->color)];
+		if (filterMode)
+		{
+			rgba[0] = col[2] * filterColorRed * filterBrightness;
+			rgba[1] = col[1] * filterColorGreen * filterBrightness;
+			rgba[2] = col[0] * filterColorBlue * filterBrightness;
+			rgba[3] = pow(filterBrightness, 2) * 255;
+		}
+		else
+		{
+			rgba[0] = col[2];
+			rgba[1] = col[1];
+			rgba[2] = col[0];
+			rgba[3] = 255;
+		}
+
+		qglColor3ubv(rgba);
+		qglTexCoord2f(0, 0);
+		qglVertex3fv(active_particle->org);
+
+		qglTexCoord2f(1, 0.0);
+		z = up[2] * scale + active_particle->org[2];
+		y = up[1] * scale + active_particle->org[1];
+		x = scale * up[0] + active_particle->org[0];
+		qglVertex3f(x, y, z);
+
+		qglTexCoord2f(0, 1.0);
+		z = right[2] * scale + active_particle->org[2];
+		y = right[1] * scale + active_particle->org[1];
+		x = scale * right[0] + active_particle->org[0];
+		qglVertex3f(x, y, z);
+
+		if (type == pt_clientcustom)
+		{
+			callback = active_particle->callback;
+			if (callback)
+			{
+				(callback)(active_particle, frametime);
+			}
+			continue;
+		}
+		VectorMA(active_particle->org, frametime, active_particle->vel, active_particle->org);
+
+		float ramp;
+		float time1, time3;
+		switch (type)
+		{
+		case pt_grav:
+			active_particle->vel[2] -= grav * 20.0;
+			break;
+		case pt_slowgrav:
+			active_particle->vel[2] = grav;
+			break;
+		case pt_fire:
+			time1 = frametime * 5.0;
+			ramp = time1 + active_particle->ramp;
+			active_particle->ramp = ramp;
+			if (ramp < 6)
+			{
+				active_particle->packedColor = 0;
+				active_particle->color = ramp3[(int)ramp];
+			}
+			else
+			{
+				active_particle->die = -1;
+			}
+			active_particle->vel[2] += grav;
+			break;
+		case pt_explode:
+			ramp = time2 + active_particle->ramp;
+			active_particle->ramp = ramp;
+			if (ramp < 8.0)
+			{
+				active_particle->packedColor = 0;
+				active_particle->color = ramp1[(int)ramp];
+			}
+			else
+			{
+				active_particle->die = -1;
+			}
+			VectorMA(active_particle->vel, dvel, active_particle->vel, active_particle->vel);
+			active_particle->vel[2] -= grav;
+			break;
+		case pt_explode2:
+			time3 = frametime * 15.0;
+			ramp = time3 + active_particle->ramp;
+			active_particle->ramp = ramp;
+			if (ramp < 8)
+			{
+				active_particle->packedColor = 0;
+				active_particle->color = ramp2[(int)ramp];
+			}
+			else
+			{
+				active_particle->die = -1.0;
+			}
+			active_particle->vel[0] -= (active_particle->vel[0] * frametime);
+			active_particle->vel[1] -= (active_particle->vel[1] * frametime);
+			active_particle->vel[2] -= (active_particle->vel[2] * frametime) + grav;
+			break;
+		case pt_blob:
+		case pt_blob2:
+			ramp = time2 + active_particle->ramp;
+			active_particle->ramp = ramp;
+			if (ramp >= 9)
+			{
+				active_particle->ramp = 0;
+			}
+			active_particle->color = gSparkRamp[(int)ramp];
+			active_particle->vel[0] -= active_particle->vel[0] * frametime * 0.5f;
+			active_particle->vel[1] -= active_particle->vel[1] * frametime * 0.5f;
+			active_particle->vel[2] -= grav * 5.0;
+			active_particle->type = (ptype_t)(7 - (RandomLong(0, 3) != 0));
+			break;
+		case pt_vox_slowgrav:
+			active_particle->vel[2] -= - grav * 4;
+			break;
+		case pt_vox_grav:
+			active_particle->vel[2] -= grav * 8;
+			break;
+		case pt_clientcustom:
+			callback = active_particle->callback;
+			if (callback)
+				(callback)(active_particle, frametime);
+			break;
+		}
+	}
+
+	qglEnd();
+	Call_Function<void>(0x7D080);
+	R_BeamDrawList();
+	qglDisable(GL_BLEND);
+	qglDisable(GL_ALPHA_TEST);
+}
+
+void R_BeamDrawList()
+{
+	//return Call_Function<void>(0x7FC80);
+	BEAM* pActiveBeam; // esi
+	BEAM* pFreeBeam; // edx
+	BEAM* tmp;
+	BEAM* beam; 
+	float frametime;
+
+	if (!gpActiveBeams && cl_numbeamentities <= 0)
+		return;
+
+	frametime = g_pcl.time - g_pcl.oldtime;
+	qglDisable(GL_ALPHA_TEST);
+	qglDepthMask(GL_ZERO);
+	tri.CullFace(TRI_NONE);
+	pActiveBeam = gpActiveBeams;
+	if (gpActiveBeams)
+	{
+		pFreeBeam = gpFreeBeams;
+		tmp = gpActiveBeams;
+		do
+		{
+			if ((pActiveBeam->flags & FBEAM_FOREVER) != 0)
+				break;
+			if (pActiveBeam->die >= g_pcl.time)
+				break;
+			pActiveBeam = pActiveBeam->next;
+			tmp->next = pFreeBeam;
+			pFreeBeam = tmp;
+			tmp = pActiveBeam;
+		} while (pActiveBeam);
+		gpFreeBeams = pFreeBeam;
+		gpActiveBeams = pActiveBeam;
+		if (pActiveBeam)
+		{
+			while (1)
+			{
+				beam = pActiveBeam->next;
+				if (pActiveBeam->next)
+				{
+					do
+					{
+						if ((beam->flags & FBEAM_FOREVER) != 0)
+							break;
+						if (beam->die > g_pcl.time)
+							break;
+						pActiveBeam->next = beam->next;
+						beam->next = pFreeBeam;
+						pFreeBeam = beam;
+						beam = pActiveBeam->next;
+					} while (pActiveBeam->next);
+					gpFreeBeams = pFreeBeam;
+				}
+				R_BeamDraw(pActiveBeam, frametime);
+				pActiveBeam = pActiveBeam->next;
+				if (!pActiveBeam)
+					break;
+				pFreeBeam = gpFreeBeams;
+			}
+		}
+	}
+	R_DrawBeamEntList(frametime);
+	qglDepthMask(GL_ONE);
+	tri.CullFace(TRI_FRONT);
+	tri.RenderMode(kRenderNormal);
+}
+
+void R_DrawBeamEntList(float frametime)
+{
+	cl_entity_t* beament; 
+	float speed; 
+	int rendermode; 
+	vec_t* start;
+	float amplitude;
+	float brightness;
+	BEAM beam;
+
+	for (int i = 0; cl_numbeamentities > i; i++)
+	{
+		beament = cl_beamentities[i];
+		speed = beament->curstate.animtime;
+		rendermode = beament->curstate.rendermode & kRenderFxDistort;
+		brightness = CL_FxBlend(beament) * 0.00392156862745098;
+		amplitude = beament->curstate.body * 0.01;
+		R_BeamSetup(
+			&beam,
+			beament->origin,
+			beament->curstate.angles,
+			beament->curstate.movetype,
+			0,
+			beament->curstate.scale,
+			amplitude,
+			brightness,
+			speed);
+
+		// SetBeamAttributes
+		beam.frameRate = 0.0;
+		beam.frame = beament->curstate.frame;
+		beam.r = beament->curstate.rendercolor.r * 0.00392156862745098;
+		beam.g = beament->curstate.rendercolor.g * 0.00392156862745098;
+		beam.b = beament->curstate.rendercolor.b * 0.00392156862745098;
+
+		if (rendermode == kRenderTransColor)
+		{
+			beam.type = 0;
+			beam.flags = 2;
+			beam.startEntity = 0;
+			beam.endEntity = beament->curstate.skin;
+		}
+		else if (rendermode == kRenderTransTexture)
+		{
+			beam.type = 0;
+			beam.flags = 3;
+			beam.startEntity = beament->curstate.sequence;
+			beam.endEntity = beament->curstate.skin;
+		};
+		rendermode = beament->curstate.rendermode;
+		if ((rendermode & FBEAM_SINENOISE) != 0)
+			beam.flags |= FBEAM_SINENOISE;
+		if ((rendermode & FBEAM_SOLID) != 0)
+			beam.flags |= FBEAM_SOLID;
+		if ((rendermode & FBEAM_SHADEIN) != 0)
+			beam.flags |= FBEAM_SHADEIN;
+		if ((rendermode & FBEAM_SHADEOUT) != 0)
+			beam.flags |= FBEAM_SHADEOUT;
+
+		beam.pFollowModel = 0;
+		if (beam.modelIndex < 0)
+		{
+			beam.die = g_pcl.time;
+			continue;
+		}
+		R_BeamDraw(&beam, frametime);
+	}
+}
+
+void R_BeamSetup(BEAM* pbeam, vec_t* start, vec_t* end, int modelIndex, float life, float width, float amplitude, float brightness, float speed)
+{
+	model_t* mod = CL_GetModelByIndex(modelIndex);
+	if (!mod)
+		return;
+
+	pbeam->type = 0;
+	pbeam->modelIndex = modelIndex;
+	pbeam->frame = 0.0;
+	pbeam->frameRate = 0.0;
+	pbeam->frameCount = ModelFrameCount(mod);
+	VectorCopy(start, pbeam->source);
+	VectorCopy(end, pbeam->target);
+	VectorSubtract(end, pbeam->target, pbeam->delta);
+	pbeam->freq = speed * g_pcl.time;
+	pbeam->die = life + g_pcl.time;
+	pbeam->width = width;
+	pbeam->amplitude = amplitude;
+	pbeam->speed = speed;
+	pbeam->brightness = brightness;
+	vec_t* index = pbeam->delta;
+	if (amplitude >= 0.5)
+		pbeam->segments = (Length(index) * 0.25 + 3.0);
+	else
+		pbeam->segments = (Length(index) * 0.075 + 3.0);
+
+	pbeam->flags = 0;
+	pbeam->pFollowModel = 0;
+}
+
+int R_BeamCull(vec_t* start, vec_t* end, int pvsOnly)
+{
+	//return Call_Function<int, vec_t*, vec_t*, int>(0x7F600, start, end, pvsOnly);
+
+	if (!g_pcl.worldmodel)
+		return false;
+
+	vec3_t	mins, maxs;
+	for (int i = 0; i < 3; i++)
+	{
+		if (start[i] < end[i])
+		{
+			mins[i] = start[i];
+			maxs[i] = end[i];
+		}
+		else
+		{
+			mins[i] = end[i];
+			maxs[i] = start[i];
+		}
+
+		// don't let it be zero sized
+		if (mins[i] == maxs[i])
+			maxs[i] += 1.0f;
+	}
+
+	if (PVSNode(g_pcl.worldmodel->nodes, mins, maxs) && (pvsOnly || R_CullBox(mins, maxs) == false))
+		return true;
+
+	return false;
+}
+
+void Noise(float* noise, int divs)
+{
+	//return Call_Function<void, float*, int>(0x7DFB0, noise, divs);
+	int div2;
+	div2 = divs >> 1;
+	if (divs >= 2)
+	{
+		while (1)
+		{
+			noise[div2] = RandomFloat(-0.125, 0.125) * divs + (noise[divs] + *noise) * 0.5;
+			if (div2 <= 1)
+				break;
+			Noise(&noise[div2], div2);
+			divs = div2;
+			div2 >>= 1;
+		}
+	}
+}
+
+void SineNoise(float* noise, int divs)
+{
+	float freq = 0;
+	float step = M_PI / (float)divs;
+	for (int i = 0; i < divs; i++)
+	{
+		noise[i] = sin(freq);
+		freq += step;
+	}
+}
+
+cl_entity_t* R_GetBeamAttachmentEntity(int index)
+{
+	if (index < 0)
+		return ClientDLL_GetUserEntity(-index & 0xFFF);
+	return &cl_entities[index & 0xFFF];
+}
+
+void R_BeamDraw(BEAM* pbeam, float frametime)
+{
+	//return Call_Function<void, BEAM*, float>(0x7F6C0, pbeam, frametime);
+	double freq; 
+	int flags; 
+	cl_entity_t* attachedEnt; 
+	model_s* mod; 
+	model_s* pFollowedModel;
+	double seg; // fst7
+	particle_t* particle; 
+	float life; 
+	vec_t org[3]; 
+	vec_t velocity[3]; 
+	model_t* model; 
+	float scale; 
+	float lenVelocity; 
+
+	if (pbeam->modelIndex < 0)
+	{
+		pbeam->die = g_pcl.time;
+		return;
+	}
+	model = CL_GetModelByIndex(pbeam->modelIndex);
+	if (!model)
+		return;
+
+	if ((pbeam->flags & FBEAM_SOLID) != 0)
+		tri.RenderMode(kRenderNormal);
+	else
+		tri.RenderMode(kRenderTransAdd);
+	
+	gNoise[0] = 0;
+	gNoise[128] = 0;
+	pbeam->freq = frametime + pbeam->freq;
+	if (pbeam->amplitude != 0)
+	{
+		if ((pbeam->flags & FBEAM_SINENOISE) != 0)
+			SineNoise(gNoise, 128);
+		else
+			Noise(gNoise, 128);
+	}
+	flags = pbeam->flags;
+	if ((flags & (FBEAM_STARTENTITY | FBEAM_ENDENTITY)) != 0)
+	{
+		if ((flags & FBEAM_STARTENTITY) != 0)
+		{
+			attachedEnt = R_GetBeamAttachmentEntity(pbeam->startEntity);
+			if (!attachedEnt)
+				return;
+			mod = attachedEnt->model;
+			if (mod && ((pFollowedModel = pbeam->pFollowModel) == 0 || pFollowedModel == mod))
+			{
+				vec_t* source = Call_Function<vec_t*, cl_entity_t*, int>(0x7D990, attachedEnt, pbeam->startEntity); //sub_3B3D990(v12, pbeam->endEntity);
+				//sub_3B3D990(attachedEnt, pbeam->startEntity);
+				VectorCopy(source, pbeam->source);
+				pbeam->flags |= FBEAM_STARTVISIBLE;
+				if (!pFollowedModel)
+					pbeam->pFollowModel = mod;
+			}
+			else
+			{
+				if (pbeam->flags >= 0)
+				{
+					pbeam->flags = pbeam->flags & 0xFE;
+				}
+			}
+		}
+		if ((pbeam->flags & FBEAM_ENDENTITY) != 0)
+		{
+			attachedEnt = R_GetBeamAttachmentEntity(pbeam->endEntity);
+			if (!attachedEnt)
+				return;
+			if (!attachedEnt->model)
+			{
+				if (pbeam->flags >= 0)
+				{
+					pbeam->flags = pbeam->flags & 0xFD;
+					pbeam->die = g_pcl.time;
+				}
+				return;
+			}
+
+			vec_t* target = Call_Function<vec_t*, cl_entity_t*, int>(0x7D990, attachedEnt, pbeam->endEntity); ;
+
+			VectorCopy(target, pbeam->target);
+			pbeam->flags |= FBEAM_ENDVISIBLE;
+			if (((pbeam->flags | FBEAM_ENDVISIBLE) & FBEAM_ENDVISIBLE) == 0)
+				return;
+		}
+
+		if ((pbeam->flags & 1) != 0 && (pbeam->flags & FBEAM_STARTVISIBLE) == 0)
+			return;
+
+		vec3_t delta;
+		VectorSubtract(pbeam->target, pbeam->source, delta);
+
+		if (Length(delta) > 0.0000001)
+		{
+			VectorCopy(delta, pbeam->delta);
+		}
+		if (pbeam->amplitude < 0.5)
+			pbeam->segments = Length(pbeam->delta) * 0.075 + 3;
+		else
+			pbeam->segments = Length(pbeam->delta) * 0.25 + 3;
+	}
+	if ((pbeam->type || R_BeamCull(pbeam->source, pbeam->target, 0))
+		&& tri.SpriteTexture(model, (int)(pbeam->frameRate * g_pcl.time + pbeam->frame) % pbeam->frameCount))
+	{
+		if ((pbeam->flags & FBEAM_SINENOISE) != 0 &&
+			egon_amplitude.value > 0.0)
+		{
+			scale = sin(pbeam->freq * 10.0) * (egon_amplitude.value * pbeam->amplitude);
+			VectorMA(pbeam->target, scale, vup, org);
+			scale = cos(pbeam->freq * 10.0) * (egon_amplitude.value * pbeam->amplitude);
+			VectorMA(org, scale, vright, org);
+			VectorSubtract(pbeam->source, org, velocity);
+			lenVelocity = Length(velocity);
+			if (lenVelocity != 0.0)
+			{
+				scale = 1000.0 / lenVelocity;
+				VectorScale(velocity, scale, velocity);
+			}
+			life = lenVelocity * 0.001;
+			particle = R_TracerParticles(org, velocity, life);
+			if (particle)
+				particle->color = 7;
+		}
+		pbeam->t = pbeam->die - g_pcl.time + pbeam->freq;
+		if (pbeam->t != 0.0)
+			pbeam->t = 1.0 - pbeam->freq / pbeam->t;
+
+		float alpha;
+		if ((pbeam->flags & FBEAM_FADEIN) != 0)
+			alpha = pbeam->t * pbeam->brightness;
+		else if ((pbeam->flags & FBEAM_FADEOUT) == 0)
+			alpha = pbeam->brightness;
+		else
+			alpha = (1.0 - pbeam->t) * pbeam->brightness;
+
+		tri.Color4f(pbeam->r, pbeam->g, pbeam->b, alpha);
+
+		switch (pbeam->type)
+		{
+		case TE_BEAMPOINTS:
+			tri.Begin(TRI_QUADS);
+			R_DrawSegs(
+				pbeam->source,
+				pbeam->delta,
+				pbeam->width,
+				pbeam->amplitude,
+				pbeam->freq,
+				pbeam->speed,
+				pbeam->segments,
+				pbeam->flags);
+			tri.End();
+			break;
+		case TE_BEAMTORUS:
+			tri.Begin(TRI_QUAD_STRIP);
+			R_DrawTorus(
+				pbeam->source,
+				pbeam->delta,
+				pbeam->width,
+				pbeam->amplitude,
+				pbeam->freq,
+				pbeam->speed,
+				pbeam->segments);
+			tri.End();
+			break;
+		case TE_BEAMDISK:
+			tri.Begin(TRI_QUAD_STRIP);
+			R_DrawDisk(
+				pbeam->source,
+				pbeam->delta,
+				pbeam->width,
+				pbeam->amplitude,
+				pbeam->freq,
+				pbeam->speed,
+				pbeam->segments);
+			tri.End();
+			break;
+		case TE_BEAMCYLINDER:
+			tri.Begin(TRI_QUAD_STRIP);
+			R_DrawCylinder(
+				pbeam->source,
+				pbeam->delta,
+				pbeam->width,
+				pbeam->amplitude,
+				pbeam->freq,
+				pbeam->speed,
+				pbeam->segments);
+			tri.End();
+			break;
+		case TE_BEAMFOLLOW:
+			tri.Begin(TRI_QUADS);
+			R_DrawBeamFollow(pbeam);
+			tri.End();
+			break;
+		case TE_BEAMRING:
+			tri.Begin(TRI_QUAD_STRIP);
+			R_DrawRing(
+				pbeam->source,
+				pbeam->delta,
+				pbeam->width,
+				pbeam->amplitude,
+				pbeam->freq,
+				pbeam->speed,
+				pbeam->segments);
+			tri.End();
+			break;
+		default:
+			break;
+		}
+	}
+}
+
+void R_DrawSegs(vec_t* source, vec_t* delta, float width, float scale, float freq, float speed, int segments, int flags)
+{
+	/*return Call_Function<void, vec_t*, vec_t*,
+		float, float, float,
+		float, int, int>
+		(0x7E260, source, delta, width,
+			scale, freq, speed, segments, flags);*/
+
+	double v;
+	float yscale;
+	float xscale;
+	float vLast;
+	float fraction;
+	float brightness;
+	int noiseIndex;
+	float div;
+	float vStep;
+	float length;
+	vec3_t last1;
+	vec3_t last2;
+	vec3_t point;
+	vec3_t screen;
+	vec3_t screenLast; 
+	vec3_t tmp;
+	vec3_t normal;
+
+	if (segments <= 1)
+		return;
+	if (segments > 128)
+		segments = 128;
+
+	length = Length(delta) * 0.01;
+	if (length < 0.5)
+		length = 0.5f;
+
+	div = 1.0 / (segments - 1);
+	vStep = length * div;
+	vLast = freq * speed;
+	vLast = fmod(vLast, 1);
+
+	if ((flags & FBEAM_SINENOISE) != 0)
+	{
+		segments = max(segments, 16);
+		if (segments < 16)
+			segments = 16;
+
+		length = segments * 0.1;
+		scale = scale * 100;
+	}
+	else
+	{
+		scale = scale * length;
+	}
+
+	ScreenTransform(source, screenLast);
+	VectorMA(source, div, delta, point);
+	ScreenTransform(point, screen);
+	VectorSubtract(screen, screenLast, tmp);
+	tmp[2] = 0.0;
+	VectorNormalize(tmp);
+	VectorScale(vup, tmp[0], normal);
+	VectorMA(normal, -tmp[1], vright, normal);
+	VectorMA(source, width, normal, last1);
+	VectorMA(source, -width, normal, last2);
+	brightness = 1.0;
+	noiseIndex = 0;
+	if ((flags & FBEAM_SINENOISE) == 0)
+		noiseIndex = (div * 128.0 * 65536.0);
+
+	if ((flags & FBEAM_SHADEIN) != 0)
+		brightness = 0;
+
+	for (int i = 0; i < segments; i++)
+	{
+		fraction = i * div;
+		tri.Brightness(brightness);
+		tri.TexCoord2f(0, vLast);
+		tri.Vertex3fv(last1);
+		tri.Brightness(brightness);
+		tri.TexCoord2f(1.0, vLast);
+		tri.Vertex3fv(last2);
+		if ((flags & FBEAM_SHADEIN) != 0)
+		{
+			brightness = i * div;
+		}
+		else if ((flags & FBEAM_SHADEOUT) != 0)
+		{
+			brightness = 1.0 - fraction;
+		}
+		VectorMA(source, fraction, delta, point);
+		if (scale != 0)
+		{
+			float factor = scale * gNoise[noiseIndex >> 16];
+			if ((flags & FBEAM_SINENOISE) != 0)
+			{
+				v = PI * fraction * length + freq;
+				yscale = sin(v) * factor;
+				VectorMA(point, yscale, vup, point);
+				xscale = factor * cos(v);
+			}
+			else
+			{
+				yscale = factor;
+				VectorMA(point, yscale, vup, point);
+				xscale = cos(PI * fraction * 3 + freq) * (scale * gNoise[noiseIndex >> 16]);
+			}
+			VectorMA(point, xscale, vright, point);
+		}
+		ScreenTransform(point, screen);
+		VectorSubtract(screen, screenLast, tmp);
+		tmp[2] = 0;
+		VectorNormalize(tmp);
+		VectorScale(vup, tmp[0], normal);
+		VectorMA(normal, -tmp[1], vright, normal);
+		VectorMA(point, width, normal, last1);
+		VectorMA(point, -width, normal, last2);
+		vLast += vStep;
+		tri.Brightness(brightness);
+		tri.TexCoord2f(1, vLast);
+		tri.Vertex3fv(last2);
+		tri.Brightness(brightness);
+		tri.TexCoord2f(0, vLast);
+		tri.Vertex3fv(last1);
+		VectorCopy(screenLast, screen);
+		vLast = fmod(vLast, 1);
+		noiseIndex += (div * 128 * 65536.0);
+	}
+}
+
+void R_DrawTorus(vec_t* source, vec_t* delta, float width, float scale, float freq, float speed, int segments)
+{
+	return Call_Function<void, vec_t*, vec_t*,
+		float, float, float,
+		float, int>
+		(0x7E6D0, source, delta, width,
+			scale, freq, speed, segments);
+}
+
+void R_DrawDisk(vec_t* source, vec_t* delta, float width, float scale, float freq, float speed, int segments)
+{
+	NOT_IMPLEMENTED;
+	return Call_Function<void, vec_t*, vec_t*,
+		float, float, float,
+		float, int>
+		(0x7E970, source, delta, width,
+			scale, freq, speed, segments);
+}
+
+void R_DrawCylinder(vec_t* source, vec_t* delta, float width, float scale, float freq, float speed, int segments)
+{
+	NOT_IMPLEMENTED;
+	return Call_Function<void, vec_t*, vec_t*,
+		float, float, float,
+		float, int>
+		(0x7EB00, source, delta, width,
+			scale, freq, speed, segments);
+}
+
+void R_DrawRing(vec_t* source, vec_t* delta, float width, float amplitude, float freq, float speed, int segments)
+{
+	NOT_IMPLEMENTED;
+	return Call_Function<void, vec_t*, vec_t*,
+		float, float, float,
+		float, int>
+		(0x7F060, source, delta, width,
+			amplitude, freq, speed, segments);
+}
+
+void R_DrawBeamFollow(BEAM* pbeam)
+{
+	//return Call_Function<void, BEAM*>(0x7ECC0, pbeam);
+	particle_s* pParticles;
+	double div;
+	float fraction;
+	float vLast;
+	vec3_t delta;
+	vec3_t last1;
+	vec3_t last2;
+	vec3_t screen;
+	vec3_t screenLast;
+	vec3_t tmp;
+	vec3_t normal;
+
+	particle_t* pnew = nullptr;
+	R_FreeDeadParticles(&pbeam->particles);
+	pParticles = pbeam->particles;
+	if ((pbeam->flags & FBEAM_STARTENTITY) != 0)
+	{
+		if (pParticles)
+		{
+			VectorSubtract(pParticles->org, pbeam->source, delta);
+			div = Length(delta);
+			pnew = free_particles;
+			free_particles = pnew->next;
+		}
+		else
+		{
+			if (!free_particles)
+				return;
+			div = 0.0;
+			pnew = free_particles;
+			free_particles = pnew->next;
+		}
+	}
+	if (pnew)
+	{
+		VectorCopy(pbeam->source, pnew->org);
+		pnew->die = pbeam->amplitude + g_pcl.time;
+		VectorClear(pnew->vel);
+		pbeam->die = pbeam->amplitude + g_pcl.time;
+
+		pnew->next = pParticles;
+		pbeam->particles = pnew;
+	}
+
+	if (!pParticles) return;
+
+	if (!pnew && div != 0)
+	{
+		VectorCopy(pbeam->source, delta);
+		ScreenTransform(pbeam->source, screenLast);
+		ScreenTransform(pParticles->org, screen);
+	}
+	else if (pParticles && pParticles->next)
+	{
+		VectorCopy(pParticles->org, delta);
+		ScreenTransform(pParticles->org, screenLast);
+		ScreenTransform(pParticles->next->org, screen);
+		pParticles = pParticles->next;
+	}
+	else
+	{
+		return;
+	}
+
+	VectorSubtract(screen, screenLast, tmp);
+	tmp[2] = 0; // Screen space 
+	VectorNormalize(tmp);
+	VectorScale(vup, tmp[0], normal);
+	VectorMA(normal, -tmp[1], vright, normal);
+	VectorMA(delta, pbeam->width, normal, last1);
+	VectorMA(delta, -pbeam->width, normal, last2);
+	if (pParticles)
+	{
+		vLast = 0.0;
+		div = 1.0 / pbeam->amplitude;
+		fraction = (pbeam->die - g_pcl.time) * div;
+		do
+		{
+			tri.Brightness(fraction);
+			tri.TexCoord2f(0.0, 0.0);
+			tri.Vertex3fv(last1);
+			tri.Brightness(fraction);
+			tri.TexCoord2f(1.0, 0.0);
+			tri.Vertex3fv(last2);
+			ScreenTransform(pParticles->org, screen);
+			VectorSubtract(screen, screenLast, tmp);
+			tmp[2] = 0.0;
+			VectorNormalize(tmp);
+			VectorScale(vup, tmp[0], normal);
+			VectorMA(normal, -tmp[1], vright, normal);
+			VectorMA(pParticles->org, pbeam->width, normal, last1);
+			VectorMA(pParticles->org, -pbeam->width, normal, last2);
+			fraction = 0.0;
+
+			if (pParticles->next)
+				fraction = (pParticles->die - g_pcl.time) * div;
+			tri.Brightness(fraction);
+			tri.TexCoord2f(1.0, 1.0);
+			tri.Vertex3fv(last2);
+			tri.Brightness(fraction);
+			tri.TexCoord2f(0.0, 1.0);
+			tri.Vertex3fv(last1);
+			VectorCopy(screen, screenLast);
+			vLast = fmod(1.0 + vLast, 1.0);
+			pParticles = pParticles->next;
+		} while (pParticles);
+	}
+
+	particle_t* vecc = pbeam->particles;
+	for (float scale = g_pcl.time - g_pcl.oldtime; vecc; vecc = vecc->next)
+		VectorMA(vecc->org, scale, vecc->vel, vecc->org);
 }
 
 void R_BuildLightMap(msurface_t* psurf, uchar* dest, int stride)
@@ -2340,6 +4160,7 @@ void R_AddDynamicLights(msurface_t* surf)
 void R_RenderDlight(dlight_t* light)
 {
 	// called by R_RenderDlights which is nvever executed 
+	NOT_IMPLEMENTED;
 	return Call_Function<void, dlight_t*>(0x42F90, light);
 }
 
@@ -2391,12 +4212,12 @@ void R_DrawWorld()
 			qglBlendFunc(0, GL_ONE_MINUS_SRC_COLOR);
 			break;
 		case GL_INTENSITY:
-			qglTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, 8448.0);
+			qglTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 			qglColor4f(0.0, 0.0, 0.0, 1.0);
 			qglBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_COLOR);
 			break;
 		case GL_RGBA:
-			qglTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, 8448.0);
+			qglTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 			break;
 		}
 	}
@@ -2458,7 +4279,7 @@ void R_DrawEntitiesOnList()
 					//	3,
 						//&g_pcl.predicted_origins[47][4270 * (g_pcl.parsecount & CL_UPDATE_MASK) + 2 + 85 * e->index]);
 				}
-				else if (e->curstate.movetype == 12)
+				else if (e->curstate.movetype == MOVETYPE_FOLLOW)
 				{
 
 					if (cl_numvisedicts <= 0)
@@ -2741,4 +4562,45 @@ int SignbitsForPlane(mplane_t* out)
 			sign |= 1 << i;
 	}
 	return sign;
+}
+
+void R_TimeRefresh_f(void)
+{
+	if (g_pcl.worldmodel)
+	{
+		if (sv_cheats.value == 0.0)
+		{
+			Con_Printf("sv_cheats not enabled\n");
+		}
+		else
+		{
+			qglDrawBuffer(GL_FRONT);
+			qglFinish();
+			float begintime = Sys_FloatTime();
+			for (int i = 0; i < 128; i++)
+			{
+				r_refdef.viewangles[1] = i * 0.0078125 * 360.0;
+				R_RenderView();
+			}
+			qglFinish();
+			float delta = Sys_FloatTime() - begintime;
+			Con_Printf("%f seconds (%f fps)\n", delta, (double)(128.0 / (delta)));
+			qglDrawBuffer(GL_BACK);
+			GL_EndRendering();
+		}
+	}
+	else
+	{
+		Con_Printf("No map loaded\n");
+	}
+}
+
+void R_Envmap_f(void)
+{
+	NOT_IMPLEMENTED;
+}
+
+void R_ReadPointFile_f(void)
+{
+	NOT_IMPLEMENTED;
 }

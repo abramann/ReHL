@@ -55,6 +55,15 @@
 #define MAXLIGHTMAPS		4
 #define MAX_KNOWN_MODELS	1024
 
+typedef enum
+{
+	SPR_FWD_PARALLEL_UPRIGHT = 0,
+	SPR_FACING_UPRIGHT,
+	SPR_FWD_PARALLEL,
+	SPR_ORIENTED,
+	SPR_FWD_PARALLEL_ORIENTED,
+} angletype_t;
+
 typedef struct mvertex_s
 {
 	vec3_t			position;

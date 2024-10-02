@@ -698,6 +698,8 @@ edict_t* EXT_FUNC PF_checkclient_I(edict_t *pEdict)
 
 mnode_t* EXT_FUNC PVSNode(mnode_t *node, vec_t *emins, vec_t *emaxs)
 {
+	//return Call_Function<mnode_t*, mnode_t*, vec_t*, vec_t*>(0x6DE50, node, emins, emaxs);
+	
 	mplane_t *splitplane;
 	int sides;
 	mnode_t *splitNode;
